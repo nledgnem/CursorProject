@@ -1,0 +1,167 @@
+# Majors vs Alts Regime Monitor Configuration
+
+# Data paths (read-only)
+data:
+  data_lake_dir: "./data/curated/data_lake"
+  duckdb_path: "./outputs/research.duckdb"  # Optional, will try to use if exists
+  universe_snapshots_path: "./data/curated/universe_snapshots.parquet"  # Optional, for PIT universe
+
+# Universe rules
+universe:
+  majors: ["BTC", "ETH"]  # Long leg assets
+  exclude_assets: []  # Additional exclusions beyond stables
+  min_mcap_usd: 50_000_000  # Minimum market cap for ALT inclusion
+  min_volume_usd: 1_000_000  # Minimum daily volume (7d median)
+  basket_size: 20  # Top N liquid alts for short basket
+  per_name_cap: 0.10  # Maximum weight per ALT name
+  gross_cap: 1.0  # Maximum gross exposure
+  vol_target: null  # Optional: target volatility (annualized, e.g., 0.15)
+  
+  # Neutrality mode: "dollar_neutral" (enforce dollar-neutrality first) or "beta_neutral" (enforce beta-neutrality first)
+  neutrality_mode: "beta_neutral"  # Options: "dollar_neutral", "beta_neutral"
+  
+  # Enhanced ALT selection filters
+  alt_selection:
+    enabled: true  # Enable enhanced ALT selection
+    max_volatility: 1.0  # Exclude ALTs with >100% annualized volatility
+    min_correlation: 0.3  # Exclude ALTs with correlation to BTC/ETH < 0.3 (idiosyncratic risk)
+    max_momentum: 0.5  # Exclude ALTs with extreme recent momentum (>50% in 7d, avoid catching falling knives)
+    min_momentum: -0.5  # Exclude ALTs with extreme negative momentum (<-50% in 7d, avoid shorting at bottom)
+    weight_by_inverse_vol: true  # Weight ALTs by inverse volatility (less volatile = higher weight)
+    volatility_lookback_days: 20  # Lookback window for volatility calculation
+    correlation_lookback_days: 60  # Lookback window for correlation calculation
+    momentum_lookback_days: 7  # Lookback window for momentum calculation
+
+# Costs & funding
+costs:
+  maker_fee_bps: 2  # Maker fee in basis points
+  taker_fee_bps: 5  # Taker fee in basis points
+  slippage_bps: 5  # Slippage in basis points
+  slippage_adv_multiplier: 0.1  # Slippage scales with ADV (0.1 = 10% of ADV)
+  funding_enabled: true  # Apply funding carry if available
+  funding_8h_rate: true  # Funding rates are 8-hourly (3x per day)
+
+# Feature computation
+features:
+  burn_in_days: 60  # Minimum observations before features are valid
+  lookback_days: 252  # Maximum lookback for rolling windows
+
+# Regime modeling
+regime:
+  mode: "composite"  # "composite" or "unsupervised"
+  n_regimes: 5  # 3 or 5 regimes (5 = more granular: STRONG/WEAK variants)
+  
+  # Composite score mode
+  composite:
+    default_weights:
+      alt_breadth: 0.18
+      btc_dominance: 0.22
+      funding_skew: 0.12
+      funding_heating: 0.10  # New: funding heating feature
+      liquidity: 0.13
+      volatility_spread: 0.13
+      momentum: 0.08
+      oi_risk: 0.04  # New: OI risk feature (using marketcap proxy)
+    threshold_low: -0.5  # Lower threshold (separates WEAK_RISK_ON_ALTS from BALANCED)
+    threshold_high: 0.5  # Upper threshold (separates BALANCED from WEAK_RISK_ON_MAJORS)
+    threshold_strong_low: -1.5  # Strong lower threshold (separates STRONG_RISK_ON_ALTS from WEAK)
+    threshold_strong_high: 1.5  # Strong upper threshold (separates WEAK_RISK_ON_MAJORS from STRONG)
+    grid_search:
+      enabled: true
+      lookback_window_days: 252  # Lookback window length (burn-in period, not training)
+      test_window_days: 63  # Test window length (walk-forward)
+      weight_ranges:
+        alt_breadth: [0.0, 0.3]
+        btc_dominance: [0.0, 0.4]
+        funding_skew: [0.0, 0.3]
+        liquidity: [0.0, 0.3]
+        volatility_spread: [0.0, 0.3]
+        momentum: [0.0, 0.2]
+      threshold_low: [-2.0, 0.0]  # Lower threshold range
+      threshold_high: [0.0, 2.0]  # Upper threshold range
+      threshold_strong_low: [-3.0, -0.5]  # Strong lower threshold range
+      threshold_strong_high: [0.5, 3.0]  # Strong upper threshold range
+      n_samples: 50  # Grid search samples per window
+      eval_horizon_days: 20  # Forward return horizon for optimization
+    hysteresis:
+      low_band: -0.3  # Hysteresis band around thresholds
+      high_band: 0.3
+  
+  # Unsupervised mode (optional)
+  unsupervised:
+    method: "hmm"  # "hmm" or "kmeans"
+    n_states: 3
+    min_state_persistence_days: 3
+    features_for_clustering: ["alt_breadth", "btc_dominance", "funding_skew"]
+
+# Beta estimation
+beta:
+  lookback_days: 60  # Rolling window for beta estimation
+  ridge_alpha: 0.1  # Ridge regression regularization
+  winsorize_pct: 0.05  # Winsorize extreme returns
+  beta_clamp: [0.0, 3.0]  # Clamp betas to this range
+  default_beta: 1.0  # Default beta if estimation fails
+  use_tracker_betas: true  # Prefer tracker betas from data lake if available
+
+# Backtest
+backtest:
+  walk_forward: true  # Enable walk-forward validation
+  lookback_window_days: 252  # Lookback window (burn-in period for features, not training)
+  test_window_days: 63
+  min_test_days: 20  # Minimum test days to report metrics
+  # Position sizing based on regime confidence
+  regime_position_scaling:
+    enabled: true  # Enable position sizing based on regime confidence
+    # For 5 regimes: scale positions based on regime strength
+    strong_risk_on_majors: 1.0  # 100% position size (full confidence)
+    weak_risk_on_majors: 0.6  # 60% position size (reduced confidence)
+    risk_on_majors: 1.0  # 100% position size (for 3-regime mode)
+    # For 3 regimes: can also use score magnitude for scaling
+    use_score_magnitude: true  # Continuous scaling based on score magnitude (improved granularity)
+  # Risk management
+  risk_management:
+    # Stop-loss: exit positions if daily loss exceeds threshold
+    # BEST PERFORMING: Stop-loss only provides best Sharpe (1.14) and returns
+    stop_loss:
+      enabled: true
+      daily_loss_threshold: -0.05  # Exit if daily return < -5% (base threshold)
+      lookback_days: 3  # Check last N days for cumulative loss (increased from 1 to catch compounding losses)
+      volatility_adjusted: true  # Scale threshold by realized volatility (2x vol = 2x threshold, capped at -7.5%)
+    # Take-profit: exit positions when profit target is reached
+    take_profit:
+      enabled: true
+      profit_threshold: 0.10  # Exit if cumulative return > +10%
+      time_based_exit_days: 30  # Exit positions after N days regardless of PnL
+      partial_profit_taking: false  # If true, reduce position by 50% when profit target hit
+    # Volatility targeting: scale positions by realized volatility
+    # Note: Using all methods together reduces performance
+    volatility_targeting:
+      enabled: true  # Enable dynamic position sizing based on portfolio volatility
+      target_volatility: 0.20  # Target 20% annualized volatility
+      lookback_days: 20  # Rolling window for volatility calculation
+      min_scale: 0.1  # Minimum position scale (10%)
+      max_scale: 1.0  # Maximum position scale (100%)
+    # Trailing stop: exit if drawdown from peak exceeds threshold
+    # Note: Reduces returns without significantly improving drawdown
+    trailing_stop:
+      enabled: false  # Disabled - stop-loss alone performs better
+      drawdown_threshold: -0.15  # Exit if drawdown from peak > 15%
+      lookback_days: 20  # Lookback window for peak calculation
+
+# Evaluation
+evaluation:
+  horizons_days: [5, 10, 20, 40, 60]  # Forward return horizons
+  bootstrap:
+    enabled: true
+    block_size: 10  # Days per block
+    n_boot: 300  # Bootstrap iterations
+
+# Output paths (outside data/)
+outputs:
+  reports_dir: "./reports/majors_alts"
+  artifacts_dir: "./artifacts/majors_alts"
+  cache_dir: "./cache"
+
+# Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR

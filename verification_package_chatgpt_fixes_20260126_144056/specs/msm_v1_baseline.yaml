@@ -1,0 +1,61 @@
+# Pure MSM Baseline Experiment
+# Market State Monitor - selection-independent, fixed basket definition
+
+title: "MSM Baseline - Top 20 Alts Equal Weight"
+experiment_id: "msm_v1_baseline"
+category_path: "msm"
+
+# Features to use
+features:
+  - id: "alt_breadth"
+    weight: 0.18
+  - id: "btc_dominance"
+    weight: 0.22
+  - id: "funding_skew"
+    weight: 0.12
+  - id: "funding_heating"
+    weight: 0.10
+  - id: "liquidity"
+    weight: 0.13
+  - id: "volatility_spread"
+    weight: 0.13
+  - id: "momentum"
+    weight: 0.08
+  - id: "oi_risk"
+    weight: 0.04
+
+# Target definition (alts index vs BTC)
+target:
+  long_leg:
+    weights: {"BTC": 1.0}  # BTC-only by default (can use {"BTC": 0.7, "ETH": 0.3} for variant)
+  
+  short_leg:
+    n: 20  # Top N alts by market cap
+    weighting: "equal"  # Equal weight (alternative: "mcap" for market cap weighted)
+    min_volume_usd: 1000  # Light liquidity sanity check (very permissive, data hygiene only)
+  
+  # Note: Exclusions (stables, exchange tokens, wrapped) are handled automatically
+  # No enhanced filters in pure MSM (vol/corr/mom filters belong to ALPHA)
+
+# State mapping (regime classification)
+state_mapping:
+  n_regimes: 5
+  thresholds:
+    low: -0.5
+    high: 0.5
+    strong_low: -1.5
+    strong_high: 1.5
+  hysteresis:
+    low_band: -0.3
+    high_band: 0.3
+  persistence:
+    min_duration_days: 3
+    requires_stronger_signal: true
+
+# Backtest parameters
+  backtest:
+    walk_forward: true
+    lookback_window_days: 252
+    test_window_days: 63
+    min_test_days: 20
+    with_regime_eval: true  # Auto-compute regime-conditional forward returns for MSM

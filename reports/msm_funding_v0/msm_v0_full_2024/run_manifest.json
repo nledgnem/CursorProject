@@ -1,0 +1,258 @@
+{
+  "run_id": "msm_v0_full_2024",
+  "timestamp": "2026-01-27T12:08:28.768555Z",
+  "config": {
+    "data": {
+      "data_lake_dir": "./data/curated/data_lake",
+      "duckdb_path": null,
+      "universe_snapshots_path": null
+    },
+    "decision": {
+      "anchor_day": "monday",
+      "anchor_hour": 0,
+      "anchor_minute": 0
+    },
+    "universe": {
+      "majors": [
+        "BTC",
+        "ETH"
+      ],
+      "majors_weights": [
+        0.7,
+        0.3
+      ],
+      "basket_size": 30,
+      "min_mcap_usd": 50000000,
+      "exclude_categories": [
+        "BTC",
+        "ETH",
+        "stablecoins",
+        "exchange_tokens",
+        "wrapped_tokens",
+        "liquid_staking",
+        "bridge"
+      ]
+    },
+    "feature": {
+      "lookback_days": 7,
+      "min_coverage_pct": 60.0,
+      "min_price_coverage_pct": 60.0
+    },
+    "label": {
+      "bins": 5,
+      "bin_names": [
+        "Red",
+        "Orange",
+        "Yellow",
+        "YellowGreen",
+        "Green"
+      ],
+      "bin_ranges": [
+        [
+          0,
+          20
+        ],
+        [
+          20,
+          40
+        ],
+        [
+          40,
+          60
+        ],
+        [
+          60,
+          80
+        ],
+        [
+          80,
+          100
+        ]
+      ],
+      "v0_0": {
+        "mode": "FULL_SAMPLE",
+        "description": "Percentiles computed vs all weeks in dataset"
+      },
+      "v0_1": {
+        "mode": "ROLLING_PAST_52W",
+        "window_weeks": 52,
+        "description": "Percentiles computed vs prior 52 valid weekly observations only"
+      }
+    },
+    "returns": {
+      "costs_enabled": false,
+      "funding_enabled": false
+    },
+    "outputs": {
+      "reports_dir": "./reports/msm_funding_v0"
+    }
+  },
+  "metadata": {
+    "run_id": "msm_v0_full_2024",
+    "start_date": "2024-01-01",
+    "end_date": "2024-12-31",
+    "n_weeks": 0,
+    "n_decision_dates": 53,
+    "rejection_counts": {
+      "skipped_no_universe": 1,
+      "skipped_funding_coverage": 0,
+      "skipped_price_coverage": 0,
+      "skipped_returns_computation": 52
+    },
+    "rejection_rate": {
+      "total_decision_dates": 53,
+      "valid_weeks": 0,
+      "rejection_rate_pct": 100.0
+    },
+    "sanity_check": {
+      "funding_earliest": "2024-01-01",
+      "funding_latest": "2024-12-31",
+      "funding_n_days": 366,
+      "marketcap_earliest": "2024-01-07",
+      "marketcap_latest": "2024-12-31",
+      "marketcap_n_days": 360,
+      "price_earliest": "2024-01-07",
+      "price_latest": "2024-12-31",
+      "price_n_days": 360,
+      "top_n_coverage": {
+        "n_assets_checked": 30,
+        "n_assets_with_funding": 22,
+        "coverage_pct": 73.33333333333333,
+        "assets": [
+          {
+            "asset_id": "BTC",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "XRP",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "BNB",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "ADA",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "LINK",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "SUI",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "HBAR",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "DOT",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "XLM",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "BCH",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "UNI",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "LTC",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "NEAR",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "APT",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "AAVE",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "ICP",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "POL",
+            "n_days": 110,
+            "earliest": "2024-09-13",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "ETC",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "VET",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "RENDER",
+            "n_days": 159,
+            "earliest": "2024-07-26",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "XMR",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "VIRTUAL",
+            "n_days": 22,
+            "earliest": "2024-12-10",
+            "latest": "2024-12-31"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,692 @@
+[
+  {
+    "symbol": "BTC",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "ETH",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "XRP",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "BNB",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "SOL",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "TRX",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "ADA",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "DOGE",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "BCH",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "LINK",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "AVAX",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "ARB",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "OP",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "TIA",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "INJ",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "NEAR",
+    "data_length": 0,
+    "first_date": null,
+    "last_date": null
+  },
+  {
+    "symbol": "APT",
+    "data_length": 0,
+    "first_date": null,
+    "last_date": null
+  },
+  {
+    "symbol": "SUI",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "JUP",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "PYTH",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "SEI",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "MATIC",
+    "data_length": 0,
+    "first_date": null,
+    "last_date": null
+  },
+  {
+    "symbol": "DOT",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "LTC",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "UNI",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "ATOM",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "ETC",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "XLM",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "FIL",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "ICP",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "ALGO",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "VET",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "THETA",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "EOS",
+    "data_length": 0,
+    "first_date": null,
+    "last_date": null
+  },
+  {
+    "symbol": "AAVE",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "MKR",
+    "data_length": 0,
+    "first_date": null,
+    "last_date": null
+  },
+  {
+    "symbol": "GRT",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "SNX",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "COMP",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "YFI",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "SUSHI",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "CRV",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "1INCH",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "BAL",
+    "data_length": 0,
+    "first_date": null,
+    "last_date": null
+  },
+  {
+    "symbol": "REN",
+    "data_length": 0,
+    "first_date": null,
+    "last_date": null
+  },
+  {
+    "symbol": "ZRX",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "BAT",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "ZEC",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "DASH",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "XMR",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "ENJ",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "MANA",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "SAND",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "AXS",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "GALA",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "CHZ",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "FLOW",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "HBAR",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "EGLD",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "FTM",
+    "data_length": 0,
+    "first_date": null,
+    "last_date": null
+  },
+  {
+    "symbol": "ONE",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "WAVES",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "KSM",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "ROSE",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "CELO",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "IOTA",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "QTUM",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "NEO",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "ONT",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "ZIL",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "SC",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "STORJ",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "ANKR",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "RUNE",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "OCEAN",
+    "data_length": 0,
+    "first_date": null,
+    "last_date": null
+  },
+  {
+    "symbol": "ALPHA",
+    "data_length": 0,
+    "first_date": null,
+    "last_date": null
+  },
+  {
+    "symbol": "KAVA",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "BAND",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "CTSI",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "OMG",
+    "data_length": 0,
+    "first_date": null,
+    "last_date": null
+  },
+  {
+    "symbol": "SKL",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "LRC",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "ZEN",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "COTI",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "FET",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "RLC",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "PERP",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "UMA",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "BADGER",
+    "data_length": 0,
+    "first_date": null,
+    "last_date": null
+  },
+  {
+    "symbol": "FIS",
+    "data_length": 0,
+    "first_date": null,
+    "last_date": null
+  },
+  {
+    "symbol": "BONK",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "WIF",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "PEPE",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "FLOKI",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "SHIB",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "LUNC",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "1000SATS",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "ORDI",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "RATS",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "BOME",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "MYRO",
+    "data_length": 0,
+    "first_date": null,
+    "last_date": null
+  },
+  {
+    "symbol": "POPCAT",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "MEW",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "GME",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "TRUMP",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "BIDEN",
+    "data_length": 0,
+    "first_date": null,
+    "last_date": null
+  },
+  {
+    "symbol": "AMP",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "KITE",
+    "data_length": 88,
+    "first_date": "2025-10-29",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "KAITO",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "LAYER",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "ALT",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "GMT",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "ZETA",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "MANTA",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  },
+  {
+    "symbol": "DYM",
+    "data_length": 334,
+    "first_date": "2025-02-25",
+    "last_date": "2026-01-24"
+  }
+]

@@ -1,0 +1,63 @@
+# MSM v0 - Funding-only Configuration
+
+# Data paths (read-only)
+data:
+  data_lake_dir: "./data/curated/data_lake"
+  duckdb_path: null  # Optional, will try to use if exists
+  universe_snapshots_path: null  # Optional, for PIT universe
+
+# Decision cadence
+decision:
+  anchor_day: "monday"  # Anchor day for weekly decisions
+  anchor_hour: 0  # Anchor hour (UTC)
+  anchor_minute: 0  # Anchor minute (UTC)
+  # Convention: Monday 00:00 UTC means decision at start of Monday UTC week
+
+# Universe rules
+universe:
+  majors: ["BTC", "ETH"]  # Long leg benchmark (70/30 split)
+  majors_weights: [0.7, 0.3]  # BTC/ETH weights
+  basket_size: 30  # Top N eligible ALTs
+  min_mcap_usd: 50_000_000  # Minimum market cap for ALT inclusion
+  
+  # Exclusions (use dim_asset tags if available, else hardcode)
+  exclude_categories:
+    - "BTC"  # Always exclude BTC
+    - "ETH"  # Always exclude ETH
+    - "stablecoins"  # Stablecoins (from dim_asset.is_stable or hardcoded)
+    - "exchange_tokens"  # Exchange tokens (hardcoded if not in dim_asset)
+    - "wrapped_tokens"  # Wrapped tokens (hardcoded if not in dim_asset)
+    - "liquid_staking"  # Liquid staking tokens (hardcoded if not in dim_asset)
+    - "bridge"  # Bridge/pegged assets (hardcoded if not in dim_asset)
+
+# Feature computation
+feature:
+  lookback_days: 7  # 7 calendar days prior to decision time
+  min_coverage_pct: 60.0  # Require >=60% of basket to have valid funding
+  min_price_coverage_pct: 60.0  # Require >=60% of basket to have valid prices for returns
+
+# Labeling
+label:
+  bins: 5  # Number of percentile bins
+  bin_names: ["Red", "Orange", "Yellow", "YellowGreen", "Green"]
+  bin_ranges: [[0, 20], [20, 40], [40, 60], [60, 80], [80, 100]]  # Percentile ranges
+  
+  # v0.0: FULL_SAMPLE (exploratory, allows look-ahead)
+  v0_0:
+    mode: "FULL_SAMPLE"
+    description: "Percentiles computed vs all weeks in dataset"
+  
+  # v0.1: ROLLING_PAST_52W (PIT-safe)
+  v0_1:
+    mode: "ROLLING_PAST_52W"
+    window_weeks: 52  # Prior 52 valid weekly observations
+    description: "Percentiles computed vs prior 52 valid weekly observations only"
+
+# Returns (costs OFF)
+returns:
+  costs_enabled: false  # No costs for v0
+  funding_enabled: false  # No funding costs for v0
+
+# Output paths
+outputs:
+  reports_dir: "./reports/msm_funding_v0"

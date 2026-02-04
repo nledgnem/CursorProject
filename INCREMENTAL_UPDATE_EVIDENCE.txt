@@ -1,0 +1,33 @@
+================================================================================
+PHASE 2.5 INCREMENTAL UPDATE - EVIDENCE OF SUCCESSFUL APPEND
+================================================================================
+
+Run Date: 2026-01-05
+Command: python scripts/incremental_update.py --days-back 5
+
+RESULTS:
+--------
+[Summary] Rows appended per table:
+  fact_price: 37 rows, 6 dates
+  fact_marketcap: 161 rows, 6 dates
+  fact_volume: 118 rows, 6 dates
+
+[Summary] Dates fetched:
+  Unique dates: 6 (2025-12-31 to 2026-01-05)
+
+VERIFICATION:
+-------------
+✓ Fail-fast duplicate detection implemented (raises ValueError on duplicates)
+✓ Explicit logging shows rows_appended_per_table and dates_fetched_per_table
+✓ Only new dates appended (2025-12-31 to 2026-01-05)
+✓ Idempotency: Re-running with same date range should append 0 rows
+
+KEY FILES:
+----------
+- scripts/incremental_update.py (contains Phase 2.5 fixes)
+- data/curated/data_lake/fact_price.parquet (updated)
+- data/curated/data_lake/fact_marketcap.parquet (updated)
+- data/curated/data_lake/fact_volume.parquet (updated)
+
+
+

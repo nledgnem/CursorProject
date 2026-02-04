@@ -1,0 +1,36 @@
+I'm building an institutional-light crypto backtesting platform with a data lake architecture. Here's the context:
+
+## Project Goal
+Create a robust, auditable pipeline for data curation, universe selection, backtesting, and validation with proper data integrity checks.
+
+## Current Architecture
+- **Data Lake**: Normalized fact/dimension/mapping tables in `data/curated/data_lake/`
+  - Dimension: `dim_asset` (939 assets), `dim_instrument` (605 instruments)
+  - Fact: `fact_price`, `fact_marketcap`, `fact_volume`, `fact_funding` (477K+ rows total)
+  - Mapping: Provider IDs → canonical asset_id/instrument_id
+- **3 Data Sources**: CoinGecko (price/mcap/volume), Binance (perp listings), Coinglass (funding rates with 30/min rate limiting)
+- **Pipeline**: 9-step orchestrator with validation, mapping checks, DuckDB views
+
+## Current Problem
+**Update behavior is FULL REPLACE (truncate-and-reload)**:
+- `download_data.py` re-downloads entire date range (e.g., 2 years) every time
+- `convert_to_fact_tables.py` re-converts entire dataset every time
+- This wastes API calls, time, and resources
+
+## What I Need
+**INCREMENTAL UPDATES (upsert/append)**:
+- Check existing fact tables to find latest dates
+- Download only missing date ranges (e.g., last 3 days instead of 2 years)
+- Merge new data with existing (deduplicate on `asset_id` + `date`)
+- Append to fact tables (preserve all existing data)
+
+## What I've Created
+- `scripts/incremental_update.py` - New script that should do incremental updates
+- It checks `fact_price.parquet` for latest date, downloads from `latest_date + 1` to `today`, merges, and appends
+
+## What I Need Help With
+1. **Verify the incremental update script works correctly** - Test that it doesn't lose existing data
+2. **Optimize the merge logic** - Ensure efficient deduplication and no data loss
+3. **Integration guidance** - Should the main pipeline use incremental updates by default?
+
+The key requirement: **Only add new data each run, never re-download or re-process existing data**.

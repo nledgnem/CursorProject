@@ -1,0 +1,56 @@
+# Minimal config that works with:
+# - scripts/run_pipeline.py
+# - src/snapshot.py (universe snapshots)
+# - src/backtest/engine.py (backtest)
+
+strategy_name: "golden_smoke"
+
+# Date range
+start_date: "2025-01-01"
+end_date: "2025-12-31"
+
+# Rebalancing
+rebalance_frequency: "monthly"   # "monthly" or "quarterly"
+rebalance_day: 1                 # day-of-month (monthly) or quarter-month logic (quarterly)
+
+# Universe selection
+base_asset: "BTC"
+top_n: 10
+excluded_assets: []              # optional, can add stablecoins etc
+
+# Eligibility rules (filters for "what coins can be picked")
+eligibility:
+  must_have_perp: true           # uses your perp allowlist / proxy
+  min_listing_days: 30
+  min_mcap_usd: null             # set null to disable
+  min_volume_usd: null           # set null to disable
+  # Point-in-time data requirements (assets must have data on rebalance date)
+  require_price: true             # required: asset must have price data on rebalance date
+  require_volume: false           # optional: asset must have volume data on rebalance date
+  require_marketcap: false        # optional: asset must have marketcap data on rebalance date
+
+# Weighting scheme
+weighting: "sqrt_cap_weighted"   # cap_weighted | sqrt_cap_weighted | equal_weight_capped
+max_weight_per_asset: 0.10
+
+# Costs (applied at rebalance)
+cost_model:
+  fee_bps: 5
+  slippage_bps: 5
+
+# Optional: keep present, even if not yet used everywhere
+carry_model:
+  funding_enabled: false
+
+# Optional: backtest data-quality knobs (safe to leave as-is)
+backtest:
+  gap_fill_mode: "none"          # "none" or "1d"
+  basket_coverage_threshold: 0.90  # If <threshold% of weight has valid prices, return NaN (unless policy allows)
+  missing_price_policy: "nan"     # "nan" (conservative, default) | "renormalize" (can bias) | "conservative_zero"
+  lookback_window_days: 30
+  min_history_days: null
+  max_missing_frac: null
+  max_consecutive_missing_days: null
+
+
+

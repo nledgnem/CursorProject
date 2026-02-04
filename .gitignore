@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Data files
+data/raw/*
+data/curated/*
+!data/curated/.gitkeep
+!data/perp_allowlist.csv
+
+# Outputs
+outputs/*
+!outputs/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment variables and secrets
+.env
+.env.local
+*.env
+*_secret.json
+*_keys.json
+secrets/
+
+# API keys (check these files before committing)
+# src/providers/coingecko.py - contains COINGECKO_API_KEY
+# OwnScripts/*/longterm_monitor.py - contains COINGLASS_API_KEY
+# OwnScripts/*/regime_monitor.py - contains COINGLASS_API_KEY
+
+# Large data files
+*.parquet
+*.csv
+!configs/*.csv
+*.duckdb
+*.db
+*.sqlite
+
+# Logs
+*.log
+logs/
+
+# Temporary test files
+test_*.py
+verify_*.py
+quick_*.py
+check_*.py
+inspect_*.py
+view_*.py
+

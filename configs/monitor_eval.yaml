@@ -1,0 +1,34 @@
+# Monitor evaluation configuration
+# Used by scripts/run_monitor_eval.py
+
+# Monitor to evaluate
+monitor_name: "existing_regime_monitor"
+# Optional: path to regime_history.csv (if using existing_monitor)
+# regime_csv_path: "OwnScripts/regime_backtest/regime_history.csv"
+
+# Forward return horizons (trading days)
+horizons: [5, 10, 20, 40, 60]
+
+# Block bootstrap configuration
+block_bootstrap:
+  enabled: true
+  block_size: 10  # trading days per block
+  n_boot: 300      # number of bootstrap samples (reduced from 1000 for speed)
+
+# Date range filter (optional, null = use all available data)
+date_range:
+  start: null  # e.g., "2024-01-01"
+  end: null    # e.g., "2024-12-31"
+
+# Calendar alignment
+calendar:
+  drop_missing: true  # true = inner join (only common dates), false = outer join
+
+# Output directory base (run_id will be appended)
+output_dir_base: "outputs/monitor_eval"
+
+# Random seed for reproducibility
+seed: 42
+
+
+

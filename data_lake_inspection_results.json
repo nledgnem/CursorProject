@@ -1,0 +1,2040 @@
+{
+  "inspection_date": "2026-01-27 23:58:33",
+  "data_lake_dir": "data\\curated\\data_lake",
+  "file_info": {
+    "dim_asset.parquet": {
+      "exists": true,
+      "size_bytes": 105730,
+      "size_mb": 0.1,
+      "last_modified": "2026-01-06 11:28:48"
+    },
+    "dim_instrument.parquet": {
+      "exists": true,
+      "size_bytes": 27538,
+      "size_mb": 0.03,
+      "last_modified": "2026-01-06 11:28:48"
+    },
+    "fact_price.parquet": {
+      "exists": true,
+      "size_bytes": 11780157,
+      "size_mb": 11.23,
+      "last_modified": "2026-01-27 20:20:16"
+    },
+    "fact_marketcap.parquet": {
+      "exists": true,
+      "size_bytes": 11159662,
+      "size_mb": 10.64,
+      "last_modified": "2026-01-27 20:20:17"
+    },
+    "fact_volume.parquet": {
+      "exists": true,
+      "size_bytes": 11846718,
+      "size_mb": 11.3,
+      "last_modified": "2026-01-27 20:20:17"
+    },
+    "fact_funding.parquet": {
+      "exists": true,
+      "size_bytes": 983282,
+      "size_mb": 0.94,
+      "last_modified": "2026-01-13 21:41:41"
+    },
+    "fact_open_interest.parquet": {
+      "exists": true,
+      "size_bytes": 7280,
+      "size_mb": 0.01,
+      "last_modified": "2026-01-13 21:41:41"
+    },
+    "map_provider_asset.parquet": {
+      "exists": true,
+      "size_bytes": 42842,
+      "size_mb": 0.04,
+      "last_modified": "2026-01-06 11:28:48"
+    },
+    "map_provider_instrument.parquet": {
+      "exists": true,
+      "size_bytes": 15182,
+      "size_mb": 0.01,
+      "last_modified": "2026-01-06 11:28:48"
+    }
+  },
+  "fact_tables": {
+    "fact_price": {
+      "exists": true,
+      "row_count": 1271237,
+      "schema": {
+        "asset_id": "String",
+        "date": "Date",
+        "close": "Float64",
+        "source": "String"
+      },
+      "date_range": {
+        "min": "2024-01-07",
+        "max": "2026-01-05",
+        "unique_dates": 730
+      },
+      "asset_coverage": {
+        "unique_assets": 2718,
+        "top_20_by_count": [
+          {
+            "asset_id": "MOCHI",
+            "count": 730
+          },
+          {
+            "asset_id": "WMNT",
+            "count": 730
+          },
+          {
+            "asset_id": "BLUR",
+            "count": 730
+          },
+          {
+            "asset_id": "SPELL",
+            "count": 730
+          },
+          {
+            "asset_id": "VVS",
+            "count": 730
+          },
+          {
+            "asset_id": "MCOIN",
+            "count": 730
+          },
+          {
+            "asset_id": "BBTC",
+            "count": 730
+          },
+          {
+            "asset_id": "FNCT",
+            "count": 730
+          },
+          {
+            "asset_id": "ACX",
+            "count": 730
+          },
+          {
+            "asset_id": "GFAL",
+            "count": 730
+          },
+          {
+            "asset_id": "JOE",
+            "count": 730
+          },
+          {
+            "asset_id": "BELLS",
+            "count": 730
+          },
+          {
+            "asset_id": "ATLAS",
+            "count": 730
+          },
+          {
+            "asset_id": "PRE",
+            "count": 730
+          },
+          {
+            "asset_id": "FUSE",
+            "count": 730
+          },
+          {
+            "asset_id": "ALPINE",
+            "count": 730
+          },
+          {
+            "asset_id": "SWCH",
+            "count": 730
+          },
+          {
+            "asset_id": "NXRA",
+            "count": 730
+          },
+          {
+            "asset_id": "BSV",
+            "count": 730
+          },
+          {
+            "asset_id": "FITFI",
+            "count": 730
+          }
+        ]
+      },
+      "duplicates": 0,
+      "source_distribution": [
+        {
+          "source": "coingecko",
+          "count": 1271237
+        }
+      ],
+      "null_counts": {
+        "asset_id": 0,
+        "date": 0,
+        "close": 0,
+        "source": 0
+      },
+      "sample_data": [
+        {
+          "asset_id": "$MYRO",
+          "date": "2024-01-07",
+          "close": 0.06929142601020269,
+          "source": "coingecko"
+        },
+        {
+          "asset_id": "0X0",
+          "date": "2024-01-07",
+          "close": 0.12833259844895092,
+          "source": "coingecko"
+        },
+        {
+          "asset_id": "10SET",
+          "date": "2024-01-07",
+          "close": 0.6146228844448931,
+          "source": "coingecko"
+        },
+        {
+          "asset_id": "1INCH",
+          "date": "2024-01-07",
+          "close": 0.4652303763528485,
+          "source": "coingecko"
+        },
+        {
+          "asset_id": "3ULL",
+          "date": "2024-01-07",
+          "close": 0.006197384758313527,
+          "source": "coingecko"
+        }
+      ]
+    },
+    "fact_marketcap": {
+      "exists": true,
+      "row_count": 1261471,
+      "schema": {
+        "asset_id": "String",
+        "date": "Date",
+        "marketcap": "Float64",
+        "source": "String"
+      },
+      "date_range": {
+        "min": "2024-01-07",
+        "max": "2026-01-05",
+        "unique_dates": 730
+      },
+      "asset_coverage": {
+        "unique_assets": 2718,
+        "top_20_by_count": [
+          {
+            "asset_id": "AGVE",
+            "count": 730
+          },
+          {
+            "asset_id": "OM",
+            "count": 730
+          },
+          {
+            "asset_id": "CTK",
+            "count": 730
+          },
+          {
+            "asset_id": "RAY",
+            "count": 730
+          },
+          {
+            "asset_id": "ACS",
+            "count": 730
+          },
+          {
+            "asset_id": "CAKE",
+            "count": 730
+          },
+          {
+            "asset_id": "JUNO",
+            "count": 730
+          },
+          {
+            "asset_id": "VTHO",
+            "count": 730
+          },
+          {
+            "asset_id": "AXL",
+            "count": 730
+          },
+          {
+            "asset_id": "RSR",
+            "count": 730
+          },
+          {
+            "asset_id": "VTC",
+            "count": 730
+          },
+          {
+            "asset_id": "PRE",
+            "count": 730
+          },
+          {
+            "asset_id": "SMT",
+            "count": 730
+          },
+          {
+            "asset_id": "CETH",
+            "count": 730
+          },
+          {
+            "asset_id": "MLN",
+            "count": 730
+          },
+          {
+            "asset_id": "WIKEN",
+            "count": 730
+          },
+          {
+            "asset_id": "OMG",
+            "count": 730
+          },
+          {
+            "asset_id": "XNO",
+            "count": 730
+          },
+          {
+            "asset_id": "FIO",
+            "count": 730
+          },
+          {
+            "asset_id": "KYVE",
+            "count": 730
+          }
+        ]
+      },
+      "duplicates": 0,
+      "source_distribution": [
+        {
+          "source": "coingecko",
+          "count": 1261471
+        }
+      ],
+      "null_counts": {
+        "asset_id": 0,
+        "date": 0,
+        "marketcap": 0,
+        "source": 0
+      },
+      "sample_data": [
+        {
+          "asset_id": "$MYRO",
+          "date": "2024-01-07",
+          "marketcap": 69866353.4961432,
+          "source": "coingecko"
+        },
+        {
+          "asset_id": "0X0",
+          "date": "2024-01-07",
+          "marketcap": 114587335.2880524,
+          "source": "coingecko"
+        },
+        {
+          "asset_id": "10SET",
+          "date": "2024-01-07",
+          "marketcap": 102906152.68791604,
+          "source": "coingecko"
+        },
+        {
+          "asset_id": "1INCH",
+          "date": "2024-01-07",
+          "marketcap": 525839576.84473515,
+          "source": "coingecko"
+        },
+        {
+          "asset_id": "3ULL",
+          "date": "2024-01-07",
+          "marketcap": 43434862.48343543,
+          "source": "coingecko"
+        }
+      ]
+    },
+    "fact_volume": {
+      "exists": true,
+      "row_count": 1265420,
+      "schema": {
+        "asset_id": "String",
+        "date": "Date",
+        "volume": "Float64",
+        "source": "String"
+      },
+      "date_range": {
+        "min": "2024-01-07",
+        "max": "2026-01-05",
+        "unique_dates": 730
+      },
+      "asset_coverage": {
+        "unique_assets": 2718,
+        "top_20_by_count": [
+          {
+            "asset_id": "LRC",
+            "count": 730
+          },
+          {
+            "asset_id": "TRUMP",
+            "count": 730
+          },
+          {
+            "asset_id": "BITCOIN",
+            "count": 730
+          },
+          {
+            "asset_id": "UOS",
+            "count": 730
+          },
+          {
+            "asset_id": "USD+",
+            "count": 730
+          },
+          {
+            "asset_id": "KUJI",
+            "count": 730
+          },
+          {
+            "asset_id": "NTX",
+            "count": 730
+          },
+          {
+            "asset_id": "GHO",
+            "count": 730
+          },
+          {
+            "asset_id": "FLR",
+            "count": 730
+          },
+          {
+            "asset_id": "GAS",
+            "count": 730
+          },
+          {
+            "asset_id": "GOMINING",
+            "count": 730
+          },
+          {
+            "asset_id": "MOON",
+            "count": 730
+          },
+          {
+            "asset_id": "COMP",
+            "count": 730
+          },
+          {
+            "asset_id": "XX",
+            "count": 730
+          },
+          {
+            "asset_id": "IOST",
+            "count": 730
+          },
+          {
+            "asset_id": "MAX",
+            "count": 730
+          },
+          {
+            "asset_id": "RACA",
+            "count": 730
+          },
+          {
+            "asset_id": "IRON",
+            "count": 730
+          },
+          {
+            "asset_id": "NUM",
+            "count": 730
+          },
+          {
+            "asset_id": "OPUL",
+            "count": 730
+          }
+        ]
+      },
+      "duplicates": 0,
+      "source_distribution": [
+        {
+          "source": "coingecko",
+          "count": 1265420
+        }
+      ],
+      "null_counts": {
+        "asset_id": 0,
+        "date": 0,
+        "volume": 0,
+        "source": 0
+      },
+      "sample_data": [
+        {
+          "asset_id": "$MYRO",
+          "date": "2024-01-07",
+          "volume": 29767294.7131797,
+          "source": "coingecko"
+        },
+        {
+          "asset_id": "0X0",
+          "date": "2024-01-07",
+          "volume": 730544.4921561241,
+          "source": "coingecko"
+        },
+        {
+          "asset_id": "10SET",
+          "date": "2024-01-07",
+          "volume": 571070.7437057175,
+          "source": "coingecko"
+        },
+        {
+          "asset_id": "1INCH",
+          "date": "2024-01-07",
+          "volume": 70162756.51657306,
+          "source": "coingecko"
+        },
+        {
+          "asset_id": "3ULL",
+          "date": "2024-01-07",
+          "volume": 898160.6305476321,
+          "source": "coingecko"
+        }
+      ]
+    },
+    "fact_funding": {
+      "exists": true,
+      "row_count": 263399,
+      "schema": {
+        "asset_id": "String",
+        "instrument_id": "String",
+        "date": "Date",
+        "funding_rate": "Float64",
+        "exchange": "String",
+        "source": "String"
+      },
+      "date_range": {
+        "min": "2023-04-19",
+        "max": "2026-01-13",
+        "unique_dates": 1001
+      },
+      "asset_coverage": {
+        "unique_assets": 507,
+        "top_20_by_count": [
+          {
+            "asset_id": "KAVA",
+            "count": 1000
+          },
+          {
+            "asset_id": "USDC",
+            "count": 1000
+          },
+          {
+            "asset_id": "TLM",
+            "count": 1000
+          },
+          {
+            "asset_id": "ASTR",
+            "count": 1000
+          },
+          {
+            "asset_id": "RUNE",
+            "count": 1000
+          },
+          {
+            "asset_id": "ZRX",
+            "count": 1000
+          },
+          {
+            "asset_id": "IMX",
+            "count": 1000
+          },
+          {
+            "asset_id": "RVN",
+            "count": 1000
+          },
+          {
+            "asset_id": "ICP",
+            "count": 1000
+          },
+          {
+            "asset_id": "DOGE",
+            "count": 1000
+          },
+          {
+            "asset_id": "AAVE",
+            "count": 1000
+          },
+          {
+            "asset_id": "GRT",
+            "count": 1000
+          },
+          {
+            "asset_id": "PEOPLE",
+            "count": 1000
+          },
+          {
+            "asset_id": "SUSHI",
+            "count": 1000
+          },
+          {
+            "asset_id": "ONT",
+            "count": 1000
+          },
+          {
+            "asset_id": "DENT",
+            "count": 1000
+          },
+          {
+            "asset_id": "YFI",
+            "count": 1000
+          },
+          {
+            "asset_id": "STG",
+            "count": 1000
+          },
+          {
+            "asset_id": "SOL",
+            "count": 1000
+          },
+          {
+            "asset_id": "ETC",
+            "count": 1000
+          }
+        ]
+      },
+      "duplicates": 0,
+      "source_distribution": [
+        {
+          "source": "coinglass",
+          "count": 263399
+        }
+      ],
+      "null_counts": {
+        "asset_id": 0,
+        "instrument_id": 1491,
+        "date": 0,
+        "funding_rate": 0,
+        "exchange": 0,
+        "source": 0
+      },
+      "sample_data": [
+        {
+          "asset_id": "1INCH",
+          "instrument_id": null,
+          "date": "2023-04-19",
+          "funding_rate": 0.01,
+          "exchange": "Binance",
+          "source": "coinglass"
+        },
+        {
+          "asset_id": "AAVE",
+          "instrument_id": "binance_perp_AAVEUSDT",
+          "date": "2023-04-19",
+          "funding_rate": 0.01,
+          "exchange": "Binance",
+          "source": "coinglass"
+        },
+        {
+          "asset_id": "ACH",
+          "instrument_id": "binance_perp_ACHUSDT",
+          "date": "2023-04-19",
+          "funding_rate": 0.01,
+          "exchange": "Binance",
+          "source": "coinglass"
+        },
+        {
+          "asset_id": "ADA",
+          "instrument_id": "binance_perp_ADAUSDT",
+          "date": "2023-04-19",
+          "funding_rate": 0.01,
+          "exchange": "Binance",
+          "source": "coinglass"
+        },
+        {
+          "asset_id": "ALGO",
+          "instrument_id": "binance_perp_ALGOUSDT",
+          "date": "2023-04-19",
+          "funding_rate": 0.01,
+          "exchange": "Binance",
+          "source": "coinglass"
+        }
+      ]
+    },
+    "fact_open_interest": {
+      "exists": true,
+      "row_count": 334,
+      "schema": {
+        "asset_id": "String",
+        "date": "Date",
+        "open_interest_usd": "Float64",
+        "source": "String"
+      },
+      "date_range": {
+        "min": "2025-02-14",
+        "max": "2026-01-13",
+        "unique_dates": 334
+      },
+      "asset_coverage": {
+        "unique_assets": 1,
+        "top_20_by_count": [
+          {
+            "asset_id": "BTC",
+            "count": 334
+          }
+        ]
+      },
+      "duplicates": 0,
+      "source_distribution": [
+        {
+          "source": "coinglass",
+          "count": 334
+        }
+      ],
+      "null_counts": {
+        "asset_id": 0,
+        "date": 0,
+        "open_interest_usd": 0,
+        "source": 0
+      },
+      "sample_data": [
+        {
+          "asset_id": "BTC",
+          "date": "2025-02-14",
+          "open_interest_usd": 60865420868.0,
+          "source": "coinglass"
+        },
+        {
+          "asset_id": "BTC",
+          "date": "2025-02-15",
+          "open_interest_usd": 61162601361.0,
+          "source": "coinglass"
+        },
+        {
+          "asset_id": "BTC",
+          "date": "2025-02-16",
+          "open_interest_usd": 60250326985.0,
+          "source": "coinglass"
+        },
+        {
+          "asset_id": "BTC",
+          "date": "2025-02-17",
+          "open_interest_usd": 60872420931.0,
+          "source": "coinglass"
+        },
+        {
+          "asset_id": "BTC",
+          "date": "2025-02-18",
+          "open_interest_usd": 61523152857.0,
+          "source": "coinglass"
+        }
+      ]
+    }
+  },
+  "dimension_tables": {
+    "dim_asset": {
+      "exists": true,
+      "row_count": 2717,
+      "schema": {
+        "asset_id": "String",
+        "symbol": "String",
+        "name": "String",
+        "chain": "Null",
+        "contract_address": "Null",
+        "coingecko_id": "String",
+        "is_stable": "Boolean",
+        "is_wrapped_stable": "Boolean",
+        "metadata_json": "String"
+      },
+      "column_stats": {
+        "asset_id": {
+          "unique_count": 2717,
+          "null_count": 0
+        },
+        "symbol": {
+          "unique_count": 2717,
+          "null_count": 0
+        },
+        "name": {
+          "unique_count": 2717,
+          "null_count": 0
+        },
+        "chain": {
+          "unique_count": 1,
+          "null_count": 2717
+        },
+        "contract_address": {
+          "unique_count": 1,
+          "null_count": 2717
+        },
+        "coingecko_id": {
+          "unique_count": 2717,
+          "null_count": 0
+        },
+        "is_stable": {
+          "unique_count": 2,
+          "null_count": 0
+        },
+        "is_wrapped_stable": {
+          "unique_count": 1,
+          "null_count": 0
+        },
+        "metadata_json": {
+          "unique_count": 2717,
+          "null_count": 0
+        }
+      },
+      "sample_data": [
+        {
+          "asset_id": "$1",
+          "symbol": "$1",
+          "name": "$1",
+          "chain": null,
+          "contract_address": null,
+          "coingecko_id": "$1",
+          "is_stable": false,
+          "is_wrapped_stable": false,
+          "metadata_json": "{\"coingecko_id\": \"$1\", \"platforms\": {}}"
+        },
+        {
+          "asset_id": "$BEAR",
+          "symbol": "$BEAR",
+          "name": "$BEAR",
+          "chain": null,
+          "contract_address": null,
+          "coingecko_id": "$bear",
+          "is_stable": false,
+          "is_wrapped_stable": false,
+          "metadata_json": "{\"coingecko_id\": \"$bear\", \"platforms\": {}}"
+        },
+        {
+          "asset_id": "$BORGY",
+          "symbol": "$BORGY",
+          "name": "$BORGY",
+          "chain": null,
+          "contract_address": null,
+          "coingecko_id": "$borgy",
+          "is_stable": false,
+          "is_wrapped_stable": false,
+          "metadata_json": "{\"coingecko_id\": \"$borgy\", \"platforms\": {}}"
+        },
+        {
+          "asset_id": "$CPT",
+          "symbol": "$CPT",
+          "name": "$CPT",
+          "chain": null,
+          "contract_address": null,
+          "coingecko_id": "$cpt",
+          "is_stable": false,
+          "is_wrapped_stable": false,
+          "metadata_json": "{\"coingecko_id\": \"$cpt\", \"platforms\": {}}"
+        },
+        {
+          "asset_id": "$FARTBOY",
+          "symbol": "$FARTBOY",
+          "name": "$FARTBOY",
+          "chain": null,
+          "contract_address": null,
+          "coingecko_id": "$fartboy",
+          "is_stable": false,
+          "is_wrapped_stable": false,
+          "metadata_json": "{\"coingecko_id\": \"$fartboy\", \"platforms\": {}}"
+        },
+        {
+          "asset_id": "$HACHI",
+          "symbol": "$HACHI",
+          "name": "$HACHI",
+          "chain": null,
+          "contract_address": null,
+          "coingecko_id": "$hachi",
+          "is_stable": false,
+          "is_wrapped_stable": false,
+          "metadata_json": "{\"coingecko_id\": \"$hachi\", \"platforms\": {}}"
+        },
+        {
+          "asset_id": "$JIM",
+          "symbol": "$JIM",
+          "name": "$JIM",
+          "chain": null,
+          "contract_address": null,
+          "coingecko_id": "$jim",
+          "is_stable": false,
+          "is_wrapped_stable": false,
+          "metadata_json": "{\"coingecko_id\": \"$jim\", \"platforms\": {}}"
+        },
+        {
+          "asset_id": "$MICHI",
+          "symbol": "$MICHI",
+          "name": "$MICHI",
+          "chain": null,
+          "contract_address": null,
+          "coingecko_id": "$michi",
+          "is_stable": false,
+          "is_wrapped_stable": false,
+          "metadata_json": "{\"coingecko_id\": \"$michi\", \"platforms\": {}}"
+        },
+        {
+          "asset_id": "$MYRO",
+          "symbol": "$MYRO",
+          "name": "$MYRO",
+          "chain": null,
+          "contract_address": null,
+          "coingecko_id": "$myro",
+          "is_stable": false,
+          "is_wrapped_stable": false,
+          "metadata_json": "{\"coingecko_id\": \"$myro\", \"platforms\": {}}"
+        },
+        {
+          "asset_id": "$NAP",
+          "symbol": "$NAP",
+          "name": "$NAP",
+          "chain": null,
+          "contract_address": null,
+          "coingecko_id": "$nap",
+          "is_stable": false,
+          "is_wrapped_stable": false,
+          "metadata_json": "{\"coingecko_id\": \"$nap\", \"platforms\": {}}"
+        }
+      ]
+    },
+    "dim_instrument": {
+      "exists": true,
+      "row_count": 605,
+      "schema": {
+        "instrument_id": "String",
+        "venue": "String",
+        "instrument_symbol": "String",
+        "instrument_type": "String",
+        "quote": "String",
+        "base_asset_symbol": "String",
+        "asset_id": "String",
+        "multiplier": "Float64",
+        "metadata_json": "String"
+      },
+      "column_stats": {
+        "instrument_id": {
+          "unique_count": 605,
+          "null_count": 0
+        },
+        "venue": {
+          "unique_count": 1,
+          "null_count": 0
+        },
+        "instrument_symbol": {
+          "unique_count": 605,
+          "null_count": 0
+        },
+        "instrument_type": {
+          "unique_count": 1,
+          "null_count": 0
+        },
+        "quote": {
+          "unique_count": 1,
+          "null_count": 0
+        },
+        "base_asset_symbol": {
+          "unique_count": 602,
+          "null_count": 0
+        },
+        "asset_id": {
+          "unique_count": 554,
+          "null_count": 50
+        },
+        "multiplier": {
+          "unique_count": 8,
+          "null_count": 585
+        },
+        "metadata_json": {
+          "unique_count": 390,
+          "null_count": 0
+        }
+      },
+      "sample_data": [
+        {
+          "instrument_id": "binance_perp_BTCUSDT",
+          "venue": "binance",
+          "instrument_symbol": "BTCUSDT",
+          "instrument_type": "perpetual",
+          "quote": "USDT",
+          "base_asset_symbol": "BTC",
+          "asset_id": "BTC",
+          "multiplier": null,
+          "metadata_json": "{\"onboard_date\": \"2019-09-25\", \"contract_type\": \"PERPETUAL\"}"
+        },
+        {
+          "instrument_id": "binance_perp_MKRUSDT",
+          "venue": "binance",
+          "instrument_symbol": "MKRUSDT",
+          "instrument_type": "perpetual",
+          "quote": "USDT",
+          "base_asset_symbol": "MKR",
+          "asset_id": null,
+          "multiplier": null,
+          "metadata_json": "{\"onboard_date\": \"2019-09-25\", \"contract_type\": \"PERPETUAL\"}"
+        },
+        {
+          "instrument_id": "binance_perp_DOTUSDT",
+          "venue": "binance",
+          "instrument_symbol": "DOTUSDT",
+          "instrument_type": "perpetual",
+          "quote": "USDT",
+          "base_asset_symbol": "DOT",
+          "asset_id": "DOT",
+          "multiplier": null,
+          "metadata_json": "{\"onboard_date\": \"2019-09-25\", \"contract_type\": \"PERPETUAL\"}"
+        },
+        {
+          "instrument_id": "binance_perp_DEFIUSDT",
+          "venue": "binance",
+          "instrument_symbol": "DEFIUSDT",
+          "instrument_type": "perpetual",
+          "quote": "USDT",
+          "base_asset_symbol": "DEFI",
+          "asset_id": null,
+          "multiplier": null,
+          "metadata_json": "{\"onboard_date\": \"2019-09-25\", \"contract_type\": \"PERPETUAL\"}"
+        },
+        {
+          "instrument_id": "binance_perp_YFIUSDT",
+          "venue": "binance",
+          "instrument_symbol": "YFIUSDT",
+          "instrument_type": "perpetual",
+          "quote": "USDT",
+          "base_asset_symbol": "YFI",
+          "asset_id": "YFI",
+          "multiplier": null,
+          "metadata_json": "{\"onboard_date\": \"2019-09-25\", \"contract_type\": \"PERPETUAL\"}"
+        },
+        {
+          "instrument_id": "binance_perp_BALUSDT",
+          "venue": "binance",
+          "instrument_symbol": "BALUSDT",
+          "instrument_type": "perpetual",
+          "quote": "USDT",
+          "base_asset_symbol": "BAL",
+          "asset_id": "BAL",
+          "multiplier": null,
+          "metadata_json": "{\"onboard_date\": \"2019-09-25\", \"contract_type\": \"PERPETUAL\"}"
+        },
+        {
+          "instrument_id": "binance_perp_CRVUSDT",
+          "venue": "binance",
+          "instrument_symbol": "CRVUSDT",
+          "instrument_type": "perpetual",
+          "quote": "USDT",
+          "base_asset_symbol": "CRV",
+          "asset_id": "CRV",
+          "multiplier": null,
+          "metadata_json": "{\"onboard_date\": \"2019-09-25\", \"contract_type\": \"PERPETUAL\"}"
+        },
+        {
+          "instrument_id": "binance_perp_TRBUSDT",
+          "venue": "binance",
+          "instrument_symbol": "TRBUSDT",
+          "instrument_type": "perpetual",
+          "quote": "USDT",
+          "base_asset_symbol": "TRB",
+          "asset_id": "TRB",
+          "multiplier": null,
+          "metadata_json": "{\"onboard_date\": \"2019-09-25\", \"contract_type\": \"PERPETUAL\"}"
+        },
+        {
+          "instrument_id": "binance_perp_RUNEUSDT",
+          "venue": "binance",
+          "instrument_symbol": "RUNEUSDT",
+          "instrument_type": "perpetual",
+          "quote": "USDT",
+          "base_asset_symbol": "RUNE",
+          "asset_id": "RUNE",
+          "multiplier": null,
+          "metadata_json": "{\"onboard_date\": \"2019-09-25\", \"contract_type\": \"PERPETUAL\"}"
+        },
+        {
+          "instrument_id": "binance_perp_SUSHIUSDT",
+          "venue": "binance",
+          "instrument_symbol": "SUSHIUSDT",
+          "instrument_type": "perpetual",
+          "quote": "USDT",
+          "base_asset_symbol": "SUSHI",
+          "asset_id": "SUSHI",
+          "multiplier": null,
+          "metadata_json": "{\"onboard_date\": \"2019-09-25\", \"contract_type\": \"PERPETUAL\"}"
+        }
+      ]
+    }
+  },
+  "mapping_tables": {
+    "map_provider_asset": {
+      "exists": true,
+      "row_count": 2717,
+      "schema": {
+        "provider": "String",
+        "provider_asset_id": "String",
+        "asset_id": "String",
+        "valid_from": "Date",
+        "valid_to": "Null",
+        "mapping_method": "String",
+        "confidence": "Float64"
+      },
+      "column_stats": {
+        "provider": {
+          "unique_count": 1,
+          "null_count": 0
+        },
+        "provider_asset_id": {
+          "unique_count": 2717,
+          "null_count": 0
+        },
+        "asset_id": {
+          "unique_count": 2717,
+          "null_count": 0
+        },
+        "valid_from": {
+          "unique_count": 1,
+          "null_count": 0
+        },
+        "valid_to": {
+          "unique_count": 1,
+          "null_count": 2717
+        },
+        "mapping_method": {
+          "unique_count": 1,
+          "null_count": 0
+        },
+        "confidence": {
+          "unique_count": 1,
+          "null_count": 0
+        }
+      },
+      "sample_data": [
+        {
+          "provider": "coingecko",
+          "provider_asset_id": "$1",
+          "asset_id": "$1",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        },
+        {
+          "provider": "coingecko",
+          "provider_asset_id": "$bear",
+          "asset_id": "$BEAR",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        },
+        {
+          "provider": "coingecko",
+          "provider_asset_id": "$borgy",
+          "asset_id": "$BORGY",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        },
+        {
+          "provider": "coingecko",
+          "provider_asset_id": "$cpt",
+          "asset_id": "$CPT",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        },
+        {
+          "provider": "coingecko",
+          "provider_asset_id": "$fartboy",
+          "asset_id": "$FARTBOY",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        },
+        {
+          "provider": "coingecko",
+          "provider_asset_id": "$hachi",
+          "asset_id": "$HACHI",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        },
+        {
+          "provider": "coingecko",
+          "provider_asset_id": "$jim",
+          "asset_id": "$JIM",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        },
+        {
+          "provider": "coingecko",
+          "provider_asset_id": "$michi",
+          "asset_id": "$MICHI",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        },
+        {
+          "provider": "coingecko",
+          "provider_asset_id": "$myro",
+          "asset_id": "$MYRO",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        },
+        {
+          "provider": "coingecko",
+          "provider_asset_id": "$nap",
+          "asset_id": "$NAP",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        }
+      ]
+    },
+    "map_provider_instrument": {
+      "exists": true,
+      "row_count": 605,
+      "schema": {
+        "provider": "String",
+        "provider_instrument_id": "String",
+        "instrument_id": "String",
+        "valid_from": "Date",
+        "valid_to": "Null",
+        "mapping_method": "String",
+        "confidence": "Float64"
+      },
+      "column_stats": {
+        "provider": {
+          "unique_count": 1,
+          "null_count": 0
+        },
+        "provider_instrument_id": {
+          "unique_count": 605,
+          "null_count": 0
+        },
+        "instrument_id": {
+          "unique_count": 605,
+          "null_count": 0
+        },
+        "valid_from": {
+          "unique_count": 1,
+          "null_count": 0
+        },
+        "valid_to": {
+          "unique_count": 1,
+          "null_count": 605
+        },
+        "mapping_method": {
+          "unique_count": 1,
+          "null_count": 0
+        },
+        "confidence": {
+          "unique_count": 1,
+          "null_count": 0
+        }
+      },
+      "sample_data": [
+        {
+          "provider": "binance",
+          "provider_instrument_id": "BTCUSDT",
+          "instrument_id": "binance_perp_BTCUSDT",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        },
+        {
+          "provider": "binance",
+          "provider_instrument_id": "MKRUSDT",
+          "instrument_id": "binance_perp_MKRUSDT",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        },
+        {
+          "provider": "binance",
+          "provider_instrument_id": "DOTUSDT",
+          "instrument_id": "binance_perp_DOTUSDT",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        },
+        {
+          "provider": "binance",
+          "provider_instrument_id": "DEFIUSDT",
+          "instrument_id": "binance_perp_DEFIUSDT",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        },
+        {
+          "provider": "binance",
+          "provider_instrument_id": "YFIUSDT",
+          "instrument_id": "binance_perp_YFIUSDT",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        },
+        {
+          "provider": "binance",
+          "provider_instrument_id": "BALUSDT",
+          "instrument_id": "binance_perp_BALUSDT",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        },
+        {
+          "provider": "binance",
+          "provider_instrument_id": "CRVUSDT",
+          "instrument_id": "binance_perp_CRVUSDT",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        },
+        {
+          "provider": "binance",
+          "provider_instrument_id": "TRBUSDT",
+          "instrument_id": "binance_perp_TRBUSDT",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        },
+        {
+          "provider": "binance",
+          "provider_instrument_id": "RUNEUSDT",
+          "instrument_id": "binance_perp_RUNEUSDT",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        },
+        {
+          "provider": "binance",
+          "provider_instrument_id": "SUSHIUSDT",
+          "instrument_id": "binance_perp_SUSHIUSDT",
+          "valid_from": "2026-01-06",
+          "valid_to": null,
+          "mapping_method": "exact_match",
+          "confidence": 1.0
+        }
+      ]
+    }
+  },
+  "temporal_coverage": {
+    "fact_price": {
+      "total_assets": 2718,
+      "top_20_assets": [
+        {
+          "asset_id": "ALUSD",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "DADDYDOGE",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "XRP",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "SRX",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "BEL",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "HOT",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "DMTR",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "WAVAX",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "KNCL",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "DOGEKING",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "BGB",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "NEXA",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "KOGE",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "RETH",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "SFP",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "EXTRA",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "MYTH",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "RARI",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "WKLAY",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "OAS",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        }
+      ]
+    },
+    "fact_marketcap": {
+      "total_assets": 2718,
+      "top_20_assets": [
+        {
+          "asset_id": "PYUSD",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "SPELL",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "AAVE",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "PSP",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "CRV",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "AURORA",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "CELL",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "GLMR",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "SUN",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "HNT",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "SD",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "YFII",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "STEP",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "EPS",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "MSOL",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "SAFEMARS",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "BORG",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "ORN",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "RARI",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "SAMA",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        }
+      ]
+    },
+    "fact_volume": {
+      "total_assets": 2718,
+      "top_20_assets": [
+        {
+          "asset_id": "ZIG",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "CORE",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "ATLAS",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "DUSK",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "STRX",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "VINU",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "KAS",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "BUCK",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "MANA",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "CORGIAI",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "MAPO",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "QTUM",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "BTT",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "PNDC",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "BTG",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "LOAN",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "CTSI",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "XSGD",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "AZERO",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        },
+        {
+          "asset_id": "PEPECOIN",
+          "min_date": "2024-01-07",
+          "max_date": "2026-01-05",
+          "date_count": 730
+        }
+      ]
+    },
+    "fact_funding": {
+      "total_assets": 507,
+      "top_20_assets": [
+        {
+          "asset_id": "ONE",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        },
+        {
+          "asset_id": "ONT",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        },
+        {
+          "asset_id": "COMP",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        },
+        {
+          "asset_id": "JASMY",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        },
+        {
+          "asset_id": "BEL",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        },
+        {
+          "asset_id": "GTC",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        },
+        {
+          "asset_id": "IOTX",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        },
+        {
+          "asset_id": "CHZ",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        },
+        {
+          "asset_id": "CHR",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        },
+        {
+          "asset_id": "ZIL",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        },
+        {
+          "asset_id": "APE",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        },
+        {
+          "asset_id": "ETH",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        },
+        {
+          "asset_id": "CKB",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        },
+        {
+          "asset_id": "FET",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        },
+        {
+          "asset_id": "ZRX",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        },
+        {
+          "asset_id": "LDO",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        },
+        {
+          "asset_id": "CTSI",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        },
+        {
+          "asset_id": "FIL",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        },
+        {
+          "asset_id": "RUNE",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        },
+        {
+          "asset_id": "DOGE",
+          "min_date": "2023-04-19",
+          "max_date": "2026-01-12",
+          "date_count": 1000
+        }
+      ]
+    }
+  },
+  "data_quality": {
+    "missing_values": {},
+    "duplicates": {},
+    "outliers": {
+      "fact_price": {
+        "min_price": 1.1370187380138597e-14,
+        "max_price": 174463063.7825922,
+        "non_positive_count": 0
+      },
+      "fact_funding": {
+        "min_funding": -3.0,
+        "max_funding": 2.0,
+        "mean_funding": 0.0017584267518099916
+      }
+    },
+    "consistency": {}
+  },
+  "asset_universe": {
+    "total_assets": 2717,
+    "stablecoins": {
+      "count": 76,
+      "percentage": 2.8
+    },
+    "chain_distribution": [
+      {
+        "chain": null,
+        "count": 2717
+      }
+    ],
+    "fact_table_coverage": {
+      "fact_price": 2718,
+      "fact_marketcap": 2718,
+      "fact_volume": 2718,
+      "fact_funding": 507
+    }
+  },
+  "funding_analysis": {
+    "exists": true,
+    "exchange_coverage": [
+      {
+        "exchange": "Binance",
+        "count": 263399
+      }
+    ],
+    "instrument_count": 498,
+    "asset_count": 507,
+    "top_20_assets_by_coverage": [
+      {
+        "asset_id": "SAND",
+        "record_count": 1000,
+        "min_funding": -0.066419,
+        "max_funding": 0.086488,
+        "mean_funding": 0.007976828,
+        "median_funding": 0.01
+      },
+      {
+        "asset_id": "COMP",
+        "record_count": 1000,
+        "min_funding": -0.642288,
+        "max_funding": 0.067908,
+        "mean_funding": -0.0014572899999999998,
+        "median_funding": 0.01
+      },
+      {
+        "asset_id": "STG",
+        "record_count": 1000,
+        "min_funding": -0.709033,
+        "max_funding": 0.122864,
+        "mean_funding": 0.0004881610000000001,
+        "median_funding": 0.01
+      },
+      {
+        "asset_id": "ATOM",
+        "record_count": 1000,
+        "min_funding": -0.45,
+        "max_funding": 0.084872,
+        "mean_funding": -0.001100291,
+        "median_funding": 0.0036025
+      },
+      {
+        "asset_id": "APE",
+        "record_count": 1000,
+        "min_funding": -0.160297,
+        "max_funding": 0.08921,
+        "mean_funding": 0.0038909730000000003,
+        "median_funding": 0.00894
+      },
+      {
+        "asset_id": "FLOW",
+        "record_count": 1000,
+        "min_funding": -0.586848,
+        "max_funding": 0.076389,
+        "mean_funding": 0.007003999,
+        "median_funding": 0.01
+      },
+      {
+        "asset_id": "SPELL",
+        "record_count": 1000,
+        "min_funding": -3.0,
+        "max_funding": 0.133513,
+        "mean_funding": -0.014715178,
+        "median_funding": 0.01
+      },
+      {
+        "asset_id": "VET",
+        "record_count": 1000,
+        "min_funding": -0.160955,
+        "max_funding": 0.101383,
+        "mean_funding": 0.008020763,
+        "median_funding": 0.01
+      },
+      {
+        "asset_id": "NKN",
+        "record_count": 1000,
+        "min_funding": -1.09239,
+        "max_funding": 0.144983,
+        "mean_funding": 0.0061115300000000004,
+        "median_funding": 0.01
+      },
+      {
+        "asset_id": "SUSHI",
+        "record_count": 1000,
+        "min_funding": -0.046047,
+        "max_funding": 0.07275,
+        "mean_funding": 0.00793839,
+        "median_funding": 0.01
+      },
+      {
+        "asset_id": "TLM",
+        "record_count": 1000,
+        "min_funding": -1.060501,
+        "max_funding": 0.100289,
+        "mean_funding": 0.008171948,
+        "median_funding": 0.01
+      },
+      {
+        "asset_id": "AR",
+        "record_count": 1000,
+        "min_funding": -0.068401,
+        "max_funding": 0.087888,
+        "mean_funding": 0.008251979999999999,
+        "median_funding": 0.01
+      },
+      {
+        "asset_id": "API3",
+        "record_count": 1000,
+        "min_funding": -2.460706,
+        "max_funding": 0.094557,
+        "mean_funding": -0.015024497999999999,
+        "median_funding": 0.005
+      },
+      {
+        "asset_id": "USDC",
+        "record_count": 1000,
+        "min_funding": -0.032245,
+        "max_funding": 0.01,
+        "mean_funding": 0.00028144400000000005,
+        "median_funding": 0.0010830000000000002
+      },
+      {
+        "asset_id": "PEOPLE",
+        "record_count": 1000,
+        "min_funding": -0.029093,
+        "max_funding": 0.089654,
+        "mean_funding": 0.009680171,
+        "median_funding": 0.01
+      },
+      {
+        "asset_id": "ZIL",
+        "record_count": 1000,
+        "min_funding": -0.129218,
+        "max_funding": 0.096522,
+        "mean_funding": 0.009741494,
+        "median_funding": 0.01
+      },
+      {
+        "asset_id": "GRT",
+        "record_count": 1000,
+        "min_funding": -0.056123,
+        "max_funding": 0.089957,
+        "mean_funding": 0.007063848,
+        "median_funding": 0.01
+      },
+      {
+        "asset_id": "ANKR",
+        "record_count": 1000,
+        "min_funding": -0.159263,
+        "max_funding": 0.092195,
+        "mean_funding": 0.008696066,
+        "median_funding": 0.01
+      },
+      {
+        "asset_id": "EGLD",
+        "record_count": 1000,
+        "min_funding": -0.123337,
+        "max_funding": 0.093918,
+        "mean_funding": 0.008978295,
+        "median_funding": 0.01
+      },
+      {
+        "asset_id": "THETA",
+        "record_count": 1000,
+        "min_funding": -0.036822,
+        "max_funding": 0.102426,
+        "mean_funding": 0.009348041,
+        "median_funding": 0.01
+      }
+    ]
+  }
+}

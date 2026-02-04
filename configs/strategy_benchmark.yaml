@@ -1,0 +1,51 @@
+# Benchmark Strategy: Long BTC, Short Top N Alts Basket
+strategy_name: "benchmark_ls"
+
+# Date range
+start_date: "2023-01-01"
+end_date: "2024-12-31"
+
+# Rebalancing
+rebalance_frequency: "monthly"  # monthly or quarterly
+rebalance_day: 1  # Day of month (for monthly) or quarter (for quarterly)
+
+# Universe selection
+base_asset: "BTC"
+top_n: 30
+excluded_assets:
+  - "USDT"
+  - "USDC"
+  - "BUSD"
+  - "DAI"
+  - "TUSD"
+  - "PAXG"  # Gold-backed, not crypto
+
+# Eligibility rules
+eligibility:
+  must_have_perp: true  # Must be in perp_allowlist.csv
+  min_listing_days: 30  # Must have price data for at least 30 days before rebalance
+  min_mcap_usd: 10000000  # Minimum $10M market cap (optional, set to null to disable)
+  min_volume_usd: 1000000  # Minimum $1M daily volume (14d rolling avg) (optional, set to null to disable)
+
+# Weighting scheme
+weighting: "sqrt_cap_weighted"  # Options: cap_weighted, sqrt_cap_weighted, equal_weight_capped
+max_weight_per_asset: 0.10  # Cap individual asset weight at 10%
+
+# Cost model
+cost_model:
+  fee_bps: 5  # 0.05% trading fee
+  slippage_bps: 5  # 0.05% slippage
+
+# Carry model (funding rates - TODO: integrate CoinGlass)
+carry_model:
+  funding_enabled: false  # Set to true when CoinGlass integration is ready
+
+# Backtest data quality settings
+backtest:
+  gap_fill_mode: "none"  # Options: "none" (preserve NA), "1d" (fill single-day gaps only)
+  min_history_days: null  # Minimum non-NA days required (null = disabled)
+  max_missing_frac: null  # Maximum missing fraction in lookback window (null = disabled)
+  max_consecutive_missing_days: null  # Maximum consecutive missing days (null = disabled)
+  basket_coverage_threshold: 0.90  # Minimum weight coverage to compute basket return (0.0-1.0)
+  lookback_window_days: 30  # Lookback window for data quality checks
+

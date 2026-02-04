@@ -1,0 +1,117 @@
+{
+  "cagr": 0.4084139575681587,
+  "sharpe": 2.505871904582572,
+  "sortino": 3.4621355505053053,
+  "max_drawdown": -0.022122967106932522,
+  "calmar": 18.461084157204972,
+  "hit_rate": 0.0967741935483871,
+  "avg_turnover": 0.02804905176435762,
+  "avg_funding_daily": 0.00019007757164333505,
+  "switches_per_year": 22.952868852459016,
+  "avg_regime_duration_days": 14.64,
+  "regime_distribution": {
+    "WEAK_RISK_ON_MAJORS": 11.202185792349727,
+    "BALANCED": 86.88524590163934,
+    "WEAK_RISK_ON_ALTS": 1.912568306010929
+  },
+  "total_switches": 23,
+  "total_days": 366,
+  "regime_evaluation": {
+    "horizon_1d": {
+      "WEAK_RISK_ON_ALTS": {
+        "mean_return": 0.0,
+        "std_return": 0.0,
+        "count": 3,
+        "hit_rate": 0.0,
+        "t_stat": 0.0,
+        "p_value": 1.0
+      },
+      "BALANCED": {
+        "mean_return": 0.0,
+        "std_return": 0.0,
+        "count": 50,
+        "hit_rate": 0.0,
+        "t_stat": 0.0,
+        "p_value": 1.0
+      },
+      "WEAK_RISK_ON_MAJORS": {
+        "mean_return": 0.012516401664502307,
+        "std_return": 0.023696335347429664,
+        "count": 8,
+        "hit_rate": 0.75,
+        "t_stat": 1.4939748890723186,
+        "p_value": 0.1788259425811174
+      }
+    },
+    "horizon_5d": {
+      "BALANCED": {
+        "mean_return": 0.0021767655068699663,
+        "std_return": 0.010504955947863437,
+        "count": 46,
+        "hit_rate": 0.13043478260869565,
+        "t_stat": 1.405388279279719,
+        "p_value": 0.16677248418677237
+      },
+      "WEAK_RISK_ON_ALTS": {
+        "mean_return": 0.0,
+        "std_return": 0.0,
+        "count": 3,
+        "hit_rate": 0.0,
+        "t_stat": 0.0,
+        "p_value": 1.0
+      },
+      "WEAK_RISK_ON_MAJORS": {
+        "mean_return": 0.0,
+        "std_return": 0.0,
+        "count": 8,
+        "hit_rate": 0.0,
+        "t_stat": 0.0,
+        "p_value": 1.0
+      }
+    },
+    "horizon_10d": {
+      "BALANCED": {
+        "mean_return": 0.00025137523252212224,
+        "std_return": 0.0037787389425815365,
+        "count": 44,
+        "hit_rate": 0.045454545454545456,
+        "t_stat": 0.44126749189752146,
+        "p_value": 0.6612302992349828
+      },
+      "WEAK_RISK_ON_MAJORS": {
+        "mean_return": 0.017814140617009016,
+        "std_return": 0.027296551776379876,
+        "count": 5,
+        "hit_rate": 0.8,
+        "t_stat": 1.4592916243303984,
+        "p_value": 0.21825221869179567
+      },
+      "WEAK_RISK_ON_ALTS": {
+        "mean_return": 0.0,
+        "std_return": 0.0,
+        "count": 3,
+        "hit_rate": 0.0,
+        "t_stat": 0.0,
+        "p_value": 1.0
+      }
+    },
+    "horizon_20d": {
+      "WEAK_RISK_ON_ALTS": {
+        "mean_return": 0.022000874905523504,
+        "std_return": 0.03810663314733383,
+        "count": 3,
+        "hit_rate": 0.3333333333333333,
+        "t_stat": 1.0,
+        "p_value": 0.42264973081037427
+      },
+      "BALANCED": {
+        "mean_return": 0.0008750920153704603,
+        "std_return": 0.004581669778488822,
+        "count": 39,
+        "hit_rate": 0.1282051282051282,
+        "t_stat": 1.192785195925983,
+        "p_value": 0.24034833770850583
+      }
+    }
+  }
+}

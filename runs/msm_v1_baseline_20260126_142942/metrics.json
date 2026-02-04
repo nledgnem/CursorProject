@@ -1,0 +1,9 @@
+{
+  "switches_per_year": 0.0,
+  "avg_regime_duration_days": 91.0,
+  "regime_distribution": {
+    "BALANCED": 100.0
+  },
+  "total_switches": 0,
+  "total_days": 91
+}
