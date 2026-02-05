@@ -12,6 +12,8 @@ ENV/
 data/raw/*
 data/curated/*
 !data/curated/.gitkeep
+!data/curated/data_lake/
+!data/curated/data_lake/**
 !data/perp_allowlist.csv
 
 # Outputs
@@ -48,6 +50,9 @@ secrets/
 *.parquet
 *.csv
 !configs/*.csv
+# Allow data lake parquet (include in repo if present)
+!data/curated/data_lake/*.parquet
+!data/curated/data_lake/**/*.parquet
 *.duckdb
 *.db
 *.sqlite

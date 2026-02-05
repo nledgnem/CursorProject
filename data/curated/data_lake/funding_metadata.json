@@ -1,0 +1,16 @@
+{
+  "script": "fetch_coinglass_funding.py",
+  "timestamp": "2025-12-22T17:53:16.456554",
+  "git_commit": null,
+  "api_key_prefix": "b8ef3d2a",
+  "output_path": "data\\curated\\data_lake\\fact_funding.parquet",
+  "row_count": 204361,
+  "exchange": "Binance",
+  "source": "coinglass",
+  "status": "populated",
+  "symbol_count": 0,
+  "date_range": {
+    "start": "2023-03-29",
+    "end": "2025-12-22"
+  }
+}

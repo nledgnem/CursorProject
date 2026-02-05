@@ -1,0 +1,194 @@
+{
+  "validation_timestamp": "2026-01-06T11:30:03.502306",
+  "snapshot_date": null,
+  "is_valid": true,
+  "guardrail_errors": [],
+  "coverage": {
+    "snapshot_date": "all_dates",
+    "total_mcap_assets": 2718,
+    "mcap_with_price": 2718,
+    "mcap_with_volume": 2718,
+    "mcap_with_both": 2718,
+    "pct_mcap_with_price": 100.0,
+    "pct_mcap_with_volume": 100.0,
+    "pct_mcap_with_both": 100.0
+  },
+  "uniqueness": {
+    "provider_asset_duplicates": [],
+    "provider_instrument_duplicates": []
+  },
+  "join_sanity": {
+    "sample_size": 20,
+    "all_join_count": 20,
+    "all_join_pct": 100.0,
+    "sample_results": [
+      {
+        "asset_id": "MAVIA",
+        "symbol": "MAVIA",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      },
+      {
+        "asset_id": "JETT",
+        "symbol": "JETT",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      },
+      {
+        "asset_id": "VITA-FAST",
+        "symbol": "VITA-FAST",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      },
+      {
+        "asset_id": "TNSR",
+        "symbol": "TNSR",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      },
+      {
+        "asset_id": "CKB",
+        "symbol": "CKB",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      },
+      {
+        "asset_id": "BEAR",
+        "symbol": "BEAR",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      },
+      {
+        "asset_id": "EGL1",
+        "symbol": "EGL1",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      },
+      {
+        "asset_id": "RSETH",
+        "symbol": "RSETH",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      },
+      {
+        "asset_id": "SN121",
+        "symbol": "SN121",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      },
+      {
+        "asset_id": "PUMPBTC",
+        "symbol": "PUMPBTC",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      },
+      {
+        "asset_id": "RE7WBTC",
+        "symbol": "RE7WBTC",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      },
+      {
+        "asset_id": "META",
+        "symbol": "META",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      },
+      {
+        "asset_id": "SEI",
+        "symbol": "SEI",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      },
+      {
+        "asset_id": "CAM",
+        "symbol": "CAM",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      },
+      {
+        "asset_id": "MNDE",
+        "symbol": "MNDE",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      },
+      {
+        "asset_id": "DASH",
+        "symbol": "DASH",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      },
+      {
+        "asset_id": "FUEL",
+        "symbol": "FUEL",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      },
+      {
+        "asset_id": "EQB",
+        "symbol": "EQB",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      },
+      {
+        "asset_id": "RFD",
+        "symbol": "RFD",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      },
+      {
+        "asset_id": "XCP",
+        "symbol": "XCP",
+        "has_marketcap": true,
+        "has_price": true,
+        "has_volume": true,
+        "all_join": true
+      }
+    ]
+  },
+  "conflict_report": {
+    "snapshot_date": "all_dates",
+    "missing_price_count": 0,
+    "top_missing_price": [],
+    "suspected_duplicates": [],
+    "duplicate_count": 0
+  }
+}
