@@ -1,0 +1,13 @@
+{
+  "run_timestamp": "2025-12-19T04:33:16.089128+00:00",
+  "script_name": "fetch_binance_perp_listings.py",
+  "git_commit_hash": null,
+  "source": "binance_exchangeInfo",
+  "proxy_version": "v0",
+  "num_symbols": 605,
+  "date_range": {
+    "earliest_onboard": "2019-09-25",
+    "latest_onboard": "2025-12-14"
+  },
+  "output_file": "data\\raw\\perp_listings_binance.parquet"
+}

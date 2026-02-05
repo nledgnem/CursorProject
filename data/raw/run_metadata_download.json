@@ -1,0 +1,36 @@
+{
+  "run_timestamp": "2026-01-05T07:40:02.104665+00:00",
+  "script_name": "download_data.py",
+  "git_commit_hash": null,
+  "data_files": {
+    "prices": {
+      "path": "data\\raw\\prices_daily.parquet",
+      "hash": "e6b4271835499050"
+    },
+    "marketcaps": {
+      "path": "data\\raw\\marketcap_daily.parquet",
+      "hash": "22a257dd43aa7ff7"
+    },
+    "volumes": {
+      "path": "data\\raw\\volume_daily.parquet",
+      "hash": "3c685c135a3ad0f8"
+    },
+    "perp_allowlist_proxy": {
+      "path": "data\\perp_allowlist.csv",
+      "hash": "ef9e3ff6e88dcdba"
+    }
+  },
+  "row_counts": {
+    "prices": 730,
+    "prices_coins": 2718,
+    "marketcaps": 730,
+    "marketcaps_coins": 2718,
+    "volumes": 730,
+    "volumes_coins": 2718
+  },
+  "date_range": {
+    "start_date": "2024-01-09",
+    "end_date": "2026-01-05"
+  },
+  "run_mode": "FULL"
+}

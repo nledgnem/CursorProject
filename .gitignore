@@ -10,6 +10,8 @@ ENV/
 
 # Data files
 data/raw/*
+!data/raw/
+!data/raw/**
 data/curated/*
 !data/curated/.gitkeep
 !data/curated/data_lake/
@@ -53,6 +55,11 @@ secrets/
 # Allow data lake parquet (include in repo if present)
 !data/curated/data_lake/*.parquet
 !data/curated/data_lake/**/*.parquet
+# Allow data/raw (include in repo)
+!data/raw/*.parquet
+!data/raw/**/*.parquet
+!data/raw/*.csv
+!data/raw/**/*.csv
 *.duckdb
 *.db
 *.sqlite
