@@ -1,0 +1,18 @@
+{
+  "run_timestamp": "2025-12-23T13:42:30.071329",
+  "refactor": "point_in_time_eligibility",
+  "config_used": "configs/golden.yaml",
+  "key_changes": [
+    "Added require_price, require_volume, require_marketcap flags to eligibility config",
+    "Eligibility now computed point-in-time (data must exist on snapshot_date)",
+    "Added has_price, has_volume, has_marketcap flags to universe_eligibility table",
+    "Added eligible boolean flag computed from all requirements",
+    "Validator updated to show candidate vs backtest-eligible metrics"
+  ],
+  "expected_improvement": "Rebalance coverage should jump from ~49% to ~100% when require_price=true",
+  "files_changed": [
+    "src/universe/snapshot.py",
+    "configs/golden.yaml",
+    "scripts/validate_canonical_ids.py"
+  ]
+}

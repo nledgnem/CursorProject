@@ -1,0 +1,29 @@
+{
+  "run_timestamp": "2025-12-18T11:22:41.434412+00:00",
+  "script_name": "run_backtest.py",
+  "git_commit_hash": null,
+  "config_file": "outputs\\sensitivity\\config_top20.yaml",
+  "config_hash": "5959a6356f6a2160",
+  "data_files": {
+    "backtest_results": {
+      "path": "outputs\\sensitivity\\top20\\backtest_results.csv",
+      "hash": "e7341097cca0ac76"
+    },
+    "snapshots": {
+      "path": "data\\curated\\universe_snapshots.parquet",
+      "hash": "9d5b2ad7bfcea659"
+    },
+    "prices": {
+      "path": "data\\curated\\prices_daily.parquet",
+      "hash": "edbb06c9bafc6228"
+    }
+  },
+  "row_counts": {
+    "backtest_results": 371
+  },
+  "date_range": {
+    "start_date": "2023-01-01",
+    "end_date": "2024-12-31"
+  },
+  "data_dir_used": "data\\curated"
+}

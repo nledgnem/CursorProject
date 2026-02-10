@@ -1,0 +1,1124 @@
+{
+  "validation_timestamp": "2025-12-23T10:11:55.441145",
+  "snapshot_date": null,
+  "check_1_uniqueness": {
+    "passed": true,
+    "violations": [],
+    "violation_count": 0
+  },
+  "check_2_no_duplicates": {
+    "passed": true,
+    "violations": [],
+    "violation_count": 0
+  },
+  "check_3_stability": {
+    "status": "PASS",
+    "tested": true,
+    "passed": true,
+    "violations": [],
+    "violation_count": 0,
+    "note": "Stability check completed with baseline comparison"
+  },
+  "check_4_coverage": {
+    "passed": true,
+    "coverage_stats": {
+      "total_mcap_assets": 939,
+      "mcap_with_price": 939,
+      "mcap_with_volume": 939,
+      "mcap_with_both": 939,
+      "pct_mcap_with_price": 100.0,
+      "pct_mcap_with_volume": 100.0,
+      "pct_mcap_with_both": 100.0,
+      "min_coverage_across_dates": 100.0,
+      "median_coverage_across_dates": 100.0,
+      "date_wise_coverage": [
+        {
+          "date": "2023-12-28",
+          "total_mcap_assets": 462,
+          "mcap_with_price": 462,
+          "mcap_with_volume": 462,
+          "mcap_with_both": 462,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2023-12-29",
+          "total_mcap_assets": 462,
+          "mcap_with_price": 462,
+          "mcap_with_volume": 462,
+          "mcap_with_both": 462,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2023-12-30",
+          "total_mcap_assets": 462,
+          "mcap_with_price": 462,
+          "mcap_with_volume": 462,
+          "mcap_with_both": 462,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2023-12-31",
+          "total_mcap_assets": 461,
+          "mcap_with_price": 461,
+          "mcap_with_volume": 461,
+          "mcap_with_both": 461,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-01",
+          "total_mcap_assets": 462,
+          "mcap_with_price": 462,
+          "mcap_with_volume": 462,
+          "mcap_with_both": 462,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-02",
+          "total_mcap_assets": 461,
+          "mcap_with_price": 461,
+          "mcap_with_volume": 461,
+          "mcap_with_both": 461,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-03",
+          "total_mcap_assets": 461,
+          "mcap_with_price": 461,
+          "mcap_with_volume": 461,
+          "mcap_with_both": 461,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-04",
+          "total_mcap_assets": 462,
+          "mcap_with_price": 462,
+          "mcap_with_volume": 462,
+          "mcap_with_both": 462,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-05",
+          "total_mcap_assets": 461,
+          "mcap_with_price": 461,
+          "mcap_with_volume": 461,
+          "mcap_with_both": 461,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-06",
+          "total_mcap_assets": 460,
+          "mcap_with_price": 460,
+          "mcap_with_volume": 460,
+          "mcap_with_both": 460,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-07",
+          "total_mcap_assets": 460,
+          "mcap_with_price": 460,
+          "mcap_with_volume": 460,
+          "mcap_with_both": 460,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-08",
+          "total_mcap_assets": 462,
+          "mcap_with_price": 462,
+          "mcap_with_volume": 462,
+          "mcap_with_both": 462,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-09",
+          "total_mcap_assets": 464,
+          "mcap_with_price": 464,
+          "mcap_with_volume": 464,
+          "mcap_with_both": 464,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-10",
+          "total_mcap_assets": 464,
+          "mcap_with_price": 464,
+          "mcap_with_volume": 464,
+          "mcap_with_both": 464,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-11",
+          "total_mcap_assets": 462,
+          "mcap_with_price": 462,
+          "mcap_with_volume": 462,
+          "mcap_with_both": 462,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-12",
+          "total_mcap_assets": 464,
+          "mcap_with_price": 464,
+          "mcap_with_volume": 464,
+          "mcap_with_both": 464,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-13",
+          "total_mcap_assets": 463,
+          "mcap_with_price": 463,
+          "mcap_with_volume": 463,
+          "mcap_with_both": 463,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-14",
+          "total_mcap_assets": 463,
+          "mcap_with_price": 463,
+          "mcap_with_volume": 463,
+          "mcap_with_both": 463,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-15",
+          "total_mcap_assets": 463,
+          "mcap_with_price": 463,
+          "mcap_with_volume": 463,
+          "mcap_with_both": 463,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-16",
+          "total_mcap_assets": 465,
+          "mcap_with_price": 465,
+          "mcap_with_volume": 465,
+          "mcap_with_both": 465,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-17",
+          "total_mcap_assets": 464,
+          "mcap_with_price": 464,
+          "mcap_with_volume": 464,
+          "mcap_with_both": 464,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-18",
+          "total_mcap_assets": 467,
+          "mcap_with_price": 467,
+          "mcap_with_volume": 467,
+          "mcap_with_both": 467,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-19",
+          "total_mcap_assets": 467,
+          "mcap_with_price": 467,
+          "mcap_with_volume": 467,
+          "mcap_with_both": 467,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-20",
+          "total_mcap_assets": 467,
+          "mcap_with_price": 467,
+          "mcap_with_volume": 467,
+          "mcap_with_both": 467,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-21",
+          "total_mcap_assets": 468,
+          "mcap_with_price": 468,
+          "mcap_with_volume": 468,
+          "mcap_with_both": 468,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-22",
+          "total_mcap_assets": 468,
+          "mcap_with_price": 468,
+          "mcap_with_volume": 468,
+          "mcap_with_both": 468,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-23",
+          "total_mcap_assets": 468,
+          "mcap_with_price": 468,
+          "mcap_with_volume": 468,
+          "mcap_with_both": 468,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-24",
+          "total_mcap_assets": 471,
+          "mcap_with_price": 471,
+          "mcap_with_volume": 471,
+          "mcap_with_both": 471,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-25",
+          "total_mcap_assets": 472,
+          "mcap_with_price": 472,
+          "mcap_with_volume": 472,
+          "mcap_with_both": 472,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-26",
+          "total_mcap_assets": 473,
+          "mcap_with_price": 473,
+          "mcap_with_volume": 473,
+          "mcap_with_both": 473,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-27",
+          "total_mcap_assets": 473,
+          "mcap_with_price": 473,
+          "mcap_with_volume": 473,
+          "mcap_with_both": 473,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-28",
+          "total_mcap_assets": 473,
+          "mcap_with_price": 473,
+          "mcap_with_volume": 473,
+          "mcap_with_both": 473,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-29",
+          "total_mcap_assets": 473,
+          "mcap_with_price": 473,
+          "mcap_with_volume": 473,
+          "mcap_with_both": 473,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-30",
+          "total_mcap_assets": 474,
+          "mcap_with_price": 474,
+          "mcap_with_volume": 474,
+          "mcap_with_both": 474,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-01-31",
+          "total_mcap_assets": 475,
+          "mcap_with_price": 475,
+          "mcap_with_volume": 475,
+          "mcap_with_both": 475,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-02-01",
+          "total_mcap_assets": 475,
+          "mcap_with_price": 475,
+          "mcap_with_volume": 475,
+          "mcap_with_both": 475,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-02-02",
+          "total_mcap_assets": 476,
+          "mcap_with_price": 476,
+          "mcap_with_volume": 476,
+          "mcap_with_both": 476,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-02-03",
+          "total_mcap_assets": 476,
+          "mcap_with_price": 476,
+          "mcap_with_volume": 476,
+          "mcap_with_both": 476,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-02-04",
+          "total_mcap_assets": 476,
+          "mcap_with_price": 476,
+          "mcap_with_volume": 476,
+          "mcap_with_both": 476,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-02-05",
+          "total_mcap_assets": 477,
+          "mcap_with_price": 477,
+          "mcap_with_volume": 477,
+          "mcap_with_both": 477,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-02-06",
+          "total_mcap_assets": 478,
+          "mcap_with_price": 478,
+          "mcap_with_volume": 478,
+          "mcap_with_both": 478,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-02-07",
+          "total_mcap_assets": 479,
+          "mcap_with_price": 479,
+          "mcap_with_volume": 479,
+          "mcap_with_both": 479,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-02-08",
+          "total_mcap_assets": 480,
+          "mcap_with_price": 480,
+          "mcap_with_volume": 480,
+          "mcap_with_both": 480,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-02-09",
+          "total_mcap_assets": 480,
+          "mcap_with_price": 480,
+          "mcap_with_volume": 480,
+          "mcap_with_both": 480,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-02-10",
+          "total_mcap_assets": 480,
+          "mcap_with_price": 480,
+          "mcap_with_volume": 480,
+          "mcap_with_both": 480,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-02-11",
+          "total_mcap_assets": 480,
+          "mcap_with_price": 480,
+          "mcap_with_volume": 480,
+          "mcap_with_both": 480,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-02-12",
+          "total_mcap_assets": 480,
+          "mcap_with_price": 480,
+          "mcap_with_volume": 480,
+          "mcap_with_both": 480,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-02-13",
+          "total_mcap_assets": 480,
+          "mcap_with_price": 480,
+          "mcap_with_volume": 480,
+          "mcap_with_both": 480,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-02-14",
+          "total_mcap_assets": 480,
+          "mcap_with_price": 480,
+          "mcap_with_volume": 480,
+          "mcap_with_both": 480,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        },
+        {
+          "date": "2024-02-15",
+          "total_mcap_assets": 482,
+          "mcap_with_price": 482,
+          "mcap_with_volume": 482,
+          "mcap_with_both": 482,
+          "pct_mcap_with_price": 100.0,
+          "pct_mcap_with_volume": 100.0,
+          "pct_mcap_with_both": 100.0
+        }
+      ]
+    },
+    "rebalance_coverage": {
+      "2024-01-01": {
+        "eligible_assets": 939,
+        "eligible_with_price": 462,
+        "pct_coverage": 49.201277955271564
+      },
+      "2024-02-01": {
+        "eligible_assets": 939,
+        "eligible_with_price": 475,
+        "pct_coverage": 50.58572949946751
+      },
+      "2024-03-01": {
+        "eligible_assets": 939,
+        "eligible_with_price": 487,
+        "pct_coverage": 51.863684771033014
+      }
+    },
+    "basket_coverage": {},
+    "provider_universe_check": {
+      "dim_asset_count": 939,
+      "mapped_asset_count": 939,
+      "note": "No raw provider data - using dim_asset as proxy (less reliable)"
+    },
+    "threshold_used": "min_coverage_across_dates >= 85.0%"
+  },
+  "check_5_time_valid_joins": {
+    "passed": true,
+    "violations": [],
+    "violation_count": 0,
+    "dates_checked": 20
+  },
+  "check_6_symbol_collisions": {
+    "symbol_collisions": [],
+    "provider_collisions": [],
+    "danger_ticker_count": 0
+  },
+  "check_7_spot_checks": {
+    "anchor_symbols": [
+      "BTC",
+      "ETH",
+      "SOL",
+      "XRP",
+      "DOGE",
+      "ADA",
+      "AVAX",
+      "DOT",
+      "LINK",
+      "UNI",
+      "ATOM",
+      "MATIC",
+      "LTC",
+      "BCH",
+      "ETC",
+      "ALGO",
+      "FIL",
+      "ICP",
+      "NEAR",
+      "APT"
+    ],
+    "spot_checks": [
+      {
+        "symbol": "BTC",
+        "status": "FOUND",
+        "asset_id": "BTC",
+        "provider_ids": {
+          "coingecko": [
+            "btc"
+          ]
+        },
+        "price_samples": [
+          {
+            "date": "2025-08-14",
+            "close": 120658.43776009887
+          },
+          {
+            "date": "2025-10-18",
+            "close": 107882.32330853751
+          },
+          {
+            "date": "2025-12-22",
+            "close": 87564.49540015674
+          }
+        ],
+        "has_price_data": true,
+        "failure_reason": null
+      },
+      {
+        "symbol": "ETH",
+        "status": "FOUND",
+        "asset_id": "ETH",
+        "provider_ids": {
+          "coingecko": [
+            "eth"
+          ]
+        },
+        "price_samples": [
+          {
+            "date": "2023-12-28",
+            "close": 2367.164885738028
+          },
+          {
+            "date": "2024-12-25",
+            "close": 3496.527338814444
+          },
+          {
+            "date": "2025-12-22",
+            "close": 3029.8450212649773
+          }
+        ],
+        "has_price_data": true,
+        "failure_reason": null
+      },
+      {
+        "symbol": "SOL",
+        "status": "FOUND",
+        "asset_id": "SOL",
+        "provider_ids": {
+          "coingecko": [
+            "sol"
+          ]
+        },
+        "price_samples": [
+          {
+            "date": "2025-02-26",
+            "close": 134.7486148194578
+          },
+          {
+            "date": "2025-07-26",
+            "close": 186.59544758554807
+          },
+          {
+            "date": "2025-12-22",
+            "close": 125.85818111917375
+          }
+        ],
+        "has_price_data": true,
+        "failure_reason": null
+      },
+      {
+        "symbol": "XRP",
+        "status": "FOUND",
+        "asset_id": "XRP",
+        "provider_ids": {
+          "coingecko": [
+            "xrp"
+          ]
+        },
+        "price_samples": [
+          {
+            "date": "2023-12-28",
+            "close": 0.635060919830047
+          },
+          {
+            "date": "2024-12-25",
+            "close": 2.3273593261078007
+          },
+          {
+            "date": "2025-12-22",
+            "close": 1.9181530002646883
+          }
+        ],
+        "has_price_data": true,
+        "failure_reason": null
+      },
+      {
+        "symbol": "DOGE",
+        "status": "FOUND",
+        "asset_id": "DOGE",
+        "provider_ids": {
+          "coingecko": [
+            "doge"
+          ]
+        },
+        "price_samples": [
+          {
+            "date": "2023-12-28",
+            "close": 0.09357020894304438
+          },
+          {
+            "date": "2024-12-25",
+            "close": 0.33661914012849653
+          },
+          {
+            "date": "2025-12-22",
+            "close": 0.13176076619027413
+          }
+        ],
+        "has_price_data": true,
+        "failure_reason": null
+      },
+      {
+        "symbol": "ADA",
+        "status": "FOUND",
+        "asset_id": "ADA",
+        "provider_ids": {
+          "coingecko": [
+            "ada"
+          ]
+        },
+        "price_samples": [
+          {
+            "date": "2023-12-28",
+            "close": 0.6329349656134101
+          },
+          {
+            "date": "2024-12-25",
+            "close": 0.9368563828179975
+          },
+          {
+            "date": "2025-12-22",
+            "close": 0.36659423573579725
+          }
+        ],
+        "has_price_data": true,
+        "failure_reason": null
+      },
+      {
+        "symbol": "AVAX",
+        "status": "FOUND",
+        "asset_id": "AVAX",
+        "provider_ids": {
+          "coingecko": [
+            "avax"
+          ]
+        },
+        "price_samples": [
+          {
+            "date": "2023-12-28",
+            "close": 42.38599111183937
+          },
+          {
+            "date": "2024-12-25",
+            "close": 41.15159056044296
+          },
+          {
+            "date": "2025-12-22",
+            "close": 12.138623120101169
+          }
+        ],
+        "has_price_data": true,
+        "failure_reason": null
+      },
+      {
+        "symbol": "DOT",
+        "status": "FOUND",
+        "asset_id": "DOT",
+        "provider_ids": {
+          "coingecko": [
+            "dot"
+          ]
+        },
+        "price_samples": [
+          {
+            "date": "2023-12-28",
+            "close": 8.6961281998288
+          },
+          {
+            "date": "2024-12-25",
+            "close": 7.569390707588506
+          },
+          {
+            "date": "2025-12-22",
+            "close": 1.813900566940651
+          }
+        ],
+        "has_price_data": true,
+        "failure_reason": null
+      },
+      {
+        "symbol": "LINK",
+        "status": "FOUND",
+        "asset_id": "LINK",
+        "provider_ids": {
+          "coingecko": [
+            "link"
+          ]
+        },
+        "price_samples": [
+          {
+            "date": "2023-12-28",
+            "close": 16.64237036753479
+          },
+          {
+            "date": "2024-12-25",
+            "close": 25.50346529911292
+          },
+          {
+            "date": "2025-12-22",
+            "close": 12.550999088413768
+          }
+        ],
+        "has_price_data": true,
+        "failure_reason": null
+      },
+      {
+        "symbol": "UNI",
+        "status": "FOUND",
+        "asset_id": "UNI",
+        "provider_ids": {
+          "coingecko": [
+            "uni"
+          ]
+        },
+        "price_samples": [
+          {
+            "date": "2023-12-28",
+            "close": 7.24260684196154
+          },
+          {
+            "date": "2024-12-25",
+            "close": 14.629907003119053
+          },
+          {
+            "date": "2025-12-22",
+            "close": 6.235301188931131
+          }
+        ],
+        "has_price_data": true,
+        "failure_reason": null
+      },
+      {
+        "symbol": "ATOM",
+        "status": "FOUND",
+        "asset_id": "ATOM",
+        "provider_ids": {
+          "coingecko": [
+            "atom"
+          ]
+        },
+        "price_samples": [
+          {
+            "date": "2023-12-28",
+            "close": 11.983429397361427
+          },
+          {
+            "date": "2024-12-25",
+            "close": 7.062532877990568
+          },
+          {
+            "date": "2025-12-22",
+            "close": 1.9501769757576317
+          }
+        ],
+        "has_price_data": true,
+        "failure_reason": null
+      },
+      {
+        "symbol": "MATIC",
+        "status": "NOT_FOUND_IN_DIM_ASSET",
+        "asset_id": null,
+        "provider_ids": {},
+        "price_samples": [],
+        "failure_reason": "Symbol 'MATIC' not found in dim_asset"
+      },
+      {
+        "symbol": "LTC",
+        "status": "FOUND",
+        "asset_id": "LTC",
+        "provider_ids": {
+          "coingecko": [
+            "ltc"
+          ]
+        },
+        "price_samples": [
+          {
+            "date": "2023-12-28",
+            "close": 75.74783827967272
+          },
+          {
+            "date": "2024-12-25",
+            "close": 108.39419540146325
+          },
+          {
+            "date": "2025-12-22",
+            "close": 77.58091781799176
+          }
+        ],
+        "has_price_data": true,
+        "failure_reason": null
+      },
+      {
+        "symbol": "BCH",
+        "status": "FOUND",
+        "asset_id": "BCH",
+        "provider_ids": {
+          "coingecko": [
+            "bch"
+          ]
+        },
+        "price_samples": [
+          {
+            "date": "2023-12-28",
+            "close": 264.20647093266973
+          },
+          {
+            "date": "2024-12-25",
+            "close": 470.9874261886745
+          },
+          {
+            "date": "2025-12-22",
+            "close": 578.542410112574
+          }
+        ],
+        "has_price_data": true,
+        "failure_reason": null
+      },
+      {
+        "symbol": "ETC",
+        "status": "FOUND",
+        "asset_id": "ETC",
+        "provider_ids": {
+          "coingecko": [
+            "etc"
+          ]
+        },
+        "price_samples": [
+          {
+            "date": "2023-12-28",
+            "close": 22.699114893854723
+          },
+          {
+            "date": "2024-12-25",
+            "close": 27.9997164985868
+          },
+          {
+            "date": "2025-12-22",
+            "close": 12.28867150284646
+          }
+        ],
+        "has_price_data": true,
+        "failure_reason": null
+      },
+      {
+        "symbol": "ALGO",
+        "status": "FOUND",
+        "asset_id": "ALGO",
+        "provider_ids": {
+          "coingecko": [
+            "algo"
+          ]
+        },
+        "price_samples": [
+          {
+            "date": "2023-12-28",
+            "close": 0.22898963443081716
+          },
+          {
+            "date": "2024-12-25",
+            "close": 0.39721216365555584
+          },
+          {
+            "date": "2025-12-22",
+            "close": 0.11117178790831023
+          }
+        ],
+        "has_price_data": true,
+        "failure_reason": null
+      },
+      {
+        "symbol": "FIL",
+        "status": "FOUND",
+        "asset_id": "FIL",
+        "provider_ids": {
+          "coingecko": [
+            "fil"
+          ]
+        },
+        "price_samples": [
+          {
+            "date": "2023-12-28",
+            "close": 5.935748034721712
+          },
+          {
+            "date": "2024-12-25",
+            "close": 5.464356644019517
+          },
+          {
+            "date": "2025-12-22",
+            "close": 1.29476711352882
+          }
+        ],
+        "has_price_data": true,
+        "failure_reason": null
+      },
+      {
+        "symbol": "ICP",
+        "status": "FOUND",
+        "asset_id": "ICP",
+        "provider_ids": {
+          "coingecko": [
+            "icp"
+          ]
+        },
+        "price_samples": [
+          {
+            "date": "2023-12-28",
+            "close": 9.22274376214364
+          },
+          {
+            "date": "2024-12-25",
+            "close": 11.32782571113817
+          },
+          {
+            "date": "2025-12-22",
+            "close": 3.0490828526715745
+          }
+        ],
+        "has_price_data": true,
+        "failure_reason": null
+      },
+      {
+        "symbol": "NEAR",
+        "status": "FOUND",
+        "asset_id": "NEAR",
+        "provider_ids": {
+          "coingecko": [
+            "near"
+          ]
+        },
+        "price_samples": [
+          {
+            "date": "2023-12-28",
+            "close": 4.089891178104164
+          },
+          {
+            "date": "2024-12-25",
+            "close": 5.557249337040812
+          },
+          {
+            "date": "2025-12-22",
+            "close": 1.5309037660632774
+          }
+        ],
+        "has_price_data": true,
+        "failure_reason": null
+      },
+      {
+        "symbol": "APT",
+        "status": "FOUND",
+        "asset_id": "APT",
+        "provider_ids": {
+          "coingecko": [
+            "apt"
+          ]
+        },
+        "price_samples": [
+          {
+            "date": "2023-12-28",
+            "close": 10.136249308944862
+          },
+          {
+            "date": "2024-12-25",
+            "close": 9.82591671224334
+          },
+          {
+            "date": "2025-12-22",
+            "close": 1.607779316387017
+          }
+        ],
+        "has_price_data": true,
+        "failure_reason": null
+      }
+    ],
+    "found_count": 19,
+    "with_price_data": 19,
+    "failures": [
+      {
+        "symbol": "MATIC",
+        "reason": "Symbol 'MATIC' not found in dim_asset"
+      }
+    ],
+    "failure_count": 1
+  },
+  "check_8_mapping_report": {
+    "mapping_coverage_pct": 100.0,
+    "unmapped_provider_ids": [],
+    "unmapped_count": 0,
+    "conflicts": [],
+    "conflict_count": 0,
+    "suspected_duplicates": [],
+    "duplicate_count": 0
+  },
+  "overall_status": "PASS_WITH_WARNINGS",
+  "warnings": [
+    "Spot checks: 1 anchor assets failed validation"
+  ],
+  "overall_passed": false
+}

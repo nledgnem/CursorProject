@@ -1,0 +1,4 @@
+horizon,edge_best,edge_worst,spread_1_5,n1,n5,n_all,mean_all,mean_1,mean_5,edge_best_pvalue,edge_best_ci_lower,edge_best_ci_upper,edge_worst_pvalue,edge_worst_ci_lower,edge_worst_ci_upper,spread_1_5_pvalue,spread_1_5_ci_lower,spread_1_5_ci_upper
+5,,,,0,0,0,,,,,,,,,,,,
+10,,,,0,0,0,,,,,,,,,,,,
+20,,,,0,0,0,,,,,,,,,,,,

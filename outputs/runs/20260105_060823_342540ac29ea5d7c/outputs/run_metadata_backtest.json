@@ -1,0 +1,29 @@
+{
+  "run_timestamp": "2026-01-05T06:09:42.623279+00:00",
+  "script_name": "run_backtest.py",
+  "git_commit_hash": null,
+  "config_file": "configs\\golden.yaml",
+  "config_hash": "f8a1edf8eaf65360",
+  "data_files": {
+    "backtest_results": {
+      "path": "outputs\\runs\\20260105_060823_342540ac29ea5d7c\\outputs\\backtest_results.csv",
+      "hash": "6e8cac1ad51f26c4"
+    },
+    "snapshots": {
+      "path": "data\\curated\\universe_snapshots.parquet",
+      "hash": "ab08162aa1bea74b"
+    },
+    "prices": {
+      "path": "data\\curated\\data_lake\\fact_price.parquet",
+      "hash": "2682fae8bf500525"
+    }
+  },
+  "row_counts": {
+    "backtest_results": 85
+  },
+  "date_range": {
+    "start_date": "2024-01-01",
+    "end_date": "2024-03-31"
+  },
+  "data_dir_used": "data\\curated"
+}

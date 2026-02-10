@@ -1,0 +1,6 @@
+col,dtype
+rebalance_date,object
+snapshot_date,object
+symbol,object
+weight,float64
+marketcap,float64

@@ -1,0 +1,26 @@
+base_asset: BTC
+carry_model:
+  funding_enabled: false
+cost_model:
+  fee_bps: 5
+  slippage_bps: 5
+eligibility:
+  min_listing_days: 30
+  min_mcap_usd: 10000000
+  min_volume_usd: 1000000
+  must_have_perp: true
+end_date: '2024-12-31'
+excluded_assets:
+- USDT
+- USDC
+- BUSD
+- DAI
+- TUSD
+- PAXG
+max_weight_per_asset: 0.1
+rebalance_day: 1
+rebalance_frequency: monthly
+start_date: '2023-01-01'
+strategy_name: benchmark_ls
+top_n: 30
+weighting: sqrt_cap_weighted

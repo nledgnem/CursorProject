@@ -1,0 +1,195 @@
+{
+  "run_id": "20251223_082242_6b1147cb9555831d",
+  "run_timestamp": "2025-12-23T08:23:09.590000+00:00",
+  "mode": "smoke",
+  "overall_status": "PASS_WITH_WARNINGS",
+  "skipped_steps": [
+    "data_acquisition",
+    "qc_curation",
+    "perp_listings",
+    "funding_rates",
+    "validation"
+  ],
+  "config": {
+    "path": "C:\\Users\\Admin\\Documents\\Cursor\\configs\\golden.yaml",
+    "hash": "6b1147cb9555831d",
+    "content": {
+      "strategy_name": "golden_smoke",
+      "start_date": "2024-01-01",
+      "end_date": "2024-03-31",
+      "rebalance_frequency": "monthly",
+      "rebalance_day": 1,
+      "base_asset": "BTC",
+      "top_n": 10,
+      "excluded_assets": [],
+      "eligibility": {
+        "must_have_perp": true,
+        "min_listing_days": 30,
+        "min_mcap_usd": null,
+        "min_volume_usd": null,
+        "require_price": true,
+        "require_volume": false,
+        "require_marketcap": false
+      },
+      "weighting": "sqrt_cap_weighted",
+      "max_weight_per_asset": 0.1,
+      "cost_model": {
+        "fee_bps": 5,
+        "slippage_bps": 5
+      },
+      "carry_model": {
+        "funding_enabled": false
+      },
+      "backtest": {
+        "gap_fill_mode": "none",
+        "basket_coverage_threshold": 0.9,
+        "lookback_window_days": 30,
+        "min_history_days": null,
+        "max_missing_frac": null,
+        "max_consecutive_missing_days": null
+      }
+    }
+  },
+  "environment": {
+    "python_version": "3.14.2 (tags/v3.14.2:df79316, Dec  5 2025, 17:18:21) [MSC v.1944 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python_executable": "C:\\Users\\Admin\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+    "installed_packages": {
+      "aiodns": "3.6.0",
+      "aiohappyeyeballs": "2.6.1",
+      "aiohttp": "3.13.2",
+      "aiosignal": "1.4.0",
+      "attrs": "25.4.0",
+      "ccxt": "4.5.26",
+      "certifi": "2025.11.12",
+      "cffi": "2.0.0",
+      "charset-normalizer": "3.4.4",
+      "cryptography": "46.0.3",
+      "duckdb": "1.4.3",
+      "frozenlist": "1.8.0",
+      "idna": "3.11",
+      "multidict": "6.7.0",
+      "numpy": "2.3.5",
+      "pandas": "2.3.3",
+      "pip": "25.3",
+      "propcache": "0.4.1",
+      "pyarrow": "22.0.0",
+      "pycares": "4.11.0",
+      "pycparser": "2.23",
+      "python-dateutil": "2.9.0.post0",
+      "pytz": "2025.2",
+      "pyyaml": "6.0.3",
+      "requests": "2.32.5",
+      "setuptools": "80.9.0",
+      "six": "1.17.0",
+      "typing-extensions": "4.15.0",
+      "tzdata": "2025.2",
+      "urllib3": "2.6.0",
+      "yarl": "1.22.0",
+      "autocommand": "2.2.2",
+      "backports.tarfile": "1.2.0",
+      "importlib-metadata": "8.0.0",
+      "inflect": "7.3.1",
+      "jaraco.collections": "5.1.0",
+      "jaraco.context": "5.3.0",
+      "jaraco.functools": "4.0.1",
+      "jaraco.text": "3.12.1",
+      "more-itertools": "10.3.0",
+      "packaging": "24.2",
+      "platformdirs": "4.2.2",
+      "tomli": "2.0.1",
+      "typeguard": "4.3.0",
+      "wheel": "0.45.1",
+      "zipp": "3.19.2"
+    }
+  },
+  "step_statuses": {
+    "data_acquisition": "SKIPPED",
+    "qc_curation": "SKIPPED",
+    "data_lake_conversion": "SUCCESS",
+    "mapping_validation": "SUCCESS",
+    "perp_listings": "SKIPPED",
+    "funding_rates": "SKIPPED",
+    "snapshots": "SUCCESS",
+    "backtest": "SUCCESS",
+    "validation": "SKIPPED",
+    "publish": "SUCCESS"
+  },
+  "manager_summary": {
+    "qc_run": false,
+    "validation_run": false,
+    "mapping_validation_run": true,
+    "time_range": {
+      "start_date": "2024-01-01",
+      "end_date": "2024-03-31"
+    },
+    "rebalance_dates_count": 3,
+    "avg_eligible_count": 110.0,
+    "rebalance_coverage": {
+      "min_pct": 100.0,
+      "median_pct": 100.0
+    },
+    "pct_rebalance_dates_with_any_snapshot": 66.66666666666666,
+    "pct_rebalance_dates_with_full_top_n_given_eligible": 100.0,
+    "pct_rebalance_dates_with_full_top_n": 100.0,
+    "assets_dropped_for_missing_data": 1246,
+    "mode": "smoke"
+  },
+  "output_files": {
+    "data_lake_dir": {
+      "path": "C:\\Users\\Admin\\Documents\\Cursor\\data\\curated\\data_lake",
+      "hash": null,
+      "size_bytes": 4096
+    },
+    "mapping_validation": {
+      "path": "C:\\Users\\Admin\\Documents\\Cursor\\data\\curated\\data_lake\\mapping_validation.json",
+      "hash": "888141f2aa452a16",
+      "size_bytes": 4646
+    },
+    "universe_eligibility": {
+      "path": "C:\\Users\\Admin\\Documents\\Cursor\\data\\curated\\universe_eligibility.parquet",
+      "hash": "ed7c9e156f704621",
+      "size_bytes": 70489
+    },
+    "basket_snapshots": {
+      "path": "C:\\Users\\Admin\\Documents\\Cursor\\data\\curated\\universe_snapshots.parquet",
+      "hash": "df2f24f48e40bba0",
+      "size_bytes": 7926
+    },
+    "snapshots_metadata": {
+      "path": "C:\\Users\\Admin\\Documents\\Cursor\\data\\curated\\run_metadata_snapshots.json",
+      "hash": "e9f890adf7a855f8",
+      "size_bytes": 1618
+    },
+    "backtest_results": {
+      "path": "outputs\\backtest_results.csv",
+      "hash": "255d21d91a6c1936",
+      "size_bytes": 3440
+    },
+    "backtest_turnover": {
+      "path": "outputs\\rebalance_turnover.csv",
+      "hash": "b63a9031d1478a6a",
+      "size_bytes": 134
+    },
+    "backtest_metadata": {
+      "path": "outputs\\run_metadata_backtest.json",
+      "hash": "fb6891ae155d6fe6",
+      "size_bytes": 807
+    },
+    "duckdb_db": {
+      "path": "research.duckdb",
+      "hash": "d54fe58e4eba0b4f",
+      "size_bytes": 274432
+    }
+  },
+  "input_files": {},
+  "validation": {
+    "status": "SKIPPED",
+    "failures": []
+  },
+  "known_limitations": [
+    "Binance-only perp proxy (v0)",
+    "CoinGecko data source",
+    "Gap fill assumptions in backtest layer"
+  ]
+}

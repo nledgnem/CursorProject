@@ -1,0 +1,51 @@
+{
+  "run_id": "20260105_181617",
+  "timestamp": "2026-01-05T10:16:19.119899+00:00",
+  "config": {
+    "monitor_name": "existing_regime_monitor",
+    "horizons": [
+      5,
+      10,
+      20
+    ],
+    "block_bootstrap": {
+      "enabled": true,
+      "block_size": 10,
+      "n_boot": 300
+    },
+    "date_range": {
+      "start": null,
+      "end": null
+    },
+    "calendar": {
+      "drop_missing": true
+    },
+    "output_dir_base": "outputs/monitor_eval",
+    "seed": 42
+  },
+  "inputs": {
+    "ls_returns_path": "C:\\Users\\Admin\\Documents\\Cursor\\outputs\\runs\\20260105_081237_bf2ead76056ec057\\outputs\\backtest_results.csv",
+    "ls_returns_hash": "1fa0111145f1d4a5",
+    "ls_returns_rows": 365,
+    "regime_source": "OwnScripts/regime_backtest/regime_history.csv",
+    "regime_rows": 743
+  },
+  "outputs": {
+    "aligned_rows": 364,
+    "date_range": {
+      "start": "2025-01-01",
+      "end": "2025-12-31"
+    },
+    "sample_sizes": {
+      "n1": 116,
+      "n5": 89,
+      "n_all": 364
+    },
+    "horizons": [
+      5,
+      10,
+      20
+    ]
+  },
+  "warnings": []
+}

@@ -1,0 +1,52 @@
+# Golden Run Config: Deterministic, small-scale test for validation
+# This config is designed for fast, repeatable runs to catch logic errors
+
+strategy_name: "golden_run"
+
+# Date range (90 days - small enough for fast runs)
+start_date: "2023-01-01"
+end_date: "2023-03-31"  # ~90 days
+
+# Rebalancing
+rebalance_frequency: "monthly"
+rebalance_day: 1
+
+# Universe selection
+base_asset: "BTC"
+top_n: 20  # Smaller basket for faster validation
+excluded_assets:
+  - "USDT"
+  - "USDC"
+  - "BUSD"
+  - "DAI"
+  - "TUSD"
+  - "PAXG"
+
+# Eligibility rules
+eligibility:
+  must_have_perp: true
+  min_listing_days: 30
+  min_mcap_usd: 10000000  # $10M
+  min_volume_usd: 1000000  # $1M
+
+# Weighting scheme (equal weight for simplicity)
+weighting: "equal_weight_capped"
+max_weight_per_asset: 0.10
+
+# Cost model
+cost_model:
+  fee_bps: 5
+  slippage_bps: 5
+
+# Carry model
+carry_model:
+  funding_enabled: false
+
+# Backtest data quality settings (conservative)
+backtest:
+  gap_fill_mode: "none"  # No gap filling for golden run
+  min_history_days: null
+  max_missing_frac: null
+  max_consecutive_missing_days: null
+  basket_coverage_threshold: 0.90
+  lookback_window_days: 30

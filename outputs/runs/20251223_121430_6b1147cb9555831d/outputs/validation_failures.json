@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-12-23T12:15:00.467648+00:00",
+  "critical_errors": [],
+  "violations": [
+    "[VIOLATION] 31 (34.1%) basket return days are NaN (exceeds DoD threshold of 10.0%)"
+  ],
+  "warnings": [],
+  "total_count": 1
+}

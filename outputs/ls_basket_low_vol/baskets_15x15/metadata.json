@@ -1,0 +1,35 @@
+{
+  "n_baskets": 10,
+  "top_5": [
+    {
+      "rank": 1,
+      "type": "optimized",
+      "strategy": "momentum_rank",
+      "vol": 0.2487982155539275
+    },
+    {
+      "rank": 2,
+      "type": "equal_weight",
+      "strategy": "momentum_rank",
+      "vol": 0.30073940448378345
+    },
+    {
+      "rank": 3,
+      "type": "optimized",
+      "strategy": "greedy_seq",
+      "vol": 0.3470430782784207
+    },
+    {
+      "rank": 4,
+      "type": "optimized",
+      "strategy": "correlation_pairs",
+      "vol": 0.35030624802611376
+    },
+    {
+      "rank": 5,
+      "type": "optimized",
+      "strategy": "minvar_rank",
+      "vol": 0.35030624802611376
+    }
+  ]
+}

@@ -1,26 +1,14 @@
-# Python
+# Python cache and bytecode
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+
+# Virtual environments (large, machine-specific)
 venv/
 env/
 ENV/
-
-# Data files
-data/raw/*
-!data/raw/
-!data/raw/**
-data/curated/*
-!data/curated/.gitkeep
-!data/curated/data_lake/
-!data/curated/data_lake/**
-!data/perp_allowlist.csv
-
-# Outputs
-outputs/*
-!outputs/.gitkeep
 
 # IDE
 .vscode/
@@ -35,44 +23,10 @@ Thumbs.db
 # Jupyter
 .ipynb_checkpoints/
 
-# Environment variables and secrets
+# Secrets and env (never commit)
 .env
 .env.local
 *.env
 *_secret.json
 *_keys.json
 secrets/
-
-# API keys (check these files before committing)
-# src/providers/coingecko.py - contains COINGECKO_API_KEY
-# OwnScripts/*/longterm_monitor.py - contains COINGLASS_API_KEY
-# OwnScripts/*/regime_monitor.py - contains COINGLASS_API_KEY
-
-# Large data files
-*.parquet
-*.csv
-!configs/*.csv
-# Allow data lake parquet (include in repo if present)
-!data/curated/data_lake/*.parquet
-!data/curated/data_lake/**/*.parquet
-# Allow data/raw (include in repo)
-!data/raw/*.parquet
-!data/raw/**/*.parquet
-!data/raw/*.csv
-!data/raw/**/*.csv
-*.duckdb
-*.db
-*.sqlite
-
-# Logs
-*.log
-logs/
-
-# Temporary test files
-test_*.py
-verify_*.py
-quick_*.py
-check_*.py
-inspect_*.py
-view_*.py
-

@@ -1,0 +1,12 @@
+col,dtype
+rebalance_date,object
+snapshot_date,object
+symbol,object
+coingecko_id,object
+venue,object
+basket_name,object
+selection_version,object
+rank,int64
+weight,float64
+marketcap,float64
+volume_14d,float64

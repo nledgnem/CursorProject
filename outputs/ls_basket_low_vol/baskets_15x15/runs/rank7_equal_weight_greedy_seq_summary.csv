@@ -1,0 +1,2 @@
+realized_vol_ann,skewness,kurtosis,cvar95,cvar99,max_drawdown,avg_turnover,median_turnover,avg_monthly_turnover,long_short_corr,avg_gross_exposure,max_gross_exposure,max_per_asset_exposure
+0.3932230006583314,-1.2101491973490963,6.33190891487682,0.06693509093857837,0.10532387887518613,-0.706782498865126,0.015956284153005467,0.0,0.4424242424242424,-0.18028006376809713,1.0,1.0,0.03333333333333333

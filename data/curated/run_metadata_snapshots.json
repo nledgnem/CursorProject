@@ -1,0 +1,57 @@
+{
+  "run_timestamp": "2026-01-06T03:30:07.709005+00:00",
+  "script_name": "build_universe_snapshots.py",
+  "git_commit_hash": null,
+  "config_file": "configs\\golden_2year.yaml",
+  "config_hash": "e5180b83342f1e99",
+  "data_files": {
+    "snapshots": {
+      "path": "data\\curated\\universe_snapshots.parquet",
+      "hash": "f146d96bdca809a5"
+    },
+    "prices": {
+      "path": "data\\curated\\data_lake\\fact_price.parquet",
+      "hash": "e87fc4055cc54011"
+    },
+    "marketcaps": {
+      "path": "data\\curated\\data_lake\\fact_marketcap.parquet",
+      "hash": "1ccc0f28209f0200"
+    },
+    "volumes": {
+      "path": "data\\curated\\data_lake\\fact_volume.parquet",
+      "hash": "6f6e8decdbd27ada"
+    },
+    "perp_allowlist_proxy": {
+      "path": "data\\perp_allowlist.csv",
+      "hash": "ef9e3ff6e88dcdba"
+    }
+  },
+  "row_counts": {
+    "snapshots": 220,
+    "snapshot_dates": 22
+  },
+  "filter_thresholds": {
+    "must_have_perp": true,
+    "min_listing_days": 30,
+    "min_mcap_usd": null,
+    "min_volume_usd": null,
+    "top_n": 10,
+    "weighting_scheme": "sqrt_cap_weighted",
+    "max_weight_per_asset": 0.1,
+    "base_asset": "BTC",
+    "blacklist_count": 6,
+    "stablecoin_count": 76,
+    "wrapped_count": 19,
+    "config_excluded_count": 0,
+    "perp_allowlist_proxy_version": "v0",
+    "perp_allowlist_proxy_source": "binance_exchangeInfo",
+    "perp_allowlist_proxy_label": "perp_eligible_proxy_binance_v0",
+    "perp_listings_used": true,
+    "perp_listings_count": 605
+  },
+  "date_range": {
+    "start_date": "2024-01-07",
+    "end_date": "2025-12-31"
+  },
+  "data_dir_used": "data\\curated"
+}

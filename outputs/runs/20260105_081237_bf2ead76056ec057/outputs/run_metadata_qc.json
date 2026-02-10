@@ -1,0 +1,56 @@
+{
+  "run_timestamp": "2026-01-05T08:12:43.559399+00:00",
+  "script_name": "qc_curate.py",
+  "git_commit_hash": null,
+  "config_hash": "619a7691d6d0fc7d",
+  "input_files": {
+    "prices": {
+      "path": "data\\raw\\prices_daily.parquet",
+      "hash": "e6b4271835499050"
+    },
+    "marketcap": {
+      "path": "data\\raw\\marketcap_daily.parquet",
+      "hash": "22a257dd43aa7ff7"
+    },
+    "volume": {
+      "path": "data\\raw\\volume_daily.parquet",
+      "hash": "3c685c135a3ad0f8"
+    }
+  },
+  "output_files": {
+    "prices": {
+      "path": "data\\curated\\prices_daily.parquet",
+      "hash": "592d3872d901392c"
+    },
+    "marketcap": {
+      "path": "data\\curated\\marketcap_daily.parquet",
+      "hash": "3a2e948f079ceeeb"
+    },
+    "volume": {
+      "path": "data\\curated\\volume_daily.parquet",
+      "hash": "41fbe45ceec8ec73"
+    }
+  },
+  "row_counts": {
+    "prices_rows": 730,
+    "marketcap_rows": 730,
+    "volume_rows": 730
+  },
+  "symbol_counts": {
+    "prices_symbols": 2718,
+    "marketcap_symbols": 2718,
+    "volume_symbols": 2718
+  },
+  "repair_stats": {
+    "total_edits": 16267,
+    "edits_by_rule": {
+      "mcap_spike": 9994,
+      "vol_spike": 6045,
+      "return_spike": 228
+    }
+  },
+  "date_range": {
+    "start_date": "2024-01-07 00:00:00",
+    "end_date": "2026-01-05 00:00:00"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "run_timestamp": "2025-12-18T08:59:30.701991+00:00",
+  "script_name": "run_backtest.py",
+  "git_commit_hash": null,
+  "config_file": "configs\\strategy_benchmark.yaml",
+  "config_hash": "418873a4ea9b78e4",
+  "data_files": {
+    "backtest_results": {
+      "path": "outputs\\test_concentration\\backtest_results.csv",
+      "hash": "26bc19ad5beca626"
+    },
+    "snapshots": {
+      "path": "data\\curated\\universe_snapshots.parquet",
+      "hash": "9d5b2ad7bfcea659"
+    },
+    "prices": {
+      "path": "data\\curated\\prices_daily.parquet",
+      "hash": "854a15a17b2abf6e"
+    }
+  },
+  "row_counts": {
+    "backtest_results": 374
+  },
+  "date_range": {
+    "start_date": "2023-01-01",
+    "end_date": "2024-12-31"
+  },
+  "data_dir_used": "data\\curated"
+}
