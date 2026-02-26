@@ -4,6 +4,7 @@ Analyze funding rate data length for each coin.
 Shows top 10 coins with longest history and bottom 10 coins with shortest history.
 """
 
+import os
 import sys
 import time
 from datetime import datetime, timedelta
@@ -12,7 +13,7 @@ import requests
 from collections import defaultdict
 
 # CoinGlass API config
-COINGLASS_API_KEY = "b8ef3d2aaa6349aeaf873fdda0d1460a"
+COINGLASS_API_KEY = os.environ.get("COINGLASS_API_KEY", "")  # Set in env; never commit keys
 COINGLASS_BASE = "https://open-api-v4.coinglass.com"
 API_SLEEP_SECONDS = 2  # Reduced from 3 to speed up
 

@@ -1,5 +1,6 @@
 """Analyst tier exclusive CoinGecko endpoints."""
 
+import os
 import time
 import requests
 from datetime import date, datetime, timezone, timedelta
@@ -7,7 +8,7 @@ from typing import Dict, List, Optional, Tuple
 import polars as pl
 
 COINGECKO_BASE = "https://pro-api.coingecko.com/api/v3"
-COINGECKO_API_KEY = "CG-RhUWZY31TcDFBPfj4GWwcsMS"
+COINGECKO_API_KEY = os.environ.get("COINGECKO_API_KEY", "")  # Set in env; never commit keys
 
 
 def fetch_ohlc_range(

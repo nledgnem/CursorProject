@@ -1,5 +1,6 @@
 """CoinGecko API provider for price, market cap, and volume data."""
 
+import os
 import time
 import requests
 from datetime import datetime, date, timedelta, timezone
@@ -9,7 +10,7 @@ import pandas as pd
 import numpy as np
 
 COINGECKO_BASE = "https://pro-api.coingecko.com/api/v3"
-COINGECKO_API_KEY = "CG-RhUWZY31TcDFBPfj4GWwcsMS"
+COINGECKO_API_KEY = os.environ.get("COINGECKO_API_KEY", "")  # Set in env; never commit keys
 
 
 def to_utc_ts(d: date, offset_days: int = 0) -> int:

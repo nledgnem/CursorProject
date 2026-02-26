@@ -13,6 +13,7 @@ End-to-end regime backtest:
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 import time
@@ -33,7 +34,7 @@ sys.path.append(str(Path(__file__).resolve().parent))
 from regime_monitor import COINGECKO_IDS, ALT_SYMBOLS  # type: ignore
 
 COINGECKO_BASE = "https://pro-api.coingecko.com/api/v3"
-COINGECKO_API_KEY = "CG-RhUWZY31TcDFBPfj4GWwcsMS"
+COINGECKO_API_KEY = os.environ.get("COINGECKO_API_KEY", "")  # Set in env; never commit keys
 DEFAULT_HISTORY_FILE = "regime_history.csv"
 
 

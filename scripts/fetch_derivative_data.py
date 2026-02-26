@@ -6,6 +6,7 @@ This provides backup data for Funding Skew and OI Risk features in MSM v0,
 complementing CoinGlass data.
 """
 
+import os
 import sys
 from pathlib import Path
 from datetime import date, datetime, timezone
@@ -17,7 +18,7 @@ import time
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 COINGECKO_BASE = "https://pro-api.coingecko.com/api/v3"
-COINGECKO_API_KEY = "CG-RhUWZY31TcDFBPfj4GWwcsMS"
+COINGECKO_API_KEY = os.environ.get("COINGECKO_API_KEY", "")  # Set in env; never commit keys
 
 
 def fetch_derivatives_list(sleep_seconds: float = 0.12) -> List[Dict]:

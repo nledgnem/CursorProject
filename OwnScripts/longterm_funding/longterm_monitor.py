@@ -5,6 +5,7 @@ Long-term funding regime monitor for BTC-long / Alt-short strategy.
 Fetches funding data from CoinGlass and computes a slow "funding regime" score.
 """
 
+import os
 import sys
 import time
 import json
@@ -18,7 +19,7 @@ import numpy as np
 # Configuration
 # ============================================================================
 
-COINGLASS_API_KEY = "b8ef3d2aaa6349aeaf873fdda0d1460a"
+COINGLASS_API_KEY = os.environ.get("COINGLASS_API_KEY", "")  # Set in env; never commit keys
 COINGLASS_BASE = "https://open-api-v4.coinglass.com"
 API_SLEEP_SECONDS = 3
 HISTORICAL_CHUNK_DAYS = 90

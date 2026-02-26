@@ -10,6 +10,7 @@ Modes:
   rows to regime_history.csv.
 """
 
+import os
 import sys
 import csv
 import time
@@ -24,10 +25,10 @@ import requests
 # CONFIG
 # ============================================================
 
-COINGLASS_API_KEY = "b8ef3d2aaa6349aeaf873fdda0d1460a"
+COINGLASS_API_KEY = os.environ.get("COINGLASS_API_KEY", "")  # Set in env; never commit keys
 COINGLASS_BASE = "https://open-api-v4.coinglass.com"
 COINGECKO_BASE = "https://pro-api.coingecko.com/api/v3"
-COINGECKO_API_KEY = "CG-RhUWZY31TcDFBPfj4GWwcsMS"
+COINGECKO_API_KEY = os.environ.get("COINGECKO_API_KEY", "")  # Set in env; never commit keys
 
 # Coinglass rate limits
 COINGLASS_SLEEP_SECONDS = 3.2  # per request (throttling)

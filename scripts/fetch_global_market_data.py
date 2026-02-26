@@ -5,6 +5,7 @@ Fetch global market data including BTC dominance for MSM v0.
 This data directly feeds the BTC Dominance feature in the Market State Monitor.
 """
 
+import os
 import sys
 from pathlib import Path
 from datetime import date, datetime, timezone
@@ -16,7 +17,7 @@ import time
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 COINGECKO_BASE = "https://pro-api.coingecko.com/api/v3"
-COINGECKO_API_KEY = "CG-RhUWZY31TcDFBPfj4GWwcsMS"
+COINGECKO_API_KEY = os.environ.get("COINGECKO_API_KEY", "")  # Set in env; never commit keys
 
 
 def fetch_global_market(sleep_seconds: float = 0.12) -> Dict:
