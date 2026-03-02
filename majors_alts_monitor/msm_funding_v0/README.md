@@ -9,7 +9,7 @@ MSM v0 implements a weekly decision cadence with:
 - **Short leg**: Top 30 eligible ALTs (by market cap)
 - **Feature**: 7-day mean funding rate basket
 - **Labels**: 5 percentile bins (Red, Orange, Yellow, YellowGreen, Green)
-- **Target**: `y = r_alts - r_maj` (ALT basket return minus major benchmark return)
+- **Target**: `y = r_maj - r_alts` (major benchmark return minus ALT basket return; long majors / short alts PnL)
 
 ## Decision Cadence
 
@@ -74,7 +74,7 @@ Two labeling modes:
 - `r_btc`: BTC return over same window
 - `r_eth`: ETH return over same window
 - `r_maj_70_30`: 0.7*r_BTC + 0.3*r_ETH
-- `y`: r_alts - r_maj_70_30 (target)
+- `y`: r_maj_70_30 - r_alts (target; long majors / short alts)
 
 ## Outputs
 

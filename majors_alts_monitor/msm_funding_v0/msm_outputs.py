@@ -1,4 +1,4 @@
-"""Output generation for MSM v0: CSV files and JSON manifest."""
+"""Output generation for MSM v0: CSV files, JSON manifest, and returns chart."""
 
 import polars as pl
 import pandas as pd
@@ -9,6 +9,15 @@ import json
 import logging
 
 logger = logging.getLogger(__name__)
+
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.dates as mdates
+    import matplotlib.pyplot as plt
+    _MATPLOTLIB_AVAILABLE = True
+except ImportError:
+    _MATPLOTLIB_AVAILABLE = False
 
 
 def write_timeseries_csv(
@@ -24,7 +33,7 @@ def write_timeseries_csv(
             - basket_hash, basket_members, n_valid, coverage
             - F_tk (feature)
             - label_v0_0, label_v0_1
-            - r_alts, r_btc, r_eth, r_maj_70_30, y
+            - r_alts, r_btc, r_eth, r_maj_weighted, y (y = r_maj - r_alts, long majors / short alts)
         output_path: Path to output CSV file
     """
     if len(data) == 0:
@@ -72,6 +81,7 @@ def write_summary_by_label(
 ) -> None:
     """
     Write summary_by_label CSV with count, mean/median/std of y, hit_rate(y<0).
+    y = r_maj - r_alts (long majors / short alts); hit_rate = fraction of weeks where y < 0 (majors underperformed alts).
     
     Args:
         data: List of dicts with label and y values
@@ -152,6 +162,104 @@ def write_run_manifest(
     logger.info(f"Wrote run manifest: {output_path}")
 
 
+def write_returns_chart(
+    data: List[Dict[str, Any]],
+    output_path: Path,
+    run_id: Optional[str] = None,
+) -> None:
+    """
+    Write a returns chart (PNG): weekly spread return (y) and cumulative return.
+    y = r_maj - r_alts (long majors / short alts).
+
+    Args:
+        data: List of timeseries dicts with decision_date, y, r_alts, r_maj_weighted
+        output_path: Path for the PNG file (e.g. output_dir / "returns_chart.png")
+        run_id: Optional run ID for the chart title
+    """
+    if not _MATPLOTLIB_AVAILABLE:
+        logger.warning("matplotlib not available, skipping returns chart")
+        return
+    if len(data) == 0:
+        logger.warning("No data for returns chart")
+        return
+
+    df = pd.DataFrame(data)
+    if "y" not in df.columns or "decision_date" not in df.columns:
+        logger.warning("Missing 'y' or 'decision_date' for returns chart")
+        return
+
+    df = df.dropna(subset=["y", "decision_date"]).copy()
+    if len(df) == 0:
+        logger.warning("No valid y/decision_date rows for returns chart")
+        return
+
+    df["decision_date"] = pd.to_datetime(df["decision_date"])
+    df = df.sort_values("decision_date").reset_index(drop=True)
+    df["cumulative_return"] = (1 + df["y"]).cumprod() - 1
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6), height_ratios=[1, 1], sharex=True)
+    fig.suptitle(
+        f"MSM v0 returns (long majors / short alts)" + (f" — {run_id}" if run_id else ""),
+        fontsize=11,
+    )
+
+    # Top: weekly spread return (y) as bars
+    ax1.bar(df["decision_date"], df["y"] * 100, width=5, color="steelblue", alpha=0.8, edgecolor="none")
+    ax1.axhline(0, color="gray", linewidth=0.8, linestyle="-")
+    ax1.set_ylabel("Weekly return (%)")
+    ax1.set_title("Weekly spread return (y = r_maj − r_alts)")
+    ax1.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.1f}%"))
+    ax1.grid(True, alpha=0.3)
+
+    # Bottom: cumulative return
+    ax2.fill_between(df["decision_date"], 0, df["cumulative_return"] * 100, alpha=0.4, color="green")
+    ax2.plot(df["decision_date"], df["cumulative_return"] * 100, color="darkgreen", linewidth=1.5, label="Cumulative return")
+    ax2.axhline(0, color="gray", linewidth=0.8, linestyle="-")
+    ax2.set_ylabel("Cumulative return (%)")
+    ax2.set_xlabel("Decision date")
+    ax2.set_title("Cumulative return (long majors / short alts)")
+    ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.0f}%"))
+    ax2.legend(loc="upper left", fontsize=8)
+    ax2.grid(True, alpha=0.3)
+
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+    ax1.xaxis.set_major_locator(mdates.MonthLocator(interval=3))
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_path, dpi=120, bbox_inches="tight")
+    plt.close(fig)
+    logger.info(f"Wrote returns chart: {output_path}")
+
+
+def write_returns_chart_from_csv(
+    timeseries_csv_path: Path,
+    output_path: Optional[Path] = None,
+    run_id: Optional[str] = None,
+) -> None:
+    """
+    Read msm_timeseries.csv and write returns_chart.png in the same directory.
+    Used to add charts to existing run folders.
+
+    Args:
+        timeseries_csv_path: Path to msm_timeseries.csv
+        output_path: Path for PNG (default: same dir as CSV, file returns_chart.png)
+        run_id: Optional run ID for title (default: parent directory name)
+    """
+    if not _MATPLOTLIB_AVAILABLE:
+        logger.warning("matplotlib not available, skipping returns chart")
+        return
+    path = Path(timeseries_csv_path)
+    if not path.exists():
+        logger.warning(f"CSV not found: {path}")
+        return
+    df = pd.read_csv(path)
+    data = df.to_dict("records")
+    out = Path(output_path) if output_path else path.parent / "returns_chart.png"
+    rid = run_id or path.parent.name
+    write_returns_chart(data, out, run_id=rid)
+
+
 def generate_outputs(
     timeseries_data: List[Dict[str, Any]],
     config: Dict[str, Any],
@@ -195,6 +303,13 @@ def generate_outputs(
         config,
         metadata,
         output_dir / "run_manifest.json"
+    )
+    
+    # Write returns chart (weekly y and cumulative return)
+    write_returns_chart(
+        timeseries_data,
+        output_dir / "returns_chart.png",
+        run_id=metadata.get("run_id"),
     )
     
     logger.info(f"Generated all outputs in: {output_dir}")

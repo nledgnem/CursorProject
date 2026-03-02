@@ -1,0 +1,170 @@
+# BTCDOM-style index (reconstructed from data lake)
+
+This folder contains a script that reconstructs a **BTCDOM-style index** from the existing parquet data lake using **Binance’s Price Component Info** (constituents, Weight % and Weight Quantity) from the [Binance Futures perpetual index page](https://www.binance.com/en/futures/funding-history/perpetual/index).
+
+## Why did our chart look different from Binance?
+
+1. **Scale** — We default to **base 1000** on the first date, so the index sits around 1000. Binance’s BTCDOM index is in the **~2500–5500** range because they use a different divisor. Use `--match-binance-date` and `--match-binance-value` so the index level matches Binance on a chosen date (e.g. 2026-01-29 and 5000).
+2. **Weight (Quantity) vs Weight (%)** — Binance’s index level is based on **Weight (Quantity)** × Last Index Price. We now use quantity weights by default so the *level* is comparable; with weight % only the *shape* is similar.
+3. **Basket size** — On some dates we have fewer than 20 constituents (e.g. 15–16) if data is missing, so the basket differs from Binance and can cause extra moves or spikes compared to their chart.
+4. **Data source** — We use the data lake’s daily closes; Binance uses their own feed and timing, so small differences in level and timing are expected.
+
+## Data sources (read-only)
+
+- `data/curated/data_lake/fact_price.parquet` — `asset_id`, `date`, `close`, `source` (used for BTC and constituent closes)
+- `data/curated/data_lake/fact_marketcap.parquet` — loaded for compatibility (not used for index calculation)
+- `data/curated/data_lake/dim_asset.parquet` — loaded for compatibility (not used for constituent set)
+
+## Methodology (Binance Price Component Info)
+
+1. **Constituents and weights**  
+   Fixed list of 20 coins and their **Weight (%)** from Binance’s BTCDOM index:  
+   ETH (42.82%), XRP (15.11%), BNB (14.82%), SOL (8.64%), TRX (4.67%), DOGE (2.94%), ADA (1.85%), BCH (1.70%), LINK (1.13%), XLM (0.92%), HBAR (0.76%), LTC (0.75%), AVAX (0.71%), ZEC (0.70%), SUI (0.64%), DOT (0.48%), UNI (0.44%), TAO (0.33%), AAVE (0.31%), SKY (0.28%).  
+   Component info can be retrieved from: [Binance Futures – Perpetual Index](https://www.binance.com/en/futures/funding-history/perpetual/index).
+
+2. **Last Index Price (per constituent)**  
+   For each constituent \(i\) on date \(t\):  
+   `Price_i(t) = BTC_close(t) / Constituent_i_close(t)`  
+   (BTC and alt closes in USD from `fact_price`; same as “Last Index Price” in Binance’s table.)
+
+3. **Weights**  
+   By default we use **Weight (Quantity)** from Binance’s table so the index level matches Binance:  
+   raw `S(t) = sum_i (weight_quantity_i * Price_i(t))`.  
+   With `--no-quantity-weights` we use Weight (%): raw `S(t) = sum_i (weight_pct_i/100) * Price_i(t)` with renormalization when a constituent is missing.
+
+4. **Index level**  
+   Divisor sets the scale. By default: `divisor = S(reference_date) / 1000` so the index is **base 1000** on the first date.  
+   To align with **Binance’s chart** (index in the ~2500–5500 range), use  
+   `--match-binance-date YYYY-MM-DD --match-binance-value VALUE`  
+   so that `divisor = S(match_date) / VALUE` and the index equals VALUE on that date (e.g. use a recent date and the Binance index value from their chart).
+
+**Missing data:** If BTC has no price we drop that date. If a constituent has no price we exclude it for that date; with quantity weights the raw sum uses only available constituents (basket size can vary by date).
+
+## Outputs (all under `BTCDOM exercise/`)
+
+| File | Description |
+|------|-------------|
+| `btcdom_daily.parquet` | Daily series: `date`, `btcdom_index`, `constituent_count`, `divisor` |
+| `btcdom_daily.csv` | Same series in CSV form |
+| `btcdom_chart.png` | Plot of date vs `btcdom_index` (full range) |
+| `btcdom_chart_2024_07_2026_01.png` | Chart when run with `--start-date 2024-07-01 --end-date 2026-01-31` |
+
+## How to run
+
+From the **repository root**:
+
+```bash
+python "BTCDOM exercise/compute_btcdom.py"
+```
+
+Optional arguments:
+
+- `--data-path PATH` — Path to data lake directory (default: `data/curated/data_lake`).
+- `--output-dir PATH` — Where to write outputs (default: this folder).
+- `--top-n N` — Ignored (constituents come from Binance component list).
+- `--start-date YYYY-MM-DD` / `--end-date YYYY-MM-DD` — Restrict series and chart to this date range.
+- `--reference-date YYYY-MM-DD` — Date for base 1000 (default: first date in series).
+- `--match-binance-date YYYY-MM-DD` and `--match-binance-value VALUE` — Set divisor so the index equals VALUE on that date (so the chart scale matches Binance, e.g. ~2500–5500).
+- `--no-quantity-weights` — Use weight % instead of weight quantity.
+- `--no-verify` — Skip printing verification of BTC/ETH/BNB coverage.
+
+Example: align scale with Binance (index ~5000 on a recent date):
+```bash
+python "BTCDOM exercise/compute_btcdom.py" --start-date 2024-07-01 --end-date 2026-01-31 --match-binance-date 2026-01-29 --match-binance-value 5000
+```
+
+Example with custom reference date:
+
+```bash
+python "BTCDOM exercise/compute_btcdom.py" --reference-date 2024-01-01
+```
+
+## Requirements
+
+- Python 3.10+
+- `polars`
+- `matplotlib` (for the chart)
+
+---
+
+## btcdom_recon package (reconstruction + Binance validation)
+
+A small, reproducible Python package that **reconstructs** the Binance BTCDOM index from your local data lake and **validates** it against Binance’s index price klines.
+
+### Assumptions
+
+- **Data lake**: Parquet at `data/curated/data_lake/fact_price.parquet` with columns `asset_id`, `date`, `close`. Symbol in code = `asset_id` (e.g. BTC, ETH).
+- **Interface**: `load_prices(symbol, start, end, freq)` returns a DataFrame with `timestamp` and `price_usd` (time-indexed or resampled to requested frequency).
+- **Formula**: `btc_in_coin_i(t) = BTCUSD(t) / COINUSD(t)`, `BTCDOM(t) = sum_i WEIGHTS[i] * btc_in_coin_i(t)`.
+- **Missing data**: Forward-fill up to a configurable limit (default 2); then either drop row or renormalize weights among available constituents.
+
+### Install (optional)
+
+From repo root or `BTCDOM exercise`:
+
+```bash
+pip install -r "BTCDOM exercise/requirements-btcdom_recon.txt"
+```
+
+### CLI
+
+From **repository root** (so that `data/curated/data_lake` exists):
+
+```bash
+python -m btcdom_recon --start 2024-07-01 --end 2026-01-31 --interval 1d --out "BTCDOM exercise"
+```
+
+Or from inside `BTCDOM exercise` (ensure path to data lake is correct, e.g. `--data-lake ../data/curated/data_lake`):
+
+```bash
+python -m btcdom_recon --start 2024-07-01 --end 2026-01-31 --interval 1d --out .
+```
+
+**Options:**
+
+- `--start`, `--end`: Date range (YYYY-MM-DD).
+- `--interval`: Candle interval (e.g. `1h`, `1d`). Default: `1h`.
+- `--out`: Output directory. Default: `outdir/`.
+- `--data-lake`: Path to data lake directory (default: `data/curated/data_lake` from repo root).
+- `--ffill-limit`: Forward-fill limit for missing prices (default: 2).
+- `--missing-mode`: `renormalize` (default) or `drop_row`.
+- `--no-plot`: Skip overlay plot.
+
+**Outputs** (under `--out`):
+
+- `recon.csv`: Reconstructed series (`timestamp`, `btcdom_recon`, `n_constituents_used`, `weights_renormalized_flag`).
+- `binance.csv`: Binance index klines (`timestamp`, `open`, `high`, `low`, `close`, `volume`).
+- `metrics.json`: MAE, MAPE, max_abs_error, correlation, n_aligned.
+- `btcdom_recon_chart.png`: Chart of reconstructed BTCDOM index only.
+- `overlay.png`: Recon vs Binance series + error chart.
+
+**Demo (no data lake):** Run with `--demo` to use synthetic data and still fetch Binance for validation:
+
+```bash
+python -m btcdom_recon --start 2024-01-01 --end 2024-03-01 --interval 1d --out . --demo
+```
+
+### Validation
+
+- Fetches index price klines from `GET https://fapi.binance.com/fapi/v1/indexPriceKlines` (pair=BTCDOMUSDT).
+- Aligns recon to Binance timestamps (inner join) and computes MAE, MAPE, max absolute error, and correlation.
+
+### Tests
+
+From repo root:
+
+```bash
+cd "BTCDOM exercise" && python -m pytest tests -v
+```
+
+Or with PYTHONPATH from root:
+
+```bash
+PYTHONPATH="BTCDOM exercise" python -m pytest "BTCDOM exercise/tests" -v
+```
+
+Tests cover: weight summation, reconstruction math on toy data, and missing-data modes (renormalize / drop).
+
+### Spike in 2024-09 (resolved)
+
+A large spike in the reconstructed series in late Aug–Sep 2024 was caused by **DOGE** in `prices_daily.parquet` being in the **wrong scale** (e.g. ~0.0001–0.01 instead of ~0.10–0.40 USD). That made BTC/DOGE explode and the index jump. By default we now **cap** each constituent’s last_index_price at 5e6; any constituent above that is excluded for that timestamp so one bad series doesn’t blow up the chart. Use `--no-cap` to disable (raw reconstruction). Fixing the DOGE series in your data is the proper long-term fix.

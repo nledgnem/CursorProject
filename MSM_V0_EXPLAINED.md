@@ -47,7 +47,7 @@ For each **Monday** in `[start_date, end_date]`:
    Using **as-of** prices (latest available on or before the date):  
    - **r_alts** = equal-weight return of the 30 alts from this Monday to next Monday.  
    - **r_maj** = 0.7×r_BTC + 0.3×r_ETH over the same window.  
-   - **y** = r_alts − r_maj (alt outperformance vs benchmark).  
+   - **y** = r_maj − r_alts (major outperformance vs alts; long majors / short alts PnL).  
    If price coverage for alts or majors is too low, the week is skipped (`skipped_price_coverage` or `skipped_returns_computation`).
 
 4. **Labels**  
@@ -59,7 +59,7 @@ For each **Monday** in `[start_date, end_date]`:
 5. **Output**  
    One row per valid week in `msm_timeseries.csv`; summaries by label in `summary_by_label_v0_0.csv` and `summary_by_label_v0_1.csv`; config and metadata in `run_manifest.json`.
 
-So in one sentence: **we did** a weekly pipeline that (1) selects top 30 alts, (2) computes 7d mean funding and F_tk, (3) computes y = r_alts − r_maj with as-of prices, (4) labels by funding percentiles (v0.0 and v0.1), and (5) writes the tables and manifest.
+So in one sentence: **we did** a weekly pipeline that (1) selects top 30 alts, (2) computes 7d mean funding and F_tk, (3) computes y = r_maj − r_alts (long majors / short alts) with as-of prices, (4) labels by funding percentiles (v0.0 and v0.1), and (5) writes the tables and manifest.
 
 ---
 
@@ -89,7 +89,7 @@ Each row = one Monday (decision date) and the next Monday (next_date).
 | **r_alts** | Equal-weight weekly return of the 30 alts. |
 | **r_btc, r_eth** | Weekly returns of BTC and ETH. |
 | **r_maj_weighted** | 0.7×r_btc + 0.3×r_eth (the benchmark return). |
-| **y** | **r_alts − r_maj_weighted** (alts vs 70/30 benchmark). Positive = alts beat the benchmark that week. |
+| **y** | **r_maj_weighted − r_alts** (long majors / short alts). Positive = majors beat alts that week. |
 
 So **results** here = one row per week with: funding feature (F_tk), two labeling schemes (v0.0 and v0.1), and the outcome **y** (what we’d use for backtests or strategy ideas).
 
@@ -101,21 +101,21 @@ Each file has one row per label (Red, Orange, Yellow, YellowGreen, Green):
 |--------|--------|
 | **label** | Red / Orange / Yellow / YellowGreen / Green. |
 | **count** | Number of weeks with that label. |
-| **mean_y** | Average **y** (r_alts − r_maj) when that label was observed. |
+| **mean_y** | Average **y** (r_maj − r_alts) when that label was observed. |
 | **median_y** | Median **y** for that label. |
 | **std_y** | Standard deviation of **y** for that label. |
-| **hit_rate** | Fraction of those weeks where **y &lt; 0** (alts underperformed the benchmark). So *low* hit_rate = alts tended to *outperform* when that label was on. |
+| **hit_rate** | Fraction of those weeks where **y &lt; 0** (majors underperformed alts). So *low* hit_rate = majors tended to *outperform* alts when that label was on. |
 
 Interpretation idea:
 
-- If **Red** (low funding) has **low hit_rate** (alts often beat the benchmark), that’s “low funding → alts outperformed.”
-- If **Green** (high funding) has **high hit_rate** (alts often underperformed), that’s “high funding → alts underperformed.”
+- If **Red** (low funding) has **low hit_rate** (majors often beat alts), that’s “low funding → majors outperformed.”
+- If **Green** (high funding) has **high hit_rate** (majors often underperformed alts), that’s “high funding → majors underperformed.”
 
 Your current numbers (v0.0):
 
-- Red: mean_y ≈ 0.0003, hit_rate ≈ 38% → slight outperformance when funding was low.
-- Yellow: mean_y ≈ −0.0215, hit_rate 65% → underperformance when funding was mid.
-- Green: mean_y ≈ −0.013, hit_rate 62% → slight underperformance when funding was high.
+- Red: mean_y ≈ 0.0003, hit_rate ≈ 38% → slight outperformance of majors when funding was low.
+- Yellow: mean_y ≈ −0.0215, hit_rate 65% → majors underperformed when funding was mid.
+- Green: mean_y ≈ −0.013, hit_rate 62% → slight underperformance of majors when funding was high.
 
 So **what we did** in terms of “results” is: we produced these tables and the manifest; the **interpretation** is that you look at how **y** and **hit_rate** vary by label (and possibly over time).
 
@@ -148,7 +148,7 @@ So the **results** also include this manifest for reproducibility and for knowin
 
 ## 5. Short Summary
 
-- **What MSM v0 is:** A weekly, funding-only monitor: one feature (7d mean funding across top 30 alts), two labeling modes (full-sample vs rolling 52w), and a single outcome **y** = alts vs BTC/ETH 70/30.
+- **What MSM v0 is:** A weekly, funding-only monitor: one feature (7d mean funding across top 30 alts), two labeling modes (full-sample vs rolling 52w), and a single outcome **y** = r_maj − r_alts (long majors / short alts vs BTC/ETH 70/30).
 - **What we did:**  
   - Implemented the module (run, config, data, universe, feature, label, returns, outputs).  
   - Ran it on your lake from 2024-02-01 to 2026-01-13.  

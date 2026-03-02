@@ -1,6 +1,6 @@
 {
   "run_id": "msm_v0_full_2024",
-  "timestamp": "2026-01-27T12:08:28.768555Z",
+  "timestamp": "2026-02-28T12:10:23.958462Z",
   "config": {
     "data": {
       "data_lake_dir": "./data/curated/data_lake",
@@ -91,29 +91,29 @@
     "run_id": "msm_v0_full_2024",
     "start_date": "2024-01-01",
     "end_date": "2024-12-31",
-    "n_weeks": 0,
+    "n_weeks": 48,
     "n_decision_dates": 53,
     "rejection_counts": {
-      "skipped_no_universe": 1,
-      "skipped_funding_coverage": 0,
+      "skipped_no_universe": 0,
+      "skipped_funding_coverage": 1,
       "skipped_price_coverage": 0,
-      "skipped_returns_computation": 52
+      "skipped_returns_computation": 4
     },
     "rejection_rate": {
       "total_decision_dates": 53,
-      "valid_weeks": 0,
-      "rejection_rate_pct": 100.0
+      "valid_weeks": 48,
+      "rejection_rate_pct": 9.433962264150944
     },
     "sanity_check": {
       "funding_earliest": "2024-01-01",
       "funding_latest": "2024-12-31",
       "funding_n_days": 366,
-      "marketcap_earliest": "2024-01-07",
+      "marketcap_earliest": "2024-01-01",
       "marketcap_latest": "2024-12-31",
-      "marketcap_n_days": 360,
-      "price_earliest": "2024-01-07",
+      "marketcap_n_days": 366,
+      "price_earliest": "2024-01-01",
       "price_latest": "2024-12-31",
-      "price_n_days": 360,
+      "price_n_days": 366,
       "top_n_coverage": {
         "n_assets_checked": 30,
         "n_assets_with_funding": 22,
@@ -121,6 +121,12 @@
         "assets": [
           {
             "asset_id": "BTC",
+            "n_days": 366,
+            "earliest": "2024-01-01",
+            "latest": "2024-12-31"
+          },
+          {
+            "asset_id": "ETH",
             "n_days": 366,
             "earliest": "2024-01-01",
             "latest": "2024-12-31"
@@ -243,12 +249,6 @@
             "asset_id": "XMR",
             "n_days": 366,
             "earliest": "2024-01-01",
-            "latest": "2024-12-31"
-          },
-          {
-            "asset_id": "VIRTUAL",
-            "n_days": 22,
-            "earliest": "2024-12-10",
             "latest": "2024-12-31"
           }
         ]

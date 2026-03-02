@@ -1,6 +1,6 @@
 {
   "run_id": "msm_v0_after_eth_backfill",
-  "timestamp": "2026-01-27T12:20:29.968771Z",
+  "timestamp": "2026-02-28T12:10:23.625922Z",
   "config": {
     "data": {
       "data_lake_dir": "./data/curated/data_lake",

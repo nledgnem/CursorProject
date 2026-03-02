@@ -74,7 +74,7 @@ def compute_returns(
         - r_alts: Equal-weight return of ALT basket (or NaN if coverage insufficient)
         - r_majors_dict: Dict mapping major asset_id to return (e.g., {"BTC": r_btc, "ETH": r_eth})
         - r_maj_weighted: Weighted average of major returns
-        - y: r_alts - r_maj_weighted (target, or NaN if insufficient data)
+        - y: r_maj_weighted - r_alts (target: long majors / short alts PnL, or NaN if insufficient data)
         - price_coverage_pct: Percentage of ALTs with valid prices
         - n_valid_alts: Number of ALTs with valid price data
     """
@@ -143,9 +143,9 @@ def compute_returns(
     if not all_majors_valid:
         r_maj_weighted = float('nan')
     
-    # Compute target: y = r_alts - r_maj_weighted
+    # Compute target: y = r_maj_weighted - r_alts (long majors / short alts PnL)
     if r_alts == r_alts and r_maj_weighted == r_maj_weighted:  # Check for NaN
-        y = r_alts - r_maj_weighted
+        y = r_maj_weighted - r_alts
     else:
         y = float('nan')
     
