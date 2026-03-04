@@ -68,7 +68,8 @@ def reconstruct_btcdom(
     Returns
     -------
     pd.DataFrame
-        Columns: timestamp, btcdom_recon, n_constituents_used, weights_renormalized_flag.
+        Columns: timestamp, btcdom_recon, n_constituents_used, weights_renormalized_flag,
+        excluded_components (comma-separated list of constituent symbols excluded that date).
     """
     if btc_df is None or constituent_dfs is None:
         btc_df = load_prices(BTC_SYMBOL, start, end, freq, data_lake_path=data_lake_path)
@@ -99,6 +100,7 @@ def reconstruct_btcdom(
     out_btcdom = []
     out_n = []
     out_renorm = []
+    out_excluded: list[str] = []  # comma-separated symbols excluded for this row
 
     for t in idx:
         btc_usd = price_btc.loc[t] if t in price_btc.index else np.nan
@@ -107,16 +109,21 @@ def reconstruct_btcdom(
 
         contributions: list[float] = []  # last_index_price_i = btc_in_coin
         weights_used: list[float] = []
+        excluded_this_row: list[str] = []
         for sym in CONSTITUENT_SYMBOLS:
             if sym not in prices:
+                excluded_this_row.append(sym)
                 continue
             coin_usd = prices[sym].loc[t] if t in prices[sym].index else np.nan
             if pd.isna(coin_usd) or coin_usd <= 0:
+                excluded_this_row.append(sym)
                 continue
             btc_in_coin = btc_usd / float(coin_usd)
             if not np.isfinite(btc_in_coin):
+                excluded_this_row.append(sym)
                 continue
             if max_last_index_price is not None and btc_in_coin > max_last_index_price:
+                excluded_this_row.append(sym)
                 continue  # exclude aberrant constituent (e.g. wrong unit / bad data)
             contributions.append(btc_in_coin)
             weights_used.append(WEIGHTS_QTY[sym] if use_quantity_weights else WEIGHTS_PCT[sym])
@@ -126,6 +133,7 @@ def reconstruct_btcdom(
 
         n = len(contributions)
         renormalized = n < len(CONSTITUENT_SYMBOLS)
+        out_excluded.append(",".join(sorted(excluded_this_row)) if excluded_this_row else "")
         if use_quantity_weights:
             # Binance: raw sum of (Weight_Quantity_i * Last_Index_Price_i), no renormalization
             btcdom_t = sum(w * c for w, c in zip(weights_used, contributions))
@@ -152,6 +160,7 @@ def reconstruct_btcdom(
         "btcdom_recon": out_btcdom,
         "n_constituents_used": out_n,
         "weights_renormalized_flag": out_renorm,
+        "excluded_components": out_excluded,
     })
 
 
