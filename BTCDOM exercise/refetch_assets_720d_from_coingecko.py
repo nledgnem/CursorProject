@@ -192,6 +192,26 @@ def main() -> int:
         help="Number of days of history to refetch ending today (default: 720).",
     )
     parser.add_argument(
+        "--recent-days",
+        type=int,
+        default=None,
+        help=(
+            "When using --auto-short, look only at this many most recent days in "
+            "fact_price when deciding which assets are short (e.g. 730 for ~2 years). "
+            "If not set, auto-short uses total history."
+        ),
+    )
+    parser.add_argument(
+        "--recent-min-days",
+        type=int,
+        default=None,
+        help=(
+            "When using --auto-short with --recent-days, require at least this many "
+            "unique dates in the recent window; assets below this are refetched. "
+            "Example: 650 (out of 730) ~90%% coverage."
+        ),
+    )
+    parser.add_argument(
         "--auto-short",
         action="store_true",
         help="Automatically detect assets in fact_price with fewer than DAYS unique dates and refetch only those.",
@@ -243,6 +263,7 @@ def main() -> int:
         "SOL": "solana",
         "TRX": "tron",
         "ZEC": "zcash",
+        "ETH": "ethereum",
     }
     # Determine which assets to refetch
     if args.auto_short:
@@ -252,10 +273,31 @@ def main() -> int:
             return 1
         fp = pd.read_parquet(fact_price_path, columns=["asset_id", "date"])
         fp["date"] = pd.to_datetime(fp["date"])
-        counts = fp.groupby("asset_id")["date"].nunique()
-        short_assets = counts[counts < days].index.tolist()
+
+        # Two modes:
+        # - recent-window mode (preferred): use --recent-days/--recent-min-days
+        # - legacy mode: total unique dates < days
+        if args.recent_days is not None and args.recent_min_days is not None:
+            end_recent = fp["date"].max().normalize()
+            start_recent = end_recent - pd.Timedelta(days=args.recent_days)
+            recent = fp[(fp["date"] >= start_recent) & (fp["date"] <= end_recent)]
+            counts = recent.groupby("asset_id")["date"].nunique()
+            short_assets = counts[counts < args.recent_min_days].index.tolist()
+            _safe_print(
+                f"Auto-detected {len(short_assets)} assets with < "
+                f"{args.recent_min_days} unique dates in the last "
+                f"{args.recent_days} days (recent window "
+                f"{start_recent.date()} -> {end_recent.date()})."
+            )
+        else:
+            counts = fp.groupby("asset_id")["date"].nunique()
+            short_assets = counts[counts < days].index.tolist()
+            _safe_print(
+                f"Auto-detected {len(short_assets)} assets with < "
+                f"{days} unique dates over full history in fact_price."
+            )
+
         assets: List[str] = [a.upper() for a in short_assets]
-        print(f"Auto-detected {len(assets)} assets with < {days} unique dates in fact_price.")
     else:
         assets = [a.upper() for a in args.assets]
 
