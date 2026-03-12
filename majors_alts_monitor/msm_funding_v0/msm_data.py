@@ -68,18 +68,22 @@ class MSMDataLoader:
         result = {}
         
         # Load prices
-        prices_path = self.data_lake_dir / "fact_price.parquet"
+        prices_path = self.data_lake_dir / "silver_fact_price.parquet"
         if prices_path.exists():
             df = pl.read_parquet(prices_path)
+            # Silver layer may contain explicit NaNs after cleansing (glitches -> NaN).
+            # Downstream logic should never see NaN closes.
+            if "close" in df.columns:
+                df = df.filter(pl.col("close").is_not_null() & pl.col("close").is_finite())
             if start or end:
                 if start:
                     df = df.filter(pl.col("date") >= pl.date(start.year, start.month, start.day))
                 if end:
                     df = df.filter(pl.col("date") <= pl.date(end.year, end.month, end.day))
             result["prices"] = df
-            logger.info(f"Loaded fact_price: {len(df)} rows")
+            logger.info(f"Loaded silver_fact_price: {len(df)} rows")
         else:
-            raise FileNotFoundError(f"fact_price.parquet not found at {prices_path}")
+            raise FileNotFoundError(f"silver_fact_price.parquet not found at {prices_path}")
         
         # Load marketcap
         marketcap_path = self.data_lake_dir / "fact_marketcap.parquet"
@@ -96,7 +100,7 @@ class MSMDataLoader:
             raise FileNotFoundError(f"fact_marketcap.parquet not found at {marketcap_path}")
         
         # Load funding
-        funding_path = self.data_lake_dir / "fact_funding.parquet"
+        funding_path = self.data_lake_dir / "silver_fact_funding.parquet"
         if funding_path.exists():
             df = pl.read_parquet(funding_path)
             if start or end:
@@ -105,9 +109,9 @@ class MSMDataLoader:
                 if end:
                     df = df.filter(pl.col("date") <= pl.date(end.year, end.month, end.day))
             result["funding"] = df
-            logger.info(f"Loaded fact_funding: {len(df)} rows")
+            logger.info(f"Loaded silver_fact_funding: {len(df)} rows")
         else:
-            logger.warning("fact_funding.parquet not found - funding features will be unavailable")
+            logger.warning("silver_fact_funding.parquet not found - funding features will be unavailable")
             result["funding"] = pl.DataFrame()
         
         # Add dim_asset

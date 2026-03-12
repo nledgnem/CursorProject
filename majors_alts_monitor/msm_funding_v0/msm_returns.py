@@ -4,6 +4,7 @@ import polars as pl
 from typing import List, Tuple, Optional, Dict, Union
 from datetime import date
 import logging
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +96,15 @@ def compute_returns(
     n_valid_alts = len(alt_returns)
     n_total_alts = len(asset_ids)
     price_coverage_pct = (n_valid_alts / n_total_alts * 100.0) if n_total_alts > 0 else 0.0
+
+    # Variance Shield: abort week if too few valid ALT assets
+    # Requirement: if n_valid_alts < 20 (out of 30 target), force strategy return y = 0.0.
+    aborted_insufficient_assets = (n_valid_alts < 20)
+    if aborted_insufficient_assets:
+        # PM-required log format (target basket size is 30 for this strategy).
+        logger.warning(
+            f"Week {decision_date} aborted: Insufficient valid assets ({n_valid_alts}/30)"
+        )
     
     if price_coverage_pct < min_price_coverage_pct:
         logger.warning(
@@ -105,6 +115,9 @@ def compute_returns(
     elif len(alt_returns) == 0:
         logger.warning(f"No ALT returns computed for {decision_date} to {next_date}")
         r_alts = float('nan')
+    elif aborted_insufficient_assets:
+        # Do not compute the basket mean when the week is aborted.
+        r_alts = float("nan")
     else:
         r_alts = sum(alt_returns) / len(alt_returns)  # Equal-weight mean
     
@@ -143,11 +156,26 @@ def compute_returns(
     if not all_majors_valid:
         r_maj_weighted = float('nan')
     
-    # Compute target: y = r_maj_weighted - r_alts (long majors / short alts PnL)
-    if r_alts == r_alts and r_maj_weighted == r_maj_weighted:  # Check for NaN
-        y = r_maj_weighted - r_alts
+    # Convert arithmetic portfolio returns to log returns
+    if r_alts == r_alts:
+        r_alts_log = np.log(1.0 + r_alts)
+    else:
+        r_alts_log = float("nan")
+    
+    if r_maj_weighted == r_maj_weighted:
+        r_maj_log = np.log(1.0 + r_maj_weighted)
+    else:
+        r_maj_log = float("nan")
+    
+    # Compute target using log-return spread: y = r_maj_log - r_alts_log
+    if r_alts_log == r_alts_log and r_maj_log == r_maj_log:  # Check for NaN
+        y = r_maj_log - r_alts_log
     else:
         y = float('nan')
+
+    # If the week is aborted due to insufficient valid assets, force flat return.
+    if aborted_insufficient_assets:
+        y = 0.0
     
     return r_alts, r_majors_dict, r_maj_weighted, y, price_coverage_pct, n_valid_alts
 
@@ -189,6 +217,10 @@ def compute_returns_for_week(
         )
         
         r_alts, r_majors_dict, r_maj_weighted, y, price_coverage_pct, n_valid_alts = returns
+
+        # Variance Shield: keep the week but force flat return (y=0.0) when too few assets.
+        if n_valid_alts < 20:
+            return (r_alts, r_majors_dict, r_maj_weighted, 0.0), None
         
         # Classify rejection reason based on actual price coverage
         if price_coverage_pct < min_price_coverage_pct:

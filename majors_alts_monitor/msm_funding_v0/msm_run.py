@@ -3,6 +3,8 @@
 import argparse
 import yaml
 import polars as pl
+import pandas as pd
+import numpy as np
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import date, datetime, timedelta
@@ -320,6 +322,90 @@ def run_msm_v0(
     )
     
     logger.info(f"MSM v0 run complete. Outputs in: {output_dir}")
+
+    # ------------------------------------------------------------------
+    # Persist historical regime columns and gated return; then live terminal status
+    # ------------------------------------------------------------------
+    try:
+        if len(timeseries_data) == 0:
+            logger.info("No valid weeks; skipping regime persistence and live status.")
+            return
+
+        timeseries_csv_path = output_dir / "msm_timeseries.csv"
+        if not timeseries_csv_path.exists():
+            logger.warning(f"Timeseries CSV not found at {timeseries_csv_path}; skipping regime persistence.")
+            return
+
+        df = pd.read_csv(timeseries_csv_path, parse_dates=["decision_date", "next_date"])
+        if df.empty or "F_tk" not in df.columns or "y" not in df.columns:
+            logger.warning("Timeseries CSV empty or missing F_tk/y; skipping regime persistence.")
+            return
+
+        df = df.sort_values("decision_date").reset_index(drop=True)
+
+        # Funding regime: 52-week rolling percentile of F_tk -> quartiles
+        df["funding_pct_rank"] = df["F_tk"].rolling(window=52, min_periods=26).apply(
+            lambda x: pd.Series(x).rank(pct=True).iloc[-1], raw=False
+        )
+        df["funding_regime"] = pd.cut(
+            df["funding_pct_rank"],
+            bins=[0.0, 0.25, 0.50, 0.75, 1.0],
+            labels=["Q1: Negative/Low", "Q2: Weak", "Q3: Neutral", "Q4: High"],
+            include_lowest=True,
+        )
+
+        # BTCDOM trend: 30d SMA of reconstructed BTCDOM, Rising/Falling
+        data_lake_dir = Path(config["data"]["data_lake_dir"])
+        btcdom_path = data_lake_dir / "btcdom_reconstructed.csv"
+        if btcdom_path.exists():
+            recon = pd.read_csv(btcdom_path, parse_dates=["date"]).sort_values("date")
+            if "reconstructed_index_value" in recon.columns:
+                recon["sma_30"] = recon["reconstructed_index_value"].rolling(window=30, min_periods=30).mean()
+                trend_df = recon[["date", "reconstructed_index_value", "sma_30"]].rename(
+                    columns={"date": "decision_date", "reconstructed_index_value": "btcd_index_decision"}
+                )
+                df = df.merge(trend_df, on="decision_date", how="left")
+                df["BTCDOM_Trend"] = np.where(df["btcd_index_decision"] > df["sma_30"], "Rising", "Falling")
+            else:
+                logger.warning("btcdom_reconstructed.csv missing column reconstructed_index_value; BTCDOM_Trend not set.")
+        else:
+            logger.warning(f"btcdom_reconstructed.csv not found at {btcdom_path}; BTCDOM_Trend not set.")
+
+        # Gate status and gated return (y_filtered = y when gate ON, else 0; y_gated alias for PM)
+        if "BTCDOM_Trend" in df.columns:
+            gate = (df["funding_regime"] == "Q2: Weak") & (df["BTCDOM_Trend"] == "Rising")
+        else:
+            gate = pd.Series(False, index=df.index)
+        df["is_mrf_active"] = gate.astype(bool)
+        df["y_filtered"] = np.where(df["is_mrf_active"], df["y"], 0.0)
+        df["y_gated"] = df["y_filtered"]
+
+        # Overwrite msm_timeseries.csv with full historical track record (including regime columns)
+        df.to_csv(timeseries_csv_path, index=False)
+        logger.info(f"Persisted historical regimes and y_gated to {timeseries_csv_path}")
+
+        # Live terminal status for latest week
+        latest_df = df.dropna(subset=["funding_regime"])
+        if latest_df.empty:
+            return
+        latest_row = latest_df.iloc[-1]
+        latest_date = latest_row["decision_date"].date()
+        funding_label = str(latest_row["funding_regime"])
+        btcd_label = str(latest_row.get("BTCDOM_Trend", "Unknown")) if pd.notna(latest_row.get("BTCDOM_Trend")) else "Unknown"
+        gate_on = bool(latest_row.get("is_mrf_active", False))
+        gate_label = "ACTIVE - DEPLOY L/S BASKET" if gate_on else "INACTIVE - HOLD 100% CASH"
+        status = (
+            "\n=========================================\n"
+            f"LIVE MARKET REGIME STATUS (As of {latest_date})\n"
+            f"Funding Regime: {funding_label}\n"
+            f"BTCDOM Trend: {btcd_label}\n"
+            f"MRF GATE: {gate_label}\n"
+            "=========================================\n"
+        )
+        logger.info(status)
+
+    except Exception as e:
+        logger.warning(f"Regime persistence or live status failed: {e}", exc_info=True)
 
 
 def main():

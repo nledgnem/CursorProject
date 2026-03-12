@@ -1,0 +1,15 @@
+Funding (F_tk) vs forward LS return (y)
+==================================================
+Weeks: 102
+
+Overall
+  Pearson:  0.0973
+  Spearman: 0.2145
+  mean(y):  0.0057
+  hit_rate(y<0): 43.14%
+
+By BTCDOM regime (quantiles)
+  Regime 1: n=21 pearson=0.0637 spearman=0.0260 mean_y=0.0127
+  Regime 2: n=20 pearson=0.5107 spearman=0.6842 mean_y=0.0220
+  Regime 3: n=20 pearson=0.0882 spearman=0.2917 mean_y=-0.0061
+  Regime 4: n=20 pearson=-0.2384 spearman=0.0346 mean_y=-0.0175

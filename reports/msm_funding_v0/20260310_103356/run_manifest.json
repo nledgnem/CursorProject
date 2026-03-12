@@ -1,0 +1,204 @@
+{
+  "run_id": "20260310_103356",
+  "timestamp": "2026-03-10T10:34:04.874506Z",
+  "config": {
+    "data": {
+      "data_lake_dir": "./data/curated/data_lake",
+      "duckdb_path": null,
+      "universe_snapshots_path": null
+    },
+    "decision": {
+      "anchor_day": "monday",
+      "anchor_hour": 0,
+      "anchor_minute": 0
+    },
+    "universe": {
+      "majors": [
+        "BTC",
+        "ETH"
+      ],
+      "majors_weights": [
+        0.7,
+        0.3
+      ],
+      "basket_size": 30,
+      "min_mcap_usd": 50000000,
+      "exclude_categories": [
+        "BTC",
+        "ETH",
+        "stablecoins",
+        "exchange_tokens",
+        "wrapped_tokens",
+        "liquid_staking",
+        "bridge"
+      ]
+    },
+    "feature": {
+      "lookback_days": 7,
+      "min_coverage_pct": 60.0,
+      "min_price_coverage_pct": 60.0
+    },
+    "label": {
+      "bins": 5,
+      "bin_names": [
+        "Red",
+        "Orange",
+        "Yellow",
+        "YellowGreen",
+        "Green"
+      ],
+      "bin_ranges": [
+        [
+          0,
+          20
+        ],
+        [
+          20,
+          40
+        ],
+        [
+          40,
+          60
+        ],
+        [
+          60,
+          80
+        ],
+        [
+          80,
+          100
+        ]
+      ],
+      "v0_0": {
+        "mode": "FULL_SAMPLE",
+        "description": "Percentiles computed vs all weeks in dataset"
+      },
+      "v0_1": {
+        "mode": "ROLLING_PAST_52W",
+        "window_weeks": 52,
+        "description": "Percentiles computed vs prior 52 valid weekly observations only"
+      }
+    },
+    "returns": {
+      "costs_enabled": false,
+      "funding_enabled": false
+    },
+    "outputs": {
+      "reports_dir": "./reports/msm_funding_v0"
+    }
+  },
+  "metadata": {
+    "run_id": "20260310_103356",
+    "start_date": "2018-01-01",
+    "end_date": "2026-03-10",
+    "n_weeks": 144,
+    "n_decision_dates": 428,
+    "rejection_counts": {
+      "skipped_no_universe": 0,
+      "skipped_funding_coverage": 284,
+      "skipped_price_coverage": 0,
+      "skipped_returns_computation": 0
+    },
+    "rejection_rate": {
+      "total_decision_dates": 428,
+      "valid_weeks": 144,
+      "rejection_rate_pct": 66.35514018691589
+    },
+    "sanity_check": {
+      "funding_earliest": "2023-04-19",
+      "funding_latest": "2026-01-13",
+      "funding_n_days": 1001,
+      "marketcap_earliest": "2018-01-01 00:00:00",
+      "marketcap_latest": "2026-03-05 00:00:00",
+      "marketcap_n_days": 2220,
+      "price_earliest": "2018-01-01 00:00:00",
+      "price_latest": "2026-03-05 00:00:00",
+      "price_n_days": 2986,
+      "top_n_coverage": {
+        "n_assets_checked": 30,
+        "n_assets_with_funding": 13,
+        "coverage_pct": 43.333333333333336,
+        "assets": [
+          {
+            "asset_id": "ETH",
+            "n_days": 1000,
+            "earliest": "2023-04-19",
+            "latest": "2026-01-12"
+          },
+          {
+            "asset_id": "SKY",
+            "n_days": 126,
+            "earliest": "2025-09-09",
+            "latest": "2026-01-12"
+          },
+          {
+            "asset_id": "MORPHO",
+            "n_days": 412,
+            "earliest": "2024-11-27",
+            "latest": "2026-01-12"
+          },
+          {
+            "asset_id": "PIPPIN",
+            "n_days": 354,
+            "earliest": "2025-01-24",
+            "latest": "2026-01-12"
+          },
+          {
+            "asset_id": "RIVER",
+            "n_days": 88,
+            "earliest": "2025-10-17",
+            "latest": "2026-01-12"
+          },
+          {
+            "asset_id": "KAIA",
+            "n_days": 405,
+            "earliest": "2024-12-04",
+            "latest": "2026-01-12"
+          },
+          {
+            "asset_id": "SYRUP",
+            "n_days": 251,
+            "earliest": "2025-05-07",
+            "latest": "2026-01-12"
+          },
+          {
+            "asset_id": "FARTCOIN",
+            "n_days": 389,
+            "earliest": "2024-12-20",
+            "latest": "2026-01-12"
+          },
+          {
+            "asset_id": "GRASS",
+            "n_days": 431,
+            "earliest": "2024-11-08",
+            "latest": "2026-01-12"
+          },
+          {
+            "asset_id": "PIEVERSE",
+            "n_days": 60,
+            "earliest": "2025-11-14",
+            "latest": "2026-01-12"
+          },
+          {
+            "asset_id": "HOME",
+            "n_days": 217,
+            "earliest": "2025-06-10",
+            "latest": "2026-01-12"
+          },
+          {
+            "asset_id": "KAITO",
+            "n_days": 327,
+            "earliest": "2025-02-20",
+            "latest": "2026-01-12"
+          },
+          {
+            "asset_id": "ZORA",
+            "n_days": 172,
+            "earliest": "2025-07-25",
+            "latest": "2026-01-12"
+          }
+        ]
+      }
+    }
+  }
+}

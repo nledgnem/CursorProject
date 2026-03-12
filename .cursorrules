@@ -1,0 +1,17 @@
+# Global Rules for Cursor AI
+
+## 1. 🛑 ZERO ROOT BLOAT (The Quarantine Rule)
+You are STRICTLY FORBIDDEN from generating one-off diagnostic `.py` scripts in the root directory (e.g., `check_positions.py`, `analyze_drawdown.py`). 
+* If the user asks you to run a diagnostic, verify a dataset, plot an equity curve, or test a snippet, you MUST write and execute it inside a Jupyter Notebook (`.ipynb`) in the `/notebooks` directory.
+* If a Python script has permanent pipeline utility, place it in `/scripts` or `/src`.
+
+## 2. 🗺️ ARCHITECTURE AWARENESS
+Before proposing any structural changes, adding modules, or modifying the pipeline flow, you MUST read `ARCHITECTURE.md` to understand the existing engine flow.
+
+## 3. ⚙️ CONFIGURATION OVER HARDCODING
+Never hardcode tickers, dates, threshold values, or API keys in the core Python modules. All strategy parameters must be routed through configuration files.
+
+## 4. 🧱 Artifact Naming
+Artifact Naming: Never use subjective suffixes like `_final`, `_v2`, or `_new` for generated files or plots. For exploratory notebooks, silently overwrite the static file name (e.g., `alpha_matrix.png`). For production runs, rely strictly on the pipeline's existing Run ID / Timestamp directory structures.
+
+Text/Markdown Reports: Never use generic names like `executive_summary.md`. All reports must be prefixed with the strategy name and version (e.g., `[strategy_name]_[version]_summary.md`) and saved within their specific strategy folder.
