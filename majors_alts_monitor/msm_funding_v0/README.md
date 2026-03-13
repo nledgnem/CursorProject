@@ -44,6 +44,11 @@ For each ALT in the top 30 basket:
 
 Basket feature `F_tk` = mean of per-coin 7d funding means across valid ALTs
 
+**Units convention**:
+- Upstream Coinglass `funding-rate/history` values are **already in percent units**.
+- In the data lake (`fact_funding.parquet`, `silver_fact_funding.parquet`), funding rates are stored as **decimal rates after dividing by 100**.
+- All MSM v0 features (`F_tk`) and thresholds therefore operate in **decimal** space (e.g., `0.0005` = 0.05% per day).
+
 **Coverage rule**: Require >=60% of the 30 assets to have valid 7d funding. If coverage < 60%, skip that week entirely (no feature/label/return row).
 
 ## Labeling

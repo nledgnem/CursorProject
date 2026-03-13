@@ -108,6 +108,7 @@ def main() -> None:
     msm = pd.read_csv(MSM_PATH, parse_dates=["decision_date", "next_date"])
     if not {"decision_date", "F_tk", "y"} <= set(msm.columns):
         raise SystemExit("msm_timeseries.csv missing required columns: decision_date, F_tk, y")
+    msm["F_tk_apr"] = msm["F_tk"] * 365.0 * 100.0  # Unit: APR % (DATA_DICTIONARY.md)
 
     # Absolute funding thresholds (F_tk stored as decimal funding rate)
     thresholds = [0.0, 0.01, 0.02, 0.05, 0.10, 0.15, 0.20, 0.25, 0.50, 1.0]

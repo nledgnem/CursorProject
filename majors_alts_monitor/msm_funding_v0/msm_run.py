@@ -18,14 +18,16 @@ try:
     from .msm_label import compute_labels_v0_0, compute_labels_v0_1
     from .msm_returns import compute_returns_for_week
     from .msm_outputs import generate_outputs
+    from ..utils.data_quality_gate import run_gold_layer_audit
 except ImportError:
-    # Fallback for direct script execution
+    # Fallback for direct script execution (run from repo root)
     from msm_data import MSMDataLoader, data_sanity_check
     from msm_universe import get_excluded_assets, select_top_n_alts, get_universe_hash
     from msm_feature import compute_feature_for_week
     from msm_label import compute_labels_v0_0, compute_labels_v0_1
     from msm_returns import compute_returns_for_week
     from msm_outputs import generate_outputs
+    from majors_alts_monitor.utils.data_quality_gate import run_gold_layer_audit
 
 logging.basicConfig(
     level=logging.INFO,
@@ -162,8 +164,8 @@ def run_msm_v0(
         if i + 1 < len(decision_dates):
             next_date = decision_dates[i + 1]
         else:
-            # Last week: use end_date or decision_date + 7 days
-            next_date = min(end_date, decision_date + timedelta(days=7))
+            # Last week: enforce strict 7-day window for Gold Layer consistency
+            next_date = decision_date + timedelta(days=7)
         
         # Select top N ALTs
         top_alts = select_top_n_alts(
@@ -243,6 +245,7 @@ def run_msm_v0(
             "n_valid": n_valid,  # Number of assets with valid funding
             "coverage": coverage_pct,  # Coverage percentage
             "F_tk": feature_value,
+            "F_tk_apr": feature_value * 365.0 * 100.0,  # Simple annualized APR (%)
             "label_v0_0": None,  # Will be filled later
             "label_v0_1": None,  # Will be filled later
             "p_v0_0": None,  # Percentile rank v0.0 (will be filled later)
@@ -265,6 +268,15 @@ def run_msm_v0(
     
     logger.info(f"Processed {len(timeseries_data)} valid weeks out of {len(decision_dates)} decision dates")
     logger.info(f"Rejection summary: {rejection_counts}")
+
+    # Validation: mean strategy return (y) and total valid weeks (for cross-sectional fix verification)
+    if timeseries_data:
+        y_values = [d["y"] for d in timeseries_data]
+        mean_y = float(np.nanmean(y_values))
+        print("\n--- Return pipeline validation ---")
+        print(f"Mean strategy return (y): {mean_y:.6f}")
+        print(f"Total valid weeks: {len(timeseries_data)}")
+        print("--------------------------------\n")
     
     # Compute labels
     if len(timeseries_data) > 0:
@@ -357,6 +369,7 @@ def run_msm_v0(
         # BTCDOM trend: 30d SMA of reconstructed BTCDOM, Rising/Falling
         data_lake_dir = Path(config["data"]["data_lake_dir"])
         btcdom_path = data_lake_dir / "btcdom_reconstructed.csv"
+        recon = None
         if btcdom_path.exists():
             recon = pd.read_csv(btcdom_path, parse_dates=["date"]).sort_values("date")
             if "reconstructed_index_value" in recon.columns:
@@ -371,6 +384,25 @@ def run_msm_v0(
         else:
             logger.warning(f"btcdom_reconstructed.csv not found at {btcdom_path}; BTCDOM_Trend not set.")
 
+        # Strict 7-day BTCDOM log return for Gold Layer (btcdom_7d_ret)
+        if recon is not None and "reconstructed_index_value" in recon.columns:
+            btc = recon[["date", "reconstructed_index_value"]].copy()
+            btc["date"] = pd.to_datetime(btc["date"]).dt.normalize()
+            btc = btc.rename(columns={"reconstructed_index_value": "btcdom_price"})
+            btc_start = btc.rename(columns={"date": "decision_date", "btcdom_price": "btcdom_price_start"})
+            btc_end = btc.rename(columns={"date": "next_date", "btcdom_price": "btcdom_price_end"})
+            df = df.merge(btc_start, on="decision_date", how="left")
+            df = df.merge(btc_end, on="next_date", how="left")
+            df["btcdom_7d_ret"] = np.log(
+                df["btcdom_price_end"].astype(float) / df["btcdom_price_start"].astype(float)
+            )
+            df.drop(columns=["btcdom_price_start", "btcdom_price_end"], inplace=True)
+        else:
+            logger.warning(
+                "btcdom_reconstructed.csv not available or missing reconstructed_index_value; "
+                "btcdom_7d_ret cannot be computed for Gold Layer."
+            )
+
         # Gate status and gated return (y_filtered = y when gate ON, else 0; y_gated alias for PM)
         if "BTCDOM_Trend" in df.columns:
             gate = (df["funding_regime"] == "Q2: Weak") & (df["BTCDOM_Trend"] == "Rising")
@@ -380,9 +412,12 @@ def run_msm_v0(
         df["y_filtered"] = np.where(df["is_mrf_active"], df["y"], 0.0)
         df["y_gated"] = df["y_filtered"]
 
+        # Run Data Quality Gatekeeper on Gold Layer dataframe before persisting
+        run_gold_layer_audit(df)
+
         # Overwrite msm_timeseries.csv with full historical track record (including regime columns)
         df.to_csv(timeseries_csv_path, index=False)
-        logger.info(f"Persisted historical regimes and y_gated to {timeseries_csv_path}")
+        logger.info(f"Persisted historical regimes, y_gated, and passed Data Quality Gate to {timeseries_csv_path}")
 
         # Live terminal status for latest week
         latest_df = df.dropna(subset=["funding_regime"])
@@ -405,7 +440,9 @@ def run_msm_v0(
         logger.info(status)
 
     except Exception as e:
-        logger.warning(f"Regime persistence or live status failed: {e}", exc_info=True)
+        logger.warning(f"Regime persistence, Data Quality Gate, or live status failed: {e}", exc_info=True)
+        # Zero-Trust: propagate failure so CI/pipeline can halt
+        raise
 
 
 def main():
@@ -458,8 +495,11 @@ def main():
             run_id=args.run_id,
             sanity_check_only=args.sanity_check_only,
         )
+        # If we reach here without exception, all Data Quality tripwires have passed.
+        print("Pipeline executed successfully. Data Quality Gate: ALL TRIPWIRES PASSED.")
     except Exception as e:
         logger.error(f"Error running MSM v0: {e}", exc_info=True)
+        # The full traceback is printed via exc_info; propagate non-zero exit for CI.
         sys.exit(1)
 
 

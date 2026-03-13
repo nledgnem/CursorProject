@@ -20,6 +20,7 @@ OUT_DIR = ROOT / "notebooks"
 def main():
     msm = pd.read_csv(MSM_PATH, parse_dates=["decision_date", "next_date"])
     msm = msm[["decision_date", "next_date", "F_tk", "y"]].copy().sort_values("decision_date").reset_index(drop=True)
+    msm["F_tk_apr"] = msm["F_tk"] * 365.0 * 100.0  # Unit: APR % (DATA_DICTIONARY.md)
 
     recon = pd.read_csv(RECON_PATH, parse_dates=["date"]).sort_values("date")
     rl = recon[["date", "reconstructed_index_value"]].rename(columns={"reconstructed_index_value": "btcd_index"})
@@ -41,7 +42,7 @@ def main():
     sma = recon[["date", "sma_30"]].rename(columns={"date": "decision_date", "sma_30": "sma_30_decision"})
     msm = msm.merge(sma, on="decision_date", how="left")
     msm = msm.sort_values("decision_date").reset_index(drop=True)
-    msm["funding_pct_rank"] = msm["F_tk"].rolling(window=52, min_periods=26).apply(
+    msm["funding_pct_rank"] = msm["F_tk_apr"].rolling(window=52, min_periods=26).apply(
         lambda x: pd.Series(x).rank(pct=True).iloc[-1], raw=False
     )
     msm["funding_regime"] = pd.cut(

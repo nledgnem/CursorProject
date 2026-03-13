@@ -19,7 +19,7 @@ def load_timeseries(csv_path: Path) -> pd.DataFrame:
     df = pd.read_csv(csv_path, parse_dates=["decision_date"])
     if "y" not in df.columns or "F_tk" not in df.columns:
         raise ValueError("Input CSV must contain at least 'decision_date', 'F_tk', and 'y' columns.")
-    # Drop rows with missing key fields
+    df["F_tk_apr"] = df["F_tk"] * 365.0 * 100.0  # Unit: APR % (DATA_DICTIONARY.md)
     df = df.dropna(subset=["decision_date", "F_tk", "y"]).copy()
     return df
 
@@ -36,7 +36,7 @@ def plot_quartiles(df: pd.DataFrame, out_path: Path) -> None:
 
     # Define quartile labels
     labels = ["Q1 (Lowest)", "Q2 (Low-Mid)", "Q3 (Mid-High)", "Q4 (Highest)"]
-    df["funding_quartile"] = pd.qcut(df["F_tk"], q=4, labels=labels)
+    df["funding_quartile"] = pd.qcut(df["F_tk_apr"], q=4, labels=labels)
 
     results = []
     for label in labels:
@@ -80,13 +80,13 @@ def plot_threshold_sweep(df: pd.DataFrame, out_path: Path) -> None:
     """Task 2: Continuous Threshold Sweep (Cumulative Return vs. Max Funding Gate)."""
     df = df.copy()
 
-    f_min = df["F_tk"].min()
-    f_max = df["F_tk"].max()
+    f_min = df["F_tk_apr"].min()
+    f_max = df["F_tk_apr"].max()
     thresholds = np.linspace(f_min, f_max, 100)
 
     cum_returns = []
     for T in thresholds:
-        active = df[df["F_tk"] <= T]
+        active = df[df["F_tk_apr"] <= T]
         y_sum = active["y"].sum()
         cumulative_pct = (np.exp(y_sum) - 1.0) * 100.0
         cum_returns.append(cumulative_pct)
@@ -98,7 +98,7 @@ def plot_threshold_sweep(df: pd.DataFrame, out_path: Path) -> None:
 
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.plot(thresholds, cum_returns, label="Cumulative Return (%)")
-    ax.set_xlabel("Max Funding Threshold F_tk")
+    ax.set_xlabel("Max Funding Threshold F_tk_apr (% APR)")
     ax.set_ylabel("Cumulative Return (%)")
     ax.set_title(
         "Optimal Funding Gate: Cumulative Return vs. Max Funding Threshold (Clean Data)"
@@ -107,7 +107,7 @@ def plot_threshold_sweep(df: pd.DataFrame, out_path: Path) -> None:
     # Highlight peak
     ax.plot(T_opt, ret_opt, "o", color="red")
     ax.annotate(
-        f"Max: {ret_opt:.1f}% at T={T_opt:.4f}",
+        f"Max: {ret_opt:.1f}% at T={T_opt:.2f}% APR",
         xy=(T_opt, ret_opt),
         xytext=(0.05, 0.95),
         textcoords="axes fraction",

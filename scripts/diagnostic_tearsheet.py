@@ -5,9 +5,11 @@ import argparse
 def generate_tearsheet(csv_path: str):
     # 1. Load data
     df = pd.read_csv(csv_path, parse_dates=["decision_date"])
+    if "F_tk" in df.columns:
+        df["F_tk_apr"] = df["F_tk"] * 365.0 * 100.0  # Unit: APR % (DATA_DICTIONARY.md)
 
     # Define the target columns we want to audit
-    target_cols = ["decision_date", "F_tk", "y", "ret_btcdom_binance", "ret_btcdom_recon"]
+    target_cols = ["decision_date", "F_tk", "F_tk_apr", "y", "ret_btcdom_binance", "ret_btcdom_recon"]
 
     # Gracefully keep only the columns that actually exist in the CSV
     existing_cols = [c for c in target_cols if c in df.columns]

@@ -1,6 +1,6 @@
 {
   "run_id": "silver_router_variance_shield",
-  "timestamp": "2026-03-11T07:23:46.149348Z",
+  "timestamp": "2026-03-12T15:08:03.164870Z",
   "config": {
     "data": {
       "data_lake_dir": "./data/curated/data_lake",
@@ -89,142 +89,112 @@
   },
   "metadata": {
     "run_id": "silver_router_variance_shield",
-    "start_date": "2023-04-24",
-    "end_date": "2026-01-12",
+    "start_date": "2023-05-01",
+    "end_date": "2026-03-12",
     "n_weeks": 138,
-    "n_decision_dates": 143,
+    "n_decision_dates": 150,
     "rejection_counts": {
       "skipped_no_universe": 0,
-      "skipped_funding_coverage": 1,
+      "skipped_funding_coverage": 8,
       "skipped_price_coverage": 0,
       "skipped_returns_computation": 4
     },
     "rejection_rate": {
-      "total_decision_dates": 143,
+      "total_decision_dates": 150,
       "valid_weeks": 138,
-      "rejection_rate_pct": 3.4965034965034967
+      "rejection_rate_pct": 8.0
     },
     "sanity_check": {
-      "funding_earliest": "2023-04-24",
-      "funding_latest": "2026-01-12",
-      "funding_n_days": 995,
-      "marketcap_earliest": "2023-04-24 00:00:00",
-      "marketcap_latest": "2026-01-12 00:00:00",
-      "marketcap_n_days": 995,
-      "price_earliest": "2023-04-24",
-      "price_latest": "2026-01-12",
-      "price_n_days": 995,
+      "funding_earliest": "2023-05-01",
+      "funding_latest": "2026-01-13",
+      "funding_n_days": 989,
+      "marketcap_earliest": "2023-05-01 00:00:00",
+      "marketcap_latest": "2026-03-05 00:00:00",
+      "marketcap_n_days": 1040,
+      "price_earliest": "2023-05-01",
+      "price_latest": "2026-03-05",
+      "price_n_days": 1040,
       "top_n_coverage": {
         "n_assets_checked": 30,
-        "n_assets_with_funding": 18,
-        "coverage_pct": 60.0,
+        "n_assets_with_funding": 13,
+        "coverage_pct": 43.333333333333336,
         "assets": [
           {
-            "asset_id": "BTC",
-            "n_days": 995,
-            "earliest": "2023-04-24",
-            "latest": "2026-01-12"
-          },
-          {
             "asset_id": "ETH",
-            "n_days": 995,
-            "earliest": "2023-04-24",
+            "n_days": 988,
+            "earliest": "2023-05-01",
             "latest": "2026-01-12"
           },
           {
-            "asset_id": "BNB",
-            "n_days": 995,
-            "earliest": "2023-04-24",
+            "asset_id": "SKY",
+            "n_days": 126,
+            "earliest": "2025-09-09",
             "latest": "2026-01-12"
           },
           {
-            "asset_id": "XRP",
-            "n_days": 995,
-            "earliest": "2023-04-24",
+            "asset_id": "MORPHO",
+            "n_days": 412,
+            "earliest": "2024-11-27",
             "latest": "2026-01-12"
           },
           {
-            "asset_id": "SOL",
-            "n_days": 995,
-            "earliest": "2023-04-24",
+            "asset_id": "PIPPIN",
+            "n_days": 354,
+            "earliest": "2025-01-24",
             "latest": "2026-01-12"
           },
           {
-            "asset_id": "TRX",
-            "n_days": 995,
-            "earliest": "2023-04-24",
+            "asset_id": "RIVER",
+            "n_days": 88,
+            "earliest": "2025-10-17",
             "latest": "2026-01-12"
           },
           {
-            "asset_id": "DOGE",
-            "n_days": 995,
-            "earliest": "2023-04-24",
+            "asset_id": "KAIA",
+            "n_days": 405,
+            "earliest": "2024-12-04",
             "latest": "2026-01-12"
           },
           {
-            "asset_id": "ADA",
-            "n_days": 995,
-            "earliest": "2023-04-24",
+            "asset_id": "SYRUP",
+            "n_days": 251,
+            "earliest": "2025-05-07",
             "latest": "2026-01-12"
           },
           {
-            "asset_id": "BCH",
-            "n_days": 995,
-            "earliest": "2023-04-24",
+            "asset_id": "FARTCOIN",
+            "n_days": 389,
+            "earliest": "2024-12-20",
             "latest": "2026-01-12"
           },
           {
-            "asset_id": "XMR",
-            "n_days": 995,
-            "earliest": "2023-04-24",
+            "asset_id": "GRASS",
+            "n_days": 431,
+            "earliest": "2024-11-08",
             "latest": "2026-01-12"
           },
           {
-            "asset_id": "LINK",
-            "n_days": 995,
-            "earliest": "2023-04-24",
+            "asset_id": "PIEVERSE",
+            "n_days": 60,
+            "earliest": "2025-11-14",
             "latest": "2026-01-12"
           },
           {
-            "asset_id": "XLM",
-            "n_days": 995,
-            "earliest": "2023-04-24",
+            "asset_id": "HOME",
+            "n_days": 217,
+            "earliest": "2025-06-10",
             "latest": "2026-01-12"
           },
           {
-            "asset_id": "SUI",
-            "n_days": 986,
-            "earliest": "2023-05-03",
+            "asset_id": "KAITO",
+            "n_days": 327,
+            "earliest": "2025-02-20",
             "latest": "2026-01-12"
           },
           {
-            "asset_id": "ZEC",
-            "n_days": 995,
-            "earliest": "2023-04-24",
-            "latest": "2026-01-12"
-          },
-          {
-            "asset_id": "LTC",
-            "n_days": 995,
-            "earliest": "2023-04-24",
-            "latest": "2026-01-12"
-          },
-          {
-            "asset_id": "CC",
-            "n_days": 74,
-            "earliest": "2025-10-31",
-            "latest": "2026-01-12"
-          },
-          {
-            "asset_id": "HBAR",
-            "n_days": 995,
-            "earliest": "2023-04-24",
-            "latest": "2026-01-12"
-          },
-          {
-            "asset_id": "WLFI",
-            "n_days": 143,
-            "earliest": "2025-08-23",
+            "asset_id": "ZORA",
+            "n_days": 172,
+            "earliest": "2025-07-25",
             "latest": "2026-01-12"
           }
         ]

@@ -24,6 +24,7 @@ def load_and_prepare() -> pd.DataFrame:
     df = pd.read_csv(TS_PATH)
     df["decision_date"] = pd.to_datetime(df["decision_date"])
     df = df.sort_values("decision_date").tail(WEEKS_LOOKBACK).copy()
+    df["F_tk_apr"] = df["F_tk"] * 365.0 * 100.0  # Unit: APR % (DATA_DICTIONARY.md)
     df = df.dropna(subset=["F_tk", "y"])
     return df
 

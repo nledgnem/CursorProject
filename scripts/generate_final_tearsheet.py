@@ -66,11 +66,12 @@ def chart_2_quartiles() -> tuple[pd.DataFrame, float]:
     """
     df = pd.read_csv(MSM_PATH)
     df["decision_date"] = pd.to_datetime(df["decision_date"])
+    df["F_tk_apr"] = df["F_tk"] * 365.0 * 100.0  # Unit: APR % (DATA_DICTIONARY.md)
     cutoff = df["decision_date"].max() - pd.DateOffset(years=2)
     df = df.loc[df["decision_date"] >= cutoff].copy()
     df = df.dropna(subset=["y"])
 
-    df["F_tk_quartile"] = pd.qcut(df["F_tk"], q=4, labels=["Q1 (Lowest)", "Q2", "Q3", "Q4 (Highest)"])
+    df["F_tk_quartile"] = pd.qcut(df["F_tk_apr"], q=4, labels=["Q1 (Lowest)", "Q2", "Q3", "Q4 (Highest)"])
 
     quartile_returns = (
         df.groupby("F_tk_quartile", observed=True)["y"]
@@ -115,17 +116,18 @@ def chart_3_threshold_sweep() -> tuple[float, float]:
     """
     df = pd.read_csv(MSM_PATH)
     df["decision_date"] = pd.to_datetime(df["decision_date"])
+    df["F_tk_apr"] = df["F_tk"] * 365.0 * 100.0  # Unit: APR % (DATA_DICTIONARY.md)
     cutoff = df["decision_date"].max() - pd.DateOffset(years=2)
     df = df.loc[df["decision_date"] >= cutoff].copy()
     df = df.dropna(subset=["y", "F_tk"])
 
-    F_min, F_max = df["F_tk"].min(), df["F_tk"].max()
+    F_min, F_max = df["F_tk_apr"].min(), df["F_tk_apr"].max()
     thresholds = np.linspace(F_min, F_max, 100)
 
     cum_returns = []
     for T in thresholds:
-        # Weekly return = y if F_tk <= T else 0 (log return)
-        log_ret = df["y"].where(df["F_tk"] <= T, 0.0).sum()
+        # Weekly return = y if F_tk_apr <= T else 0 (log return)
+        log_ret = df["y"].where(df["F_tk_apr"] <= T, 0.0).sum()
         pct = (np.exp(log_ret) - 1.0) * 100
         cum_returns.append(pct)
 
@@ -146,7 +148,7 @@ def chart_3_threshold_sweep() -> tuple[float, float]:
         arrowprops=dict(arrowstyle="->", color="red"),
     )
     ax.set_title("Optimal Funding Gate: Cumulative Return vs. Max Absolute Funding Threshold")
-    ax.set_xlabel("Threshold T (F_tk <= T)")
+    ax.set_xlabel("Threshold T (F_tk_apr <= T, % APR)")
     ax.set_ylabel("Cumulative Return (%)")
     ax.grid(True, alpha=0.3)
     plt.tight_layout()

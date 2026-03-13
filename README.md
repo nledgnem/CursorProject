@@ -182,6 +182,15 @@ See the config file for all options.
 - `data/curated/universe_snapshots.parquet`: Basket snapshots (selected top-N with weights)
 - `data/curated/universe_eligibility.parquet`: Universe eligibility (all candidates with flags and exclusion reasons)
 
+### Funding rate units (Coinglass)
+
+- **Source**: Coinglass `futures/funding-rate/history` (via `scripts/fetch_coinglass_funding.py`).
+- **API contract**: Coinglass returns funding **already expressed in percent units** (e.g., `0.01` means **0.01%**, not 1%).
+- **Bronze lake rule**: When writing `data/curated/data_lake/fact_funding.parquet`, Coinglass `funding_rate` values **must be interpreted as percentages and converted to decimal rates for modeling**:
+  - Stored modeling value \(r_{\text{decimal}}\) = \(r_{\text{coinglass\_percent}} / 100\).
+  - Example: Coinglass `0.01` (0.01%) → stored as `0.0001` (0.01% per interval in decimal).
+- **Silver lake**: `silver_fact_funding.parquet` is built from `fact_funding.parquet` and preserves this convention (decimal rates) before applying capping/ffill.
+
 ### QC Outputs
 - `outputs/qc_report.md`: Human-readable QC summary (date ranges, missingness, edit counts, top symbols by edits)
 - `outputs/repair_log.parquet`: Machine-readable audit log of all QC edits (dataset, symbol, date, action, rule, old_value, new_value)

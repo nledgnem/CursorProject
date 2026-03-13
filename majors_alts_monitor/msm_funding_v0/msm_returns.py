@@ -1,4 +1,20 @@
-"""Returns calculation for MSM v0."""
+"""Returns calculation for MSM v0.
+
+Assumption Ledger (cross-sectional volatility drag fix)
+------------------------------------------------------
+- Equal-weight basket return: We use the mean of simple (arithmetic) returns,
+  R_basket = (1/N) * sum(R_i). This matches the physical PnL of a rebalanced
+  portfolio: each week we hold 1/N in each asset, so the portfolio return is
+  exactly the average of constituent simple returns. Averaging log returns
+  would understate the short leg due to Jensen's inequality (E[log(1+R)] <
+  log(1+E[R]) for non-degenerate R), so we aggregate in arithmetic space.
+
+- Strategy spread: We define the raw arithmetic spread for the week as
+  Y = R_maj - R_alts (long majors / short alts). The strategy's weekly log
+  return stored in the timeseries is then y = ln(1 + Y). This ensures
+  correct compounding over time: cumulative gross return = exp(sum(y)) =
+  prod(1 + Y_t), and the time-series is consistent with portfolio PnL.
+"""
 
 import polars as pl
 from typing import List, Tuple, Optional, Dict, Union
@@ -89,6 +105,7 @@ def compute_returns(
             prev_close = prev_result[1]
             curr_close = curr_result[1]
             if prev_close > 0:
+                # Simple arithmetic return; NaNs from missing data remain (we do not append).
                 ret = (curr_close / prev_close) - 1.0
                 alt_returns.append(ret)
     
@@ -119,7 +136,8 @@ def compute_returns(
         # Do not compute the basket mean when the week is aborted.
         r_alts = float("nan")
     else:
-        r_alts = sum(alt_returns) / len(alt_returns)  # Equal-weight mean
+        # Arithmetic cross-section: equal-weight mean of simple returns (physical PnL).
+        r_alts = float(np.nanmean(alt_returns))
     
     # Compute major returns (using config majors list, not hardcoded)
     r_majors_dict = {}
@@ -131,6 +149,7 @@ def compute_returns(
             prev_close = prev_result[1]
             curr_close = curr_result[1]
             if prev_close > 0:
+                # Simple arithmetic return
                 r_major = (curr_close / prev_close) - 1.0
                 r_majors_dict[major_id] = r_major
             else:
@@ -155,27 +174,21 @@ def compute_returns(
     
     if not all_majors_valid:
         r_maj_weighted = float('nan')
-    
-    # Convert arithmetic portfolio returns to log returns
-    if r_alts == r_alts:
-        r_alts_log = np.log(1.0 + r_alts)
+
+    # Strategy spread: raw arithmetic Y = R_maj - R_alts; then weekly log return y = ln(1 + Y).
+    if r_alts == r_alts and r_maj_weighted == r_maj_weighted:
+        Y = r_maj_weighted - r_alts
     else:
-        r_alts_log = float("nan")
-    
-    if r_maj_weighted == r_maj_weighted:
-        r_maj_log = np.log(1.0 + r_maj_weighted)
-    else:
-        r_maj_log = float("nan")
-    
-    # Compute target using log-return spread: y = r_maj_log - r_alts_log
-    if r_alts_log == r_alts_log and r_maj_log == r_maj_log:  # Check for NaN
-        y = r_maj_log - r_alts_log
+        Y = float('nan')
+
+    # Variance Shield: force flat return when too few valid alts.
+    if aborted_insufficient_assets:
+        Y = 0.0
+
+    if Y == Y:  # not NaN
+        y = np.log1p(Y)
     else:
         y = float('nan')
-
-    # If the week is aborted due to insufficient valid assets, force flat return.
-    if aborted_insufficient_assets:
-        y = 0.0
     
     return r_alts, r_majors_dict, r_maj_weighted, y, price_coverage_pct, n_valid_alts
 

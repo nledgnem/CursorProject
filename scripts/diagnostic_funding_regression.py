@@ -15,7 +15,7 @@ def run_regression(timeseries_path: Path, output_path: Path) -> None:
     if "F_tk" not in df.columns or "y" not in df.columns:
         raise ValueError("Input CSV must contain 'F_tk' and 'y' columns.")
 
-    # Drop NaNs in F_tk or y
+    df["F_tk_apr"] = df["F_tk"] * 365.0 * 100.0  # Unit: APR % (DATA_DICTIONARY.md)
     df = df.dropna(subset=["F_tk", "y"])
 
     if df.empty:

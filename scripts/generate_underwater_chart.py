@@ -37,8 +37,9 @@ def build_gated_series(msm: pd.DataFrame) -> pd.DataFrame:
     )
     msm = msm.sort_values("decision_date").reset_index(drop=True)
 
-    # Funding regime: 52-week rolling percentile of F_tk mapped to quartiles
-    msm["funding_pct_rank"] = msm["F_tk"].rolling(window=52, min_periods=26).apply(
+    msm["F_tk_apr"] = msm["F_tk"] * 365.0 * 100.0  # Unit: APR % (DATA_DICTIONARY.md)
+    # Funding regime: 52-week rolling percentile of F_tk_apr mapped to quartiles
+    msm["funding_pct_rank"] = msm["F_tk_apr"].rolling(window=52, min_periods=26).apply(
         lambda x: pd.Series(x).rank(pct=True).iloc[-1], raw=False
     )
     msm["funding_regime"] = pd.cut(

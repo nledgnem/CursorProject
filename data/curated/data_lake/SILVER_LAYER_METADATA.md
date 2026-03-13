@@ -17,5 +17,5 @@ Quality flags: `is_ffilled`, `is_winsorized` (price, market cap), `is_capped` (f
 ## silver_fact_funding.parquet
 
 - **Total row count:** 261,914
-- **Rows flagged `is_capped`:** 11,061 (4.2231%)
+- **Rows flagged `is_capped`:** 0 (0.0000%)
 - **Rows flagged `is_ffilled`:** 6 (0.0023%)

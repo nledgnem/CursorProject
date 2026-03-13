@@ -2,8 +2,8 @@
 """
 Medallion Silver Layer Builder.
 
-Reads Bronze (curated/data_lake) fact_price and fact_funding; applies winsorization/capping
-and forward-fill; appends quality flags (is_ffilled, is_winsorized, is_capped); writes
+Reads Bronze (curated/data_lake) fact_price and fact_funding; applies winsorization (price),
+forward-fill, and no capping on funding (raw distribution); appends quality flags; writes
 silver_* parquet files and SILVER_LAYER_METADATA.md.
 """
 
@@ -18,7 +18,6 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_LAKE = REPO_ROOT / "data" / "curated" / "data_lake"
 
 FFILL_LIMIT = 3
-FUNDING_CAP = 0.05
 
 # Slingshot thresholds (returns on consecutive calendar days)
 RETURN_CAP_UP = 1.0      # +100% on day T
@@ -198,13 +197,31 @@ def build_silver_fact_price(data_lake_dir: Path) -> tuple[pd.DataFrame, dict]:
 
 def build_silver_fact_funding(data_lake_dir: Path) -> pd.DataFrame:
     """
-    Task 2: Load fact_funding, sort, add flags, cap funding_rate to ±5%, forward-fill gaps.
+    Task 2: Load fact_funding, sort, add flags, forward-fill gaps.
+    No capping: funding_rate is preserved as raw (uncapped) market leverage cost.
     """
     path = data_lake_dir / "fact_funding.parquet"
     if not path.exists():
         raise FileNotFoundError(f"fact_funding.parquet not found: {path}")
 
     df = pd.read_parquet(path)
+
+    # Data type safeguard: funding_rate must be float
+    if "funding_rate" not in df.columns:
+        raise ValueError("Silver funding ETL: 'funding_rate' column missing in fact_funding.parquet.")
+    if not pd.api.types.is_float_dtype(df["funding_rate"]):
+        raise ValueError(
+            f"Silver funding ETL: funding_rate dtype must be float, got {df['funding_rate'].dtype}."
+        )
+
+    # Asset coverage safeguard: expect ~Top 30 assets; fail hard if materially lower
+    if "asset_id" in df.columns:
+        n_assets = int(df["asset_id"].nunique())
+        if n_assets < 25:
+            raise ValueError(
+                f"ASSET DROP DETECTED: API returned fewer than 25 assets for the Top 30 universe "
+                f"(unique asset_id count = {n_assets})."
+            )
     if len(df) == 0:
         df["is_ffilled"] = False
         df["is_capped"] = False
@@ -213,14 +230,7 @@ def build_silver_fact_funding(data_lake_dir: Path) -> pd.DataFrame:
     df = df.sort_values(["asset_id", "instrument_id", "exchange", "date"]).reset_index(drop=True)
 
     df["is_ffilled"] = False
-    df["is_capped"] = False
-
-    # Capper: funding_rate in [-0.05, 0.05]
-    mask_high = df["funding_rate"] > FUNDING_CAP
-    mask_low = df["funding_rate"] < -FUNDING_CAP
-    df.loc[mask_high, "funding_rate"] = FUNDING_CAP
-    df.loc[mask_low, "funding_rate"] = -FUNDING_CAP
-    df.loc[mask_high | mask_low, "is_capped"] = True
+    df["is_capped"] = False  # No capping: pure uncapped distribution
 
     # Gap filler: full date range per (asset_id, instrument_id, exchange)
     key = ["asset_id", "instrument_id", "exchange"]

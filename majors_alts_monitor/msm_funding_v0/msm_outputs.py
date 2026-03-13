@@ -46,7 +46,7 @@ def write_timeseries_csv(
     base_columns = [
         "decision_date", "next_date",
         "basket_hash", "basket_members", "n_valid", "coverage",
-        "F_tk",
+        "F_tk", "F_tk_apr",
         "label_v0_0", "label_v0_1",
         "p_v0_0", "p_v0_1",  # Percentile ranks
         "r_alts", "r_maj_weighted", "y",

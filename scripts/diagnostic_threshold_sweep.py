@@ -8,6 +8,7 @@ def run_threshold_sweep(csv_path: str):
     # 1. Load data and filter to last 2 years (approx 104 weeks)
     df = pd.read_csv(csv_path, parse_dates=["decision_date"])
     df = df.sort_values("decision_date").dropna(subset=["F_tk", "y"])
+    df["F_tk_apr"] = df["F_tk"] * 365.0 * 100.0  # Unit: APR % (DATA_DICTIONARY.md)
     df_2yr = df.tail(104).copy()
 
     print(
