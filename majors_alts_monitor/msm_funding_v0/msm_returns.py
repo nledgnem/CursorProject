@@ -248,3 +248,36 @@ def compute_returns_for_week(
     except Exception as e:
         logger.warning(f"Error computing returns: {e}")
         return None, "skipped_returns_computation"
+
+
+def compute_alt_constituent_simple_returns(
+    prices: pl.DataFrame,
+    asset_ids: List[str],
+    decision_date: date,
+    next_date: date,
+) -> Dict[str, float]:
+    """
+    Compute simple arithmetic returns for each ALT constituent between decision_date and next_date.
+
+    Returns a dict mapping asset_id -> simple_return for assets with valid prices at both endpoints.
+    """
+    per_asset_returns: Dict[str, float] = {}
+
+    for asset_id in asset_ids:
+        prev_result = get_close_asof(prices, asset_id, decision_date)
+        curr_result = get_close_asof(prices, asset_id, next_date)
+
+        if prev_result is None or curr_result is None:
+            continue
+
+        prev_close = prev_result[1]
+        curr_close = curr_result[1]
+
+        if prev_close <= 0:
+            continue
+
+        ret = (curr_close / prev_close) - 1.0
+        if ret == ret:
+            per_asset_returns[asset_id] = float(ret)
+
+    return per_asset_returns

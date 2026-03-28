@@ -6,7 +6,7 @@ import argparse
 import requests
 import os
 from pathlib import Path
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Dict, List, Optional
 import pandas as pd
 import json
@@ -82,49 +82,53 @@ def fetch_funding_rate_history(
     while attempt < max_total_attempts:
         try:
             response = requests.get(url, headers=headers, params=params, timeout=30)
-            response.raise_for_status()
-            data = response.json()
-            
-            # Handle rate limits - retry with exponential backoff (up to max attempts)
+
+            # ZERO-TRUST PATCH: Do NOT call raise_for_status() yet.
+            # Parse the JSON first so we can evaluate 400/429 business logic.
+            try:
+                data = response.json()
+            except ValueError:
+                # If the response isn't JSON (e.g., 502 Bad Gateway HTML), raise the HTTP error
+                response.raise_for_status()
+                data = {}
+
+            # 1. Handle Rate Limits explicitly
             if response.status_code == 429:
                 attempt += 1
-                if attempt >= max_total_attempts:
-                    print(f"  [SKIP] {symbol}: Rate limit after {max_total_attempts} attempts")
-                    return None
-                wait_time = max(60.0, min(300.0, retry_delay * (2 ** min(attempt - 1, 6))))  # Cap at 5 minutes
-                print(f"  [RATE LIMIT 429] {symbol}, attempt {attempt}/{max_total_attempts}, waiting {wait_time:.1f}s...")
+                wait_time = retry_delay * (2 ** (attempt - 1))
+                print(f"  [RATE LIMIT] {symbol}: Sleeping {wait_time}s...")
                 sleep(wait_time)
                 continue
-            
+
+            # 2. Handle Fail-Fast (Invalid Pair) before any retries
+            if response.status_code in [400, 404]:
+                error_msg = data.get("msg", "").lower()
+                if "does not exist" in error_msg or "not found" in error_msg or "supported exchange" in error_msg:
+                    print(f"  [SKIP FAST] {symbol}: Pair invalid. Ejecting instantly.")
+                    return None
+                else:
+                    # It's a 400 error we don't recognize, treat as generic API failure
+                    response.raise_for_status()
+
+            # 3. Handle 200 OK but API-level logical errors (CoinGlass custom codes)
             if data.get("code") != "0":
-                error_msg = data.get("msg", "Unknown error")
-                
-                # Rate limit errors - retry (up to max attempts)
-                if "too many requests" in error_msg.lower() or "rate limit" in error_msg.lower():
+                error_msg = data.get("msg", "Unknown error").lower()
+                if "too many requests" in error_msg or "rate limit" in error_msg:
                     attempt += 1
-                    if attempt >= max_total_attempts:
-                        print(f"  [SKIP] {symbol}: Rate limit after {max_total_attempts} attempts")
-                        return None
-                    wait_time = max(60.0, min(300.0, retry_delay * (2 ** min(attempt - 1, 6))))  # Cap at 5 minutes
-                    print(f"  [RATE LIMIT] {symbol}: {error_msg}, attempt {attempt}/{max_total_attempts}, waiting {wait_time:.1f}s...")
+                    wait_time = retry_delay * (2 ** (attempt - 1))
                     sleep(wait_time)
                     continue
-                
-                # Unrecoverable errors - fail immediately
-                if "not found" in error_msg.lower() or "invalid" in error_msg.lower():
-                    print(f"  [SKIP] {symbol}: {error_msg}")
+                if "not found" in error_msg or "invalid" in error_msg or "does not exist" in error_msg or "supported exchange" in error_msg:
+                    print(f"  [SKIP FAST] {symbol}: Pair invalid. Ejecting instantly.")
                     return None
-                
-                # Other errors - retry (up to max attempts)
-                attempt += 1
-                if attempt >= max_total_attempts:
-                    print(f"  [SKIP] {symbol}: {error_msg} after {max_total_attempts} attempts")
-                    return None
-                wait_time = retry_delay * (2 ** min(attempt - 1, 4))
-                print(f"  [RETRY] {symbol}: {error_msg}, attempt {attempt}/{max_total_attempts}, waiting {wait_time:.1f}s...")
-                sleep(wait_time)
-                continue
-            
+
+                # Fall through to retry for unknown logical errors
+                raise requests.exceptions.HTTPError(f"API Code != 0: {error_msg}")
+
+            # 4. Success - raise for any other unhandled 5xx errors just in case
+            if response.status_code >= 500:
+                response.raise_for_status()
+
             # Success - parse and return data
             rows = []
             for item in data.get("data", []):
@@ -132,7 +136,8 @@ def fetch_funding_rate_history(
                 funding_rate_close = item.get("close")
                 
                 if time_ms is not None and funding_rate_close is not None:
-                    dt_obj = datetime.fromtimestamp(time_ms / 1000)
+                    # ZERO-TRUST PATCH: Enforce strict UTC to prevent local server offset drift
+                    dt_obj = datetime.fromtimestamp(time_ms / 1000, tz=timezone.utc)
                     rows.append({
                         "date": dt_obj.date(),
                         "symbol": symbol,
@@ -402,7 +407,8 @@ def fetch_oi_history(
                 close_val = item.get("close")
                 
                 if time_ms is not None and close_val is not None:
-                    dt_obj = datetime.fromtimestamp(time_ms / 1000)
+                    # ZERO-TRUST PATCH: Enforce strict UTC to prevent local server offset drift
+                    dt_obj = datetime.fromtimestamp(time_ms / 1000, tz=timezone.utc)
                     d = dt_obj.date()
                     per_day_closes.setdefault(d, []).append(float(close_val))
             
@@ -758,6 +764,49 @@ def main():
                 else:
                     print("  [ERROR] No symbols provided and no data sources found")
                     symbols = []
+            
+            # LIQUIDITY GATE: Filter for valid perpetuals FIRST (or universe), then Top-N by market cap (avoid spot-only denominator trap)
+            _top_n_fallback = 200
+            try:
+                data_lake_dir = repo_root / "data" / "curated" / "data_lake"
+                mcap_path = data_lake_dir / "fact_marketcap.parquet"
+                if mcap_path.exists():
+                    mcap_df = pd.read_parquet(mcap_path)
+                    if not mcap_df.empty and "date" in mcap_df.columns and "marketcap" in mcap_df.columns and "asset_id" in mcap_df.columns:
+                        max_date = mcap_df["date"].max()
+                        latest = mcap_df[mcap_df["date"] == max_date].copy()
+                        latest = latest.sort_values("marketcap", ascending=False)
+
+                        # ZERO-TRUST PATCH: Filter for known valid symbols FIRST, then take Top N
+                        symbols_set = set(s.upper() for s in symbols)
+                        # Prefer symbols we already have funding for (valid perpetuals) when available
+                        if funding_output_path.exists():
+                            try:
+                                existing = pd.read_parquet(funding_output_path)
+                                col = "asset_id" if "asset_id" in existing.columns else "symbol"
+                                if len(existing) > 0 and col in existing.columns:
+                                    valid_perps = set(existing[col].astype(str).str.upper().tolist())
+                                    if len(valid_perps) >= 30:
+                                        symbols_set = valid_perps
+                            except Exception:
+                                pass
+                        # 1. Get all market cap assets that exist in our valid symbols list
+                        valid_mcap_assets = latest[latest["asset_id"].astype(str).str.upper().isin(symbols_set)]
+                        # 2. NOW take the Top 150 of that filtered list
+                        _top_n_perps = 150
+                        top_perps = set(valid_mcap_assets.head(_top_n_perps)["asset_id"].astype(str).str.upper().tolist())
+                        # 3. Preserve original casing from the current symbols list (universe)
+                        symbols = sorted([s for s in symbols if s.upper() in top_perps])
+                        print(f"  [LIQUIDITY GATE] Reduced universe to {len(symbols)} Top-{_top_n_perps} Liquid Perpetuals (max_date={max_date}).")
+                    else:
+                        symbols = symbols[:_top_n_fallback]
+                        print(f"  [LIQUIDITY GATE] fact_marketcap schema missing columns; applied fail-safe slice to {len(symbols)} symbols.")
+                else:
+                    symbols = symbols[:_top_n_fallback]
+                    print(f"  [LIQUIDITY GATE] fact_marketcap.parquet not found; applied fail-safe slice to {len(symbols)} symbols.")
+            except Exception as e:
+                symbols = symbols[:_top_n_fallback]
+                print(f"  [LIQUIDITY GATE] Fallback after error ({e}); applied fail-safe slice to {len(symbols)} symbols.")
         
         if symbols:
             # Load existing data for per-symbol incremental checking
@@ -814,6 +863,9 @@ def main():
                 funding_df = funding_df.sort_values(["date", "symbol"])
                 funding_df = funding_df[["asset_id", "instrument_id", "date", "funding_rate", "exchange", "source"]]
             
+            # ZERO-TRUST PATCH: Coerce all mixed temporal objects into uniform datetime.date for PyArrow
+            funding_df["date"] = pd.to_datetime(funding_df["date"], utc=True).dt.date
+
             # Append/merge with existing if requested
             if (args.incremental or args.merge_existing) and funding_output_path.exists():
                 try:

@@ -1,16 +1,58 @@
 """CoinGecko API provider for price, market cap, and volume data."""
 
+import json
 import os
 import time
 import requests
 from datetime import datetime, date, timedelta, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional, Tuple
 import pandas as pd
-import numpy as np
 
 COINGECKO_BASE = "https://pro-api.coingecko.com/api/v3"
 COINGECKO_API_KEY = os.environ.get("COINGECKO_API_KEY", "")  # Set in env; never commit keys
+
+
+def _repo_root() -> Path:
+    """src/providers/coingecko.py -> repository root."""
+    return Path(__file__).resolve().parent.parent.parent
+
+
+def ingestion_failure_log_path() -> Path:
+    """
+    Structured audit log for failed fetches (append-only JSONL).
+
+    Override with env INGESTION_FAILURE_LOG to redirect (e.g. CI artifact path).
+    """
+    override = os.environ.get("INGESTION_FAILURE_LOG", "").strip()
+    if override:
+        return Path(override)
+    return _repo_root() / "logs" / "ingestion_failures.jsonl"
+
+
+def log_ingestion_failure(
+    coingecko_id: str,
+    start_date: date,
+    end_date: date,
+    error_code_or_exception: str,
+) -> None:
+    """
+    Append one JSON line: timestamp, id, window, error.
+
+    Why: empty return {}, {}, {} must never be silent in production quant pipelines;
+    downstream merges create survivorship bias without this audit trail.
+    """
+    path = ingestion_failure_log_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    rec = {
+        "timestamp_of_run": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "coingecko_id": coingecko_id,
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
+        "error_code_or_exception": str(error_code_or_exception)[:8000],
+    }
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
 
 def to_utc_ts(d: date, offset_days: int = 0) -> int:
@@ -23,7 +65,7 @@ def fetch_price_history(
     coingecko_id: str,
     start_date: date,
     end_date: date,
-    sleep_seconds: float = 0.12,  # 500 calls/min = 0.12s between calls (Analyst tier)
+    sleep_seconds: float = 0.25,  # min spacing: 240 calls/min (under 250/min Pro ceiling; avoids 429)
     max_retries: int = 5,
 ) -> Tuple[Dict[date, float], Dict[date, float], Dict[date, float]]:
     """
@@ -45,10 +87,12 @@ def fetch_price_history(
     }
     
     delay = sleep_seconds
+    last_http_status: Optional[int] = None
     for attempt in range(1, max_retries + 1):
         try:
             # Disable proxy to avoid connection issues
             resp = requests.get(url, params=params, timeout=30, proxies={"http": None, "https": None})
+            last_http_status = resp.status_code
             
             if resp.status_code == 200:
                 data = resp.json()
@@ -78,6 +122,9 @@ def fetch_price_history(
             
             elif resp.status_code == 404:
                 print(f"[WARN] CoinGecko has no data for {coingecko_id} (404). Skipping.")
+                log_ingestion_failure(
+                    coingecko_id, start_date, end_date, "HTTP_404_not_found"
+                )
                 return {}, {}, {}
             
             elif resp.status_code == 429:
@@ -88,10 +135,20 @@ def fetch_price_history(
             
             elif resp.status_code == 401:
                 print(f"[ERROR] Unauthorized (401) for {coingecko_id}. Check API key.")
+                log_ingestion_failure(
+                    coingecko_id, start_date, end_date, "HTTP_401_unauthorized"
+                )
                 return {}, {}, {}
             
             else:
+                snippet = resp.text[:500] if resp.text else ""
                 print(f"[ERROR] CoinGecko error for {coingecko_id}: {resp.status_code} {resp.text[:200]}")
+                log_ingestion_failure(
+                    coingecko_id,
+                    start_date,
+                    end_date,
+                    f"HTTP_{resp.status_code} body_prefix={snippet!r}",
+                )
                 time.sleep(sleep_seconds)
                 return {}, {}, {}
                 
@@ -101,8 +158,17 @@ def fetch_price_history(
                 time.sleep(delay)
                 delay *= 2.0
             else:
+                log_ingestion_failure(
+                    coingecko_id,
+                    start_date,
+                    end_date,
+                    f"exception_after_retries: {type(e).__name__}: {e}",
+                )
                 return {}, {}, {}
     
+    # Exhausted retries without success (e.g. repeated 429)
+    detail = f"exhausted_retries_last_http={last_http_status}"
+    log_ingestion_failure(coingecko_id, start_date, end_date, detail)
     return {}, {}, {}
 
 
@@ -129,9 +195,9 @@ def download_all_coins(
     
     total_coins = len(allowlist_df)
     print(f"Downloading data for {total_coins} coins from {start_date} to {end_date}...")
-    # Rate limit: 250 calls/min = ~0.25s per call
+    # Throttle matches fetch_price_history default sleep (0.25s) ≈ 240 calls/min max
     estimated_minutes = (total_coins * 0.25) / 60.0
-    print(f"Estimated time: ~{estimated_minutes:.1f} minutes (250 calls/min rate limit)\n")
+    print(f"Estimated time: ~{estimated_minutes:.1f} minutes (<=240 calls/min effective, under 250/min cap)\n")
     
     successful = 0
     failed = 0

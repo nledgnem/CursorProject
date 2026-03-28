@@ -21,7 +21,7 @@ def compute_7d_mean_funding(
     Then computes basket feature as mean of per-coin 7d funding means.
     
     Args:
-        funding: Funding dataframe (asset_id, date, funding_rate)
+        funding: Funding dataframe (asset_id, date, funding_rate_raw_pct)
         asset_ids: List of asset_ids in the basket
         decision_date: Decision time t_k
         lookback_days: Number of calendar days to look back (default 7)
@@ -66,7 +66,7 @@ def compute_7d_mean_funding(
             asset_daily = (
                 asset_funding
                 .group_by("date")
-                .agg(pl.col("funding_rate").mean().alias("daily_funding"))
+                .agg(pl.col("funding_rate_raw_pct").mean().alias("daily_funding"))
             )
             
             if len(asset_daily) > 0:
@@ -131,3 +131,57 @@ def compute_feature_for_week(
         return None, coverage_pct, n_valid
     
     return basket_feature, coverage_pct, n_valid
+
+
+def compute_7d_mean_funding_per_asset(
+    funding: pl.DataFrame,
+    asset_ids: List[str],
+    decision_date: date,
+    lookback_days: int = 7,
+) -> List[tuple]:
+    """
+    Compute 7-day mean funding rate per asset for a basket of assets.
+
+    Returns a list of (asset_id, mean_funding) tuples for assets with valid data.
+    """
+    if len(funding) == 0:
+        logger.warning("No funding data available")
+        return []
+
+    if len(asset_ids) == 0:
+        logger.warning("No assets in basket")
+        return []
+
+    start_date = decision_date - timedelta(days=lookback_days)
+    end_date = decision_date - timedelta(days=1)
+
+    funding_window = funding.filter(
+        (pl.col("date") >= pl.date(start_date.year, start_date.month, start_date.day))
+        & (pl.col("date") <= pl.date(end_date.year, end_date.month, end_date.day))
+    )
+
+    if len(funding_window) == 0:
+        logger.warning(f"No funding data in window {start_date} to {end_date}")
+        return []
+
+    per_asset_means: List[tuple] = []
+    for asset_id in asset_ids:
+        asset_funding = funding_window.filter(pl.col("asset_id") == asset_id)
+
+        if len(asset_funding) == 0:
+            continue
+
+        asset_daily = (
+            asset_funding.group_by("date").agg(
+                pl.col("funding_rate_raw_pct").mean().alias("daily_funding")
+            )
+        )
+
+        if len(asset_daily) == 0:
+            continue
+
+        mean_funding = asset_daily["daily_funding"].mean()
+        if mean_funding is not None and not (mean_funding != mean_funding):
+            per_asset_means.append((asset_id, mean_funding))
+
+    return per_asset_means

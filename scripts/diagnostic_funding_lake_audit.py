@@ -53,7 +53,7 @@ def load_funding_table(path: Path) -> Tuple[pl.DataFrame, Dict[str, str]]:
     # Date column candidates
     date_candidates = ["date", "trading_date", "ds"]
     asset_candidates = ["asset_id", "symbol", "base_asset_id"]
-    funding_candidates = ["funding_rate", "funding_rate_daily", "funding_rate_1d"]
+    funding_candidates = ["funding_rate_raw_pct", "funding_rate", "funding_rate_daily", "funding_rate_1d"]
     exchange_candidates = ["exchange", "venue", "exchange_name"]
 
     def pick(name: str, candidates: list[str], required: bool = True) -> Optional[str]:

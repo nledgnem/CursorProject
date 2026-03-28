@@ -29,7 +29,7 @@ import argparse
 import logging
 import subprocess
 import sys
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -44,6 +44,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 SCRIPT_FUNDING = PROJECT_ROOT / "scripts" / "fetch_coinglass_data.py"
 SCRIPT_PRICES_MCAP = PROJECT_ROOT / "scripts" / "incremental_update.py"
 SCRIPT_MACRO = PROJECT_ROOT / "scripts" / "data_ingestion" / "btcdom_backfill.py"
+SCRIPT_BUILD_SILVER = PROJECT_ROOT / "scripts" / "data_ingestion" / "build_silver_layer.py"
 MSM_RUN = PROJECT_ROOT / "majors_alts_monitor" / "msm_funding_v0" / "msm_run.py"
 
 
@@ -92,7 +93,8 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    end_date = date.today() if args.end_date is None else date.fromisoformat(args.end_date)
+    # Default to *UTC* "today" to avoid local timezone leakage into strategy date alignment.
+    end_date = datetime.now(timezone.utc).date() if args.end_date is None else date.fromisoformat(args.end_date)
     if args.start_date is None:
         start_date = end_date - timedelta(days=730)
     else:
@@ -102,6 +104,9 @@ def main() -> int:
     # Steps 1-3: Updating Data Lake (halt on failure)
     # ------------------------------------------------------------------
     if not args.skip_ingestion:
+        # ZERO-TRUST PATCH: Enforce dynamic UTC boundary to override any static configs
+        today_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
         # Step 1: Funding (CoinGlass -> fact_funding.parquet)
         if not SCRIPT_FUNDING.exists():
             logger.error("Funding ingestion script not found: %s", SCRIPT_FUNDING)
@@ -115,6 +120,8 @@ def main() -> int:
                 str(SCRIPT_FUNDING),
                 "--incremental",
                 "--merge-existing",
+                "--end-date",
+                today_utc,
             ],
             step_name="Step 1: Ingest Raw Funding (scripts/fetch_coinglass_data.py)",
         )
@@ -148,6 +155,24 @@ def main() -> int:
             logger.error("Halting: macro index build failed. Strategy will not run on stale macro.")
             return 1
 
+        # Step 3.5: Build Silver Layer (prices, funding, marketcap) from updated Bronze
+        if not SCRIPT_BUILD_SILVER.exists():
+            logger.error("Silver layer builder not found: %s", SCRIPT_BUILD_SILVER)
+            return 1
+        ok = run_step(
+            cwd=PROJECT_ROOT,
+            cmd=[
+                sys.executable,
+                str(SCRIPT_BUILD_SILVER),
+                "--data-lake",
+                str(PROJECT_ROOT / "data" / "curated" / "data_lake"),
+            ],
+            step_name="Step 3.5: Build Silver Layer (scripts/data_ingestion/build_silver_layer.py)",
+        )
+        if not ok:
+            logger.error("Halting: Silver layer build failed. Strategy will not run on stale Silver.")
+            return 1
+
         logger.info("Data update steps complete (funding, prices/marketcap, macro indices).")
     else:
         logger.info("Data update steps skipped (--skip-ingestion).")
@@ -162,7 +187,8 @@ def main() -> int:
         cwd=PROJECT_ROOT,
         cmd=[
             sys.executable,
-            str(MSM_RUN),
+            "-m",
+            "majors_alts_monitor.msm_funding_v0.msm_run",
             "--start-date", start_date.isoformat(),
             "--end-date", end_date.isoformat(),
         ],

@@ -1,0 +1,54 @@
+# Master Data Dictionary: MSM Funding Pipeline + Curated Price Panels
+# Machine-readable source of truth for column semantics.
+
+layers:
+  bronze:
+    description: "Raw data ingestion layer."
+    columns:
+      - name: funding_rate_raw_pct
+        type: float
+        unit: decimal  # Example: 0.000186 means 0.0186% per 8-hours
+        frequency: 8-hour
+        source: coinglass_api
+
+  silver:
+    description: "Cleaned and standardized layer."
+    columns:
+      - name: funding_rate_raw_pct
+        type: float
+        unit: decimal  # Example: 0.000186 means 0.0186% per 8-hours
+        frequency: 8-hour
+        transformation: "Bronze column funding_rate renamed to funding_rate_raw_pct. Temporal harmonization applied due to an upstream unit shift (cutover 2026-01-13 UTC): before cutover values treated as decimals; at/after cutover values are divided by 100 to convert percent-units into decimals."
+
+  gold:
+    description: "Feature engineering and strategy engine layer."
+    columns:
+      - name: F_tk_apr_dec
+        type: float
+        unit: decimal # Example: 0.04 (representing 4.0% APR)
+        frequency: annualized
+        pipeline_column: "F_tk_apr"  # msm_timeseries.csv: decimal APR (not percentage points)
+
+prices_daily:
+  close:
+    dtype: float64
+    unit: USD
+    definition: "Quote currency is USD. Close price represents USD per unit of base asset."
+  volume:
+    dtype: float64
+    unit: USD
+    definition: "Represents 24-hour rolling quote volume expressed in USD."
+  date:
+    frequency: Daily
+    definition: "Daily bars closing at 00:00 UTC. Any naive datetime index must be localized to UTC. Missing calendar days are to be treated as pipeline ingestion gaps, not expected exchange pauses."
+
+Live_State_Database:
+  engine: SQLite
+  file: macro_state.db
+  primary_table: macro_features
+  primary_key: decision_date (Must be strictly indexed for fast UPSERTs and UI reads)
+  write_protocol: UPSERT only. Destructive overwrites are forbidden.
+
+System_Time:
+  timezone: UTC
+  cron_offsets: +5 minutes past the 8-hour epoch (e.g., 08:05) to ensure exchange API settlement.

@@ -1,3 +1,10 @@
+# ==========================================
+# STRICT DATA GOVERNANCE DIRECTIVE
+# ==========================================
+1. YOU ARE STRICTLY FORBIDDEN from making implicit assumptions about data geometry, units, or temporal frequency.
+2. ALWAYS load and read the `data_dictionary.yaml` file before generating or modifying any analytical code, pandas transformations, or feature engineering logic.
+3. If a variable is not explicitly defined in the data dictionary, you must HALT and ask for the unit definition. DO NOT GUESS.
+
 # Global Rules for Cursor AI
 
 ## 1. 🛑 ZERO ROOT BLOAT (The Quarantine Rule)
@@ -5,8 +12,8 @@ You are STRICTLY FORBIDDEN from generating one-off diagnostic `.py` scripts in t
 * If the user asks you to run a diagnostic, verify a dataset, plot an equity curve, or test a snippet, you MUST write and execute it inside a Jupyter Notebook (`.ipynb`) in the `/notebooks` directory.
 * If a Python script has permanent pipeline utility, place it in `/scripts` or `/src`.
 
-## 2. 🗺️ ARCHITECTURE AWARENESS
-Before proposing any structural changes, adding modules, or modifying the pipeline flow, you MUST read `ARCHITECTURE.md` to understand the existing engine flow.
+## 2. 🗺️ ARCHITECTURE & SOP AWARENESS
+Before proposing structural changes, modifying the pipeline, OR writing any data analysis/plotting scripts, you MUST read `ARCHITECTURE.md` to enforce the 6-step Data Integrity Baseline.
 
 ## 3. ⚙️ CONFIGURATION OVER HARDCODING
 Never hardcode tickers, dates, threshold values, or API keys in the core Python modules. All strategy parameters must be routed through configuration files.
@@ -15,3 +22,78 @@ Never hardcode tickers, dates, threshold values, or API keys in the core Python 
 Artifact Naming: Never use subjective suffixes like `_final`, `_v2`, or `_new` for generated files or plots. For exploratory notebooks, silently overwrite the static file name (e.g., `alpha_matrix.png`). For production runs, rely strictly on the pipeline's existing Run ID / Timestamp directory structures.
 
 Text/Markdown Reports: Never use generic names like `executive_summary.md`. All reports must be prefixed with the strategy name and version (e.g., `[strategy_name]_[version]_summary.md`) and saved within their specific strategy folder.
+
+## 5. 🛡️ ZERO-TRUST DATA GOVERNANCE
+You are acting as a Lead Quantitative Developer for an institutional fund. You are strictly forbidden from making implicit assumptions about data geometry, units, or temporal frequency.
+* **The Schema Mandate:** You must explicitly know the Data Type, Unit, and Temporal Frequency of every variable before writing analytical code.
+* **Ban on "Naked" Variables:** Never output code that assumes a naked float's unit. `F_tk` is physically banned in user-facing outputs; you must calculate and use `F_tk_apr` (annualized APR as a **decimal**, e.g. `0.04` = 4%; multiply by 100 only for human-readable `%`).
+* **Explicit Assumption Logging:** If you lack the definitions to proceed, you must HALT and output: **"WARNING: Missing Data Definition. Please clarify unit/frequency."** Do not guess.
+
+## 6. 🏛️ PIPELINE INTEGRITY & SINGLE SOURCE OF TRUTH
+The production pipeline is governed strictly by `run_live_pipeline.py`. 
+* **Read-Only Downstream:** Any dashboard, monitoring tool, or downstream UI must act strictly as a **Read-Only** presentation layer. 
+* **No Parallel Ingestion:** You are strictly forbidden from writing new API ingestion logic (e.g., hitting CoinGlass or Binance) for downstream dashboards. All dashboards must read exclusively from the output of the master execution script (e.g., the Gold Layer `msm_timeseries.csv`).
+
+## 7. 🧮 THE MSM MACRO SENSOR LOGIC
+When evaluating the MSM Funding Macro Sensor state, you must strictly apply the **Asymmetric Safe-Sticky** state machine logic, never a simple threshold (`F_tk_apr` in `msm_timeseries.csv` is **decimal APR**; see `data_dictionary.yaml`):
+* **Entry Gate:** `0.01 <= F_tk_apr <= 0.04` (1%–4% APR)
+* **Exit Gate (Cold/Sticky):** `F_tk_apr < 0.0`
+* **Exit Gate (Toxic/Strict):** `F_tk_apr > 0.04`
+* **Gamma Awareness:** Treat the Cold exit as a slow bleed (high tolerance) and the Toxic exit as a short-squeeze risk (zero tolerance).
+
+Why these are mandatory:
+Rule 5: Physically stops Cursor from messing up the 7-day temporal alignment or the APR math.
+
+Rule 6: Prevents the "Production Pipeline Desync" failure mode. It forces Cursor to use your exact msm_timeseries.csv for any dashboard it builds, guaranteeing the UI perfectly matches the trading engine.
+
+Rule 7: Locks the exact physical logic of your $1M reserve into Cursor's permanent memory. If Mads asks Cursor a question about the sensor's status next month, Cursor will automatically apply the Asymmetric logic to answer.
+
+## 8. 🗂️ NON-DESTRUCTIVE AUDIT TRAIL
+You are strictly forbidden from modifying `msm_run.py` to overwrite a single `msm_timeseries.csv` file. The pipeline must always generate new `run_id` folders to preserve Point-in-Time integrity.
+
+## 9. 🌐 STRICT UTC TIMEZONE ENFORCEMENT
+All temporal data ingestion and processing MUST strictly operate in UTC.
+* **No Local Time Leakage:** You are strictly forbidden from using `datetime.fromtimestamp(ts)` or `datetime.now()` without an explicit timezone. You MUST always use `datetime.fromtimestamp(ts, tz=timezone.utc)` and `datetime.now(timezone.utc)`.
+* **Global Alignment:** Financial data geometry relies on absolute temporal alignment. Any script that converts API milliseconds/seconds to a Date or Datetime object must explicitly enforce UTC to prevent local server offsets (e.g., UTC+8) from corrupting the Silver and Gold data layers.
+
+## 10. 📊 COINGLASS FUNDING UNITS (see `data_dictionary.yaml`)
+* **Source of truth:** Column definitions and units for MSM funding live in the repository root `data_dictionary.yaml`. Read it before changing ingestion, Silver ETL, or Gold annualization.
+* **Silver layer:** Persist native Coinglass pure decimals as funding_rate_raw_pct. Do **not** divide by 100 or multiply by 100. The API natively outputs pure decimals.
+* **Gold layer:** `F_tk_apr` in `msm_timeseries.csv` is **annualized APR as a decimal** (e.g. `0.04` = 4% APR), aligned with `F_tk_apr_dec` in the dictionary.
+* **No Double Scaling:** Do not apply percentage↔decimal conversions twice across layers; follow the dictionary.
+
+# 11. LIVE RUN BOUNDARY (Always Through Present Date)
+If the user asks to run the MSM/macro pipeline (strategy engine and/or regime state persistence), you MUST run it through the present date:
+* Prefer `python run_live_pipeline.py` with no `--end-date` flag (the script defaults to UTC "today").
+* Never cap strategy runs at a fixed historical cutoff (e.g., "Mar 2025") unless the user explicitly requests a backtest window.
+* For audits/plots/dashboards, always use the latest generated run folder under `reports/msm_funding_v0/` and its `msm_timeseries.csv` (latest history, current regime).
+
+# ==========================================
+# PROJECT KNOWLEDGE BASE: MACRO REGIMES & EXECUTION GATING
+# ==========================================
+The AI must natively understand the following market states based on the `Environment_APR` (Weekly Rank-Based Truncated Mean) to accurately write execution and sizing logic.
+
+**Target Output:** `w_risk` (Continuous Allocation Weight multiplier from 0.0 to 1.0) governing the $1M stablecoin reserve.
+
+* **Regime 1: The Cold Flush (Environment_APR < 2.0%)**
+  * **Physics:** Market is in backwardation/liquidation flush.
+  * **Action:** `w_risk = 0.0`. Full capital defense. 100% of reserve in baseline on-chain stablecoin yield (e.g., Aave). Zero Polymarket exposure.
+* **Regime 2: The Recovery Ramp (2.0% <= Environment_APR < 5.0%)**
+  * **Physics:** Organic Open Interest rebuilding. Waking up from flush.
+  * **Action:** `w_risk` scales linearly from 0.0 to 1.0. Incremental deployment to prevent whipsaw.
+* **Regime 3: The Golden Pocket (5.0% <= Environment_APR <= 15.0%)**
+  * **Physics:** Healthy trend, structural resting baseline. Optimal cross-sectional dispersion.
+  * **Action:** `w_risk = 1.0`. Maximum allowed alpha generation. 100% deployment into active Polymarket strategy.
+* **Regime 4: Leverage Exhaustion (Environment_APR > 15.0%)**
+  * **Physics:** Retail mania, flatlining forward returns (asymptote reached), high liquidation risk.
+  * **Action:** `w_risk` scales linearly from 1.0 down to 0.0 (hitting 0.0 at 35.0% APR). Aggressive mechanical de-risking back to stablecoin reserve.
+
+**Execution Rule:** Never write binary "If/Else" on/off switches for these regimes. Always utilize the continuous `w_risk` multiplier to prevent order book slippage and execution drag.
+By placing this directly inside .cursorrules, Dan ensures the Cursor agent is permanently calibrated to the market physics of your portfolio. When he begins coding the Polymarket sizing limits, the AI will naturally know to pull capital back when the APR crosses 15%.
+
+# PRODUCTION DATABASE DIRECTIVES (CRITICAL)
+When interacting with `run_live_pipeline.py` or `macro_state.db`, you must strictly adhere to the following safety rules:
+1. **Never Drop State:** Do not write SQL commands that DROP or completely overwrite the `macro_features` table.
+2. **Strict UPSERT:** All database insertions must use strict UPSERT logic (Update if exists, Insert if not) keyed explicitly to `decision_date`. This prevents duplicating historical records if the pipeline is triggered manually.
+3. **The Warm-Up Rule:** Never write logic that fetches "only the newest row" from the Coinglass API. You must always fetch a minimum 100-day lookback array to safely calculate the 90-day rolling Z-Score before dropping the historical context for the UPSERT.
+Once Dan pastes these blocks into their respective files, the Cursor agent will be perfectly synchronized with the live automation architecture. It will know exactly where the database is, how the heartbeat runs, and what mathematical rules govern the live ETL updates.

@@ -62,7 +62,7 @@ class MSMDataLoader:
         Returns dict with keys:
         - prices: (asset_id, date, close)
         - marketcap: (asset_id, date, marketcap)
-        - funding: (asset_id, instrument_id, date, funding_rate)
+        - funding: (asset_id, instrument_id, date, funding_rate_raw_pct)
         - dim_asset: (asset_id, symbol, is_stable, ...)
         """
         result = {}

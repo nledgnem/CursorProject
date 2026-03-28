@@ -14,19 +14,29 @@ import sys
 try:
     from .msm_data import MSMDataLoader, data_sanity_check
     from .msm_universe import get_excluded_assets, select_top_n_alts, get_universe_hash
-    from .msm_feature import compute_feature_for_week
+    from .msm_feature import compute_feature_for_week, compute_7d_mean_funding_per_asset
     from .msm_label import compute_labels_v0_0, compute_labels_v0_1
-    from .msm_returns import compute_returns_for_week
+    from .msm_returns import compute_returns_for_week, compute_alt_constituent_simple_returns
     from .msm_outputs import generate_outputs
+    from .macro_environment import (
+        apply_weekly_momentum_and_gate,
+        build_daily_environment_table,
+        weekly_lookback_means,
+    )
     from ..utils.data_quality_gate import run_gold_layer_audit
 except ImportError:
     # Fallback for direct script execution (run from repo root)
     from msm_data import MSMDataLoader, data_sanity_check
     from msm_universe import get_excluded_assets, select_top_n_alts, get_universe_hash
-    from msm_feature import compute_feature_for_week
+    from msm_feature import compute_feature_for_week, compute_7d_mean_funding_per_asset
     from msm_label import compute_labels_v0_0, compute_labels_v0_1
-    from msm_returns import compute_returns_for_week
+    from msm_returns import compute_returns_for_week, compute_alt_constituent_simple_returns
     from msm_outputs import generate_outputs
+    from macro_environment import (
+        apply_weekly_momentum_and_gate,
+        build_daily_environment_table,
+        weekly_lookback_means,
+    )
     from majors_alts_monitor.utils.data_quality_gate import run_gold_layer_audit
 
 logging.basicConfig(
@@ -131,6 +141,29 @@ def run_msm_v0(
     marketcap = datasets["marketcap"]
     funding = datasets.get("funding", pl.DataFrame())
     dim_asset = datasets.get("dim_asset")
+
+    # ZERO-TRUST PATCH: Override static/config end_date with the live data lake maximum, if newer
+    try:
+        if funding is not None and isinstance(funding, pl.DataFrame) and funding.height > 0:
+            max_date_series = funding.select(pl.col("date").max()).to_series()
+            if len(max_date_series) > 0:
+                actual_max_date = max_date_series[0]
+                # Polars date is already a Python date-like; coerce defensively
+                if isinstance(actual_max_date, datetime):
+                    actual_max_date = actual_max_date.date()
+                if actual_max_date > end_date:
+                    end_date = actual_max_date
+                    logger.info(
+                        "[LIVE OVERRIDE] Extended Gold Layer timeline to actual data max from funding: %s",
+                        end_date,
+                    )
+    except Exception as e:
+        logger.warning("Could not dynamically extend end_date from funding data: %s", e)
+
+    if len(funding) > 0:
+        daily_macro_df = build_daily_environment_table(funding.to_pandas())
+    else:
+        daily_macro_df = pd.DataFrame()
     
     # Get excluded assets
     exclude_categories = config["universe"].get("exclude_categories", [])
@@ -144,6 +177,11 @@ def run_msm_v0(
         anchor_hour=config["decision"]["anchor_hour"],
         anchor_minute=config["decision"]["anchor_minute"],
     )
+
+    # LIVE DASHBOARD INJECTOR: Ensure the current run date is always the final row
+    if end_date not in decision_dates:
+        decision_dates.append(end_date)
+        logger.info(f"Appended Live T-0 Row for {end_date} to decision_dates.")
     
     logger.info(f"Found {len(decision_dates)} decision dates from {start_date} to {end_date}")
     
@@ -162,18 +200,42 @@ def run_msm_v0(
     for i, decision_date in enumerate(decision_dates):
         # Get next decision date
         if i + 1 < len(decision_dates):
-            next_date = decision_dates[i + 1]
+            next_candidate = decision_dates[i + 1]
+            # ZERO-TRUST PATCH:
+            # Enforce strict 7-day Gold Layer cadence even when a "Live T-0 Row"
+            # (non-Monday end_date) is appended to decision_dates.
+            # If the next decision date is not exactly 7 days ahead, fall back
+            # to a fixed 7-day window.
+            try:
+                delta_days = (next_candidate - decision_date).days
+            except Exception:
+                delta_days = None
+            next_date = next_candidate if delta_days == 7 else (decision_date + timedelta(days=7))
         else:
             # Last week: enforce strict 7-day window for Gold Layer consistency
             next_date = decision_date + timedelta(days=7)
         
-        # Select top N ALTs
+        # Denominator alignment: restrict basket to assets with funding in lookback window
+        # so coverage % is computed against a basket we can actually fill.
+        lookback_d = config["feature"]["lookback_days"]
+        funding_start = decision_date - timedelta(days=lookback_d)
+        funding_end = decision_date - timedelta(days=1)
+        funding_in_window = funding.filter(
+            (pl.col("date") >= pl.date(funding_start.year, funding_start.month, funding_start.day))
+            & (pl.col("date") <= pl.date(funding_end.year, funding_end.month, funding_end.day))
+        )
+        candidates = set(funding_in_window.select("asset_id").unique().to_series().to_list()) if len(funding_in_window) > 0 else set()
+        basket_size = config["universe"]["basket_size"]
+        candidate_asset_ids = candidates if len(candidates) >= basket_size else None
+
+        # Select top N ALTs (from candidates with funding when provided; else full universe)
         top_alts = select_top_n_alts(
             marketcap,
             decision_date,
             n=config["universe"]["basket_size"],
             min_mcap_usd=config["universe"]["min_mcap_usd"],
             excluded_assets=excluded_assets,
+            candidate_asset_ids=candidate_asset_ids,
         )
         
         if len(top_alts) == 0:
@@ -225,6 +287,58 @@ def run_msm_v0(
             continue
         
         r_alts, r_majors_dict, r_maj_weighted, y = returns
+
+        # --------------------------------------------------------------
+        # Hot-15 vs Cold-15 decomposition of ALT short leg
+        # --------------------------------------------------------------
+        per_asset_funding = compute_7d_mean_funding_per_asset(
+            funding,
+            asset_ids,
+            decision_date,
+            lookback_days=config["feature"]["lookback_days"],
+        )
+        per_asset_funding_dict = {aid: f for aid, f in per_asset_funding}
+
+        per_asset_simple_rets = compute_alt_constituent_simple_returns(
+            prices,
+            asset_ids,
+            decision_date,
+            next_date,
+        )
+
+        hot_log_returns = []
+        cold_log_returns = []
+
+        if per_asset_funding_dict and per_asset_simple_rets:
+            records = []
+            for aid, funding_mean in per_asset_funding_dict.items():
+                if aid not in per_asset_simple_rets:
+                    continue
+                simple_ret = per_asset_simple_rets[aid]
+                log_ret = np.log1p(simple_ret)
+                # ZERO-TRUST PATCH: Annualize an 8-hour funding pure decimal rate.
+                funding_apr = funding_mean * 1095.0  # decimal APR (data_dictionary F_tk_apr_dec)
+                records.append((aid, funding_apr, log_ret))
+
+            if records:
+                records.sort(key=lambda x: x[1], reverse=True)
+                n_assets = len(records)
+                k = min(15, n_assets // 2) if n_assets >= 2 else 0
+
+                if k > 0:
+                    hot_slice = records[:k]
+                    cold_slice = records[-k:]
+                    hot_log_returns = [r[2] for r in hot_slice]
+                    cold_log_returns = [r[2] for r in cold_slice]
+
+        y_hot = float(np.nan) if not hot_log_returns else float(np.nanmean(hot_log_returns))
+        y_cold = float(np.nan) if not cold_log_returns else float(np.nanmean(cold_log_returns))
+
+        env_apr_w, frag_w, z_w = weekly_lookback_means(
+            daily_macro_df,
+            decision_date,
+            config["feature"]["lookback_days"],
+        )
         
         # Extract individual major returns for output
         # Store as dynamic columns based on config majors
@@ -245,7 +359,11 @@ def run_msm_v0(
             "n_valid": n_valid,  # Number of assets with valid funding
             "coverage": coverage_pct,  # Coverage percentage
             "F_tk": feature_value,
-            "F_tk_apr": feature_value * 365.0 * 100.0,  # Simple annualized APR (%)
+            # ZERO-TRUST PATCH: Annualize an 8-hour funding pure decimal rate.
+            "F_tk_apr": feature_value * 1095.0,  # annualized APR as decimal (see data_dictionary.yaml)
+            "Environment_APR": env_apr_w,
+            "Fragmentation_Spread": frag_w,
+            "Z_Score_90d": z_w,
             "label_v0_0": None,  # Will be filled later
             "label_v0_1": None,  # Will be filled later
             "p_v0_0": None,  # Percentile rank v0.0 (will be filled later)
@@ -253,6 +371,8 @@ def run_msm_v0(
             "r_alts": r_alts,
             "r_maj_weighted": r_maj_weighted,  # Weighted major return
             "y": y,
+            "y_hot": y_hot,
+            "y_cold": y_cold,
         }
         
         # Add individual major returns (dynamic based on config)
@@ -278,6 +398,12 @@ def run_msm_v0(
         print(f"Total valid weeks: {len(timeseries_data)}")
         print("--------------------------------\n")
     
+    # Weekly momentum + macro gate (conditioned momentum, w_risk)
+    if len(timeseries_data) > 0:
+        ts_df = pd.DataFrame(timeseries_data)
+        ts_df = apply_weekly_momentum_and_gate(ts_df)
+        timeseries_data = ts_df.to_dict("records")
+
     # Compute labels
     if len(timeseries_data) > 0:
         # Extract feature values for labeling
@@ -334,6 +460,36 @@ def run_msm_v0(
     )
     
     logger.info(f"MSM v0 run complete. Outputs in: {output_dir}")
+
+    # ------------------------------------------------------------------
+    # Hot-15 vs Cold-15 statistical audit
+    # ------------------------------------------------------------------
+    try:
+        df_stats = pd.DataFrame(timeseries_data)
+        if not df_stats.empty and "y_hot" in df_stats.columns and "y_cold" in df_stats.columns:
+            df_valid = df_stats.dropna(subset=["y_hot", "y_cold"]).copy()
+            if not df_valid.empty:
+                ret_hot = (np.exp(df_valid["y_hot"].astype(float)) - 1.0) * 100.0
+                ret_cold = (np.exp(df_valid["y_cold"].astype(float)) - 1.0) * 100.0
+                spread = (ret_hot - ret_cold).mean()
+
+                def max_drawdown(returns_pct: pd.Series) -> float:
+                    r = returns_pct.astype(float) / 100.0
+                    equity = (1.0 + r).cumprod()
+                    peak = equity.cummax()
+                    drawdown = equity / peak - 1.0
+                    return float(drawdown.min() * 100.0)
+
+                mdd_hot = max_drawdown(ret_hot)
+                mdd_cold = max_drawdown(ret_cold)
+
+                print("\n--- Hot-15 vs Cold-15 Audit ---")
+                print(f"Avg Weekly Spread (Hot - Cold): {spread:.4f}%")
+                print(f"Max Drawdown Hot-15: {mdd_hot:.2f}%")
+                print(f"Max Drawdown Cold-15: {mdd_cold:.2f}%")
+                print("--------------------------------\n")
+    except Exception as e:
+        logger.warning(f"Hot/Cold statistical audit failed: {e}", exc_info=True)
 
     # ------------------------------------------------------------------
     # Persist historical regime columns and gated return; then live terminal status
@@ -418,6 +574,14 @@ def run_msm_v0(
         # Overwrite msm_timeseries.csv with full historical track record (including regime columns)
         df.to_csv(timeseries_csv_path, index=False)
         logger.info(f"Persisted historical regimes, y_gated, and passed Data Quality Gate to {timeseries_csv_path}")
+
+        # Default run artifact for downstream DB ingestion and audits.
+        # Keep this aligned with the finalized Gold-layer dataframe used by the dashboard.
+        macro_audit_dir = output_dir / "macro_audit"
+        macro_audit_dir.mkdir(parents=True, exist_ok=True)
+        master_macro_features_path = macro_audit_dir / "master_macro_features.csv"
+        df.to_csv(master_macro_features_path, index=False)
+        logger.info(f"Wrote default macro audit export: {master_macro_features_path}")
 
         # Live terminal status for latest week
         latest_df = df.dropna(subset=["funding_regime"])

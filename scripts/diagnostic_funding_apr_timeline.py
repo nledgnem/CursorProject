@@ -2,7 +2,7 @@
 """
 Timeline chart: Average funding APR (all coins) vs F_tk_apr (strategy basket), Jan 2024–Dec 2025.
 
-- Avg funding APR: from silver_fact_funding, daily mean across all coins, then annualized (rate * 365 * 100).
+- Avg funding APR: from silver_fact_funding, daily mean across all coins; raw % × 365 → APR % for display.
 - F_tk_apr: from msm_timeseries.csv (weekly decision dates).
 """
 
@@ -34,17 +34,18 @@ def load_daily_avg_funding_apr(
     df = df[(df["date"] >= start) & (df["date"] <= end)]
 
     # Per (asset_id, date) take mean rate if multiple instruments
+    rate_col = "funding_rate_raw_pct" if "funding_rate_raw_pct" in df.columns else "funding_rate"
     daily_per_asset = (
-        df.groupby(["asset_id", "date"], as_index=False)["funding_rate"]
+        df.groupby(["asset_id", "date"], as_index=False)[rate_col]
         .mean()
     )
-    # Daily average across all coins → APR in %
+    # Daily average across all coins → APR in % (native % per row × 365)
     daily_avg = (
-        daily_per_asset.groupby("date")["funding_rate"]
+        daily_per_asset.groupby("date")[rate_col]
         .mean()
         .reset_index()
     )
-    daily_avg["funding_apr_pct"] = daily_avg["funding_rate"] * 365.0 * 100.0
+    daily_avg["funding_apr_pct"] = daily_avg[rate_col] * 365.0
     return daily_avg[["date", "funding_apr_pct"]]
 
 
@@ -54,7 +55,7 @@ def load_ftk_apr_timeline(csv_path: Path, start: str, end: str) -> pd.DataFrame:
     df["decision_date"] = pd.to_datetime(df["decision_date"]).dt.normalize()
     df = df[(df["decision_date"] >= start) & (df["decision_date"] <= end)]
     if "F_tk_apr" not in df.columns and "F_tk" in df.columns:
-        df["F_tk_apr"] = df["F_tk"] * 365.0 * 100.0
+        df["F_tk_apr"] = (df["F_tk"] / 100.0) * 365.0
     return df[["decision_date", "F_tk_apr"]].dropna(subset=["F_tk_apr"])
 
 

@@ -7,6 +7,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import json
 import logging
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,8 @@ def write_timeseries_csv(
         "decision_date", "next_date",
         "basket_hash", "basket_members", "n_valid", "coverage",
         "F_tk", "F_tk_apr",
+        "Environment_APR", "Fragmentation_Spread", "Z_Score_90d",
+        "Delta_APR", "LogModulus_APR", "Conditioned_Momentum", "w_risk",
         "label_v0_0", "label_v0_1",
         "p_v0_0", "p_v0_1",  # Percentile ranks
         "r_alts", "r_maj_weighted", "y",
@@ -195,32 +198,114 @@ def write_returns_chart(
 
     df["decision_date"] = pd.to_datetime(df["decision_date"])
     df = df.sort_values("decision_date").reset_index(drop=True)
+
+    has_hot_cold = "y_hot" in df.columns and "y_cold" in df.columns
+
+    if has_hot_cold:
+        df["ret_hot_pct"] = (np.exp(df["y_hot"].astype(float)) - 1.0) * 100.0
+        df["ret_cold_pct"] = (np.exp(df["y_cold"].astype(float)) - 1.0) * 100.0
+        df["cum_hot"] = (1.0 + df["ret_hot_pct"] / 100.0).cumprod() - 1.0
+        df["cum_cold"] = (1.0 + df["ret_cold_pct"] / 100.0).cumprod() - 1.0
+
     df["cumulative_return"] = (1 + df["y"]).cumprod() - 1
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6), height_ratios=[1, 1], sharex=True)
+    if has_hot_cold:
+        fig, (ax1, ax2, ax3) = plt.subplots(
+            3, 1, figsize=(10, 8), height_ratios=[1, 1, 1], sharex=True
+        )
+    else:
+        fig, (ax1, ax2) = plt.subplots(
+            2, 1, figsize=(10, 6), height_ratios=[1, 1], sharex=True
+        )
+
     fig.suptitle(
         f"MSM v0 returns (long majors / short alts)" + (f" — {run_id}" if run_id else ""),
         fontsize=11,
     )
 
-    # Top: weekly spread return (y) as bars
-    ax1.bar(df["decision_date"], df["y"] * 100, width=5, color="steelblue", alpha=0.8, edgecolor="none")
+    # Panel 1: weekly spread return (y) as bars
+    ax1.bar(
+        df["decision_date"],
+        df["y"] * 100,
+        width=5,
+        color="steelblue",
+        alpha=0.8,
+        edgecolor="none",
+    )
     ax1.axhline(0, color="gray", linewidth=0.8, linestyle="-")
     ax1.set_ylabel("Weekly return (%)")
     ax1.set_title("Weekly spread return (y = r_maj − r_alts)")
     ax1.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.1f}%"))
     ax1.grid(True, alpha=0.3)
 
-    # Bottom: cumulative return
-    ax2.fill_between(df["decision_date"], 0, df["cumulative_return"] * 100, alpha=0.4, color="green")
-    ax2.plot(df["decision_date"], df["cumulative_return"] * 100, color="darkgreen", linewidth=1.5, label="Cumulative return")
+    # Panel 2: cumulative spread return
+    ax2.fill_between(
+        df["decision_date"],
+        0,
+        df["cumulative_return"] * 100,
+        alpha=0.4,
+        color="green",
+    )
+    ax2.plot(
+        df["decision_date"],
+        df["cumulative_return"] * 100,
+        color="darkgreen",
+        linewidth=1.5,
+        label="Cumulative return",
+    )
     ax2.axhline(0, color="gray", linewidth=0.8, linestyle="-")
     ax2.set_ylabel("Cumulative return (%)")
-    ax2.set_xlabel("Decision date")
     ax2.set_title("Cumulative return (long majors / short alts)")
     ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.0f}%"))
     ax2.legend(loc="upper left", fontsize=8)
     ax2.grid(True, alpha=0.3)
+
+    if has_hot_cold:
+        # Panel 3: Hot-15 vs Cold-15 equity curves with Toxic Zone shading
+        ax3.plot(
+            df["decision_date"],
+            df["cum_hot"] * 100.0,
+            color="red",
+            linewidth=1.5,
+            label="Hot-15 cumulative return",
+        )
+        ax3.plot(
+            df["decision_date"],
+            df["cum_cold"] * 100.0,
+            color="blue",
+            linewidth=1.5,
+            label="Cold-15 cumulative return",
+        )
+        ax3.axhline(0, color="gray", linewidth=0.8, linestyle="-")
+        ax3.set_ylabel("Cumulative return (%)")
+        ax3.set_xlabel("Decision date")
+        ax3.set_title("Hot-15 vs Cold-15 cumulative equity")
+        ax3.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.0f}%"))
+        ax3.grid(True, alpha=0.3)
+
+        if "F_tk_apr" in df.columns:
+            toxic = df["F_tk_apr"].astype(float) > 0.04
+            in_zone = False
+            start = None
+            for idx, (date_val, is_toxic) in enumerate(
+                zip(df["decision_date"], toxic)
+            ):
+                if is_toxic and not in_zone:
+                    in_zone = True
+                    start = date_val
+                elif not is_toxic and in_zone:
+                    end = df["decision_date"].iloc[idx - 1]
+                    ax3.axvspan(start, end, color="red", alpha=0.12)
+                    in_zone = False
+                    start = None
+            if in_zone and start is not None:
+                end = df["decision_date"].iloc[-1]
+                ax3.axvspan(start, end, color="red", alpha=0.12)
+
+        ax3.legend(loc="upper left", fontsize=8)
+
+    else:
+        ax2.set_xlabel("Decision date")
 
     ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
     ax1.xaxis.set_major_locator(mdates.MonthLocator(interval=3))

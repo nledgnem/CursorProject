@@ -215,7 +215,10 @@ def append_to_fact_table(
     combined = combined.drop_duplicates(
         subset=["asset_id", "date"],
         keep="last"
-    ).sort_values(["date", "asset_id"])
+    )
+    # ZERO-TRUST: Normalize date column to datetime.date so sort_values never sees Timestamp vs date mix
+    combined["date"] = pd.to_datetime(combined["date"], utc=True).dt.date
+    combined = combined.sort_values(["date", "asset_id"])
     
     return combined, new_fact
 
@@ -303,12 +306,30 @@ def main():
     if args.days_back and not args.start_date:
         start_date = end_date - timedelta(days=args.days_back)
     
-    # Check if update is needed
-    if start_date > end_date:
+    # ZERO-TRUST PATCH: Strictly normalize both variables to datetime.date before comparison
+    if hasattr(start_date, "date") and callable(getattr(start_date, "date")):
+        norm_start = start_date.date()
+    elif isinstance(start_date, pd.Timestamp):
+        norm_start = start_date.date()
+    else:
+        norm_start = start_date
+
+    if hasattr(end_date, "date") and callable(getattr(end_date, "date")):
+        norm_end = end_date.date()
+    elif isinstance(end_date, pd.Timestamp):
+        norm_end = end_date.date()
+    else:
+        norm_end = end_date
+
+    if norm_start > norm_end:
         latest_str = str(overall_latest) if overall_latest else "N/A"
-        print(f"\n[INFO] Data is already up to date! Latest: {latest_str}, Today: {end_date}")
+        print(f"\n[INFO] Data is already up to date! Latest: {latest_str}, Today: {norm_end}")
         return
-    
+
+    # Use normalized dates for rest of pipeline to avoid Timestamp vs date desync
+    start_date = norm_start
+    end_date = norm_end
+
     print(f"\n[Step 2] Downloading new data ({start_date} to {end_date})...")
     
     # Load existing wide format files (if they exist)

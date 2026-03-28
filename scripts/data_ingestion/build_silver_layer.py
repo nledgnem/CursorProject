@@ -10,14 +10,33 @@ silver_* parquet files and SILVER_LAYER_METADATA.md.
 import sys
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pandera.errors
+import pandera.pandas as pa
 
 # Repo root: script lives in scripts/data_ingestion/
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_LAKE = REPO_ROOT / "data" / "curated" / "data_lake"
 
+# Gold macro sensor: daily cross-sectional fragmentation + IQM (coin-level Silver grain)
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+from majors_alts_monitor.msm_funding_v0.macro_environment import build_daily_environment_table
+
 FFILL_LIMIT = 3
+
+# Coinglass funding units harmonizer:
+# Empirically, the upstream payload shifted units mid-stream (decimal -> percent units)
+# around 2026-01-13 UTC. We normalize to a single canonical representation:
+# decimal fraction per 8-hours.
+FUNDING_UNIT_CUTOVER_UTC_DATE = pd.Timestamp("2026-01-13", tz="UTC").date()
+
+# Pandera: fatal schema check before silver_fact_funding.parquet write (data_dictionary.yaml)
+SILVER_FUNDING_SCHEMA = pa.DataFrameSchema(
+    {"funding_rate_raw_pct": pa.Column(float, nullable=False)},
+    strict=False,
+)
 
 # Slingshot thresholds (returns on consecutive calendar days)
 RETURN_CAP_UP = 1.0      # +100% on day T
@@ -198,7 +217,8 @@ def build_silver_fact_price(data_lake_dir: Path) -> tuple[pd.DataFrame, dict]:
 def build_silver_fact_funding(data_lake_dir: Path) -> pd.DataFrame:
     """
     Task 2: Load fact_funding, sort, add flags, forward-fill gaps.
-    No capping: funding_rate is preserved as raw (uncapped) market leverage cost.
+    Canonicalize to a pure decimal 8-hour rate (e.g. 0.000186 = 0.0186% per 8-hours).
+    No capping: funding_rate_raw_pct is preserved aside from unit harmonization.
     """
     path = data_lake_dir / "fact_funding.parquet"
     if not path.exists():
@@ -206,12 +226,18 @@ def build_silver_fact_funding(data_lake_dir: Path) -> pd.DataFrame:
 
     df = pd.read_parquet(path)
 
-    # Data type safeguard: funding_rate must be float
-    if "funding_rate" not in df.columns:
-        raise ValueError("Silver funding ETL: 'funding_rate' column missing in fact_funding.parquet.")
-    if not pd.api.types.is_float_dtype(df["funding_rate"]):
+    # Canonical column per data_dictionary.yaml (Bronze may still expose funding_rate)
+    if "funding_rate_raw_pct" not in df.columns:
+        if "funding_rate" not in df.columns:
+            raise ValueError(
+                "Silver funding ETL: expected 'funding_rate' or 'funding_rate_raw_pct' in fact_funding.parquet."
+            )
+        df = df.rename(columns={"funding_rate": "funding_rate_raw_pct"})
+
+    if not pd.api.types.is_float_dtype(df["funding_rate_raw_pct"]):
         raise ValueError(
-            f"Silver funding ETL: funding_rate dtype must be float, got {df['funding_rate'].dtype}."
+            "Silver funding ETL: funding_rate_raw_pct dtype must be float, "
+            f"got {df['funding_rate_raw_pct'].dtype}."
         )
 
     # Asset coverage safeguard: expect ~Top 30 assets; fail hard if materially lower
@@ -227,6 +253,19 @@ def build_silver_fact_funding(data_lake_dir: Path) -> pd.DataFrame:
         df["is_capped"] = False
         return df
     df["date"] = _normalize_date_series(df["date"])
+
+    # Temporal Harmonizer: normalize funding_rate_raw_pct to decimal across the API unit shift.
+    # Rule:
+    # - date <  2026-01-13: values are already pure decimals (no transform)
+    # - date >= 2026-01-13: values are percent-units, so divide by 100 to convert to decimals
+    #
+    # This keeps downstream feature engineering consistent (annualization * 1095).
+    df["_date_dt"] = pd.to_datetime(df["date"], utc=True, errors="raise")
+    df["_date_utc"] = df["_date_dt"].dt.date
+    mask_pct_units = df["_date_utc"] >= FUNDING_UNIT_CUTOVER_UTC_DATE
+    df.loc[mask_pct_units, "funding_rate_raw_pct"] = df.loc[mask_pct_units, "funding_rate_raw_pct"] / 100.0
+    df.drop(columns=["_date_dt", "_date_utc"], inplace=True)
+
     df = df.sort_values(["asset_id", "instrument_id", "exchange", "date"]).reset_index(drop=True)
 
     df["is_ffilled"] = False
@@ -247,23 +286,28 @@ def build_silver_fact_funding(data_lake_dir: Path) -> pd.DataFrame:
             })
     full_index = pd.DataFrame(full_rows)
 
-    cols_merge = key + ["date", "funding_rate", "source", "is_ffilled", "is_capped"]
+    cols_merge = key + ["date", "funding_rate_raw_pct", "source", "is_ffilled", "is_capped"]
     merged = full_index.merge(
         df[cols_merge],
         on=key + ["date"],
         how="left",
     )
     merged = merged.sort_values(key + ["date"]).reset_index(drop=True)
-    merged["_rate_orig"] = merged["funding_rate"].copy()
-    merged["funding_rate"] = merged.groupby(key)["funding_rate"].ffill(limit=FFILL_LIMIT)
+    merged["_rate_orig"] = merged["funding_rate_raw_pct"].copy()
+    merged["funding_rate_raw_pct"] = merged.groupby(key)["funding_rate_raw_pct"].ffill(limit=FFILL_LIMIT)
     merged["source"] = merged.groupby(key)["source"].ffill(limit=FFILL_LIMIT)
-    filled = merged["_rate_orig"].isna() & merged["funding_rate"].notna()
+    filled = merged["_rate_orig"].isna() & merged["funding_rate_raw_pct"].notna()
     merged.loc[filled, "is_ffilled"] = True
     merged.drop(columns=["_rate_orig"], inplace=True)
     merged["is_ffilled"] = (merged["is_ffilled"] == True)
     merged["is_capped"] = (merged["is_capped"] == True)
-    merged = merged.dropna(subset=["funding_rate"]).copy()
+    merged = merged.dropna(subset=["funding_rate_raw_pct"]).copy()
     merged = merged.sort_values(key + ["date"]).reset_index(drop=True)
+
+    try:
+        SILVER_FUNDING_SCHEMA.validate(merged, lazy=True)
+    except (pandera.errors.SchemaError, pandera.errors.SchemaErrors) as e:
+        raise RuntimeError(f"Silver funding Pandera schema validation failed: {e}") from e
 
     return merged
 
@@ -520,6 +564,13 @@ def main() -> None:
     out_funding = data_lake_dir / "silver_fact_funding.parquet"
     silver_funding.to_parquet(out_funding, index=False)
     print(f"        -> {out_funding} ({len(silver_funding):,} rows)")
+    try:
+        daily_macro = build_daily_environment_table(silver_funding)
+        cs_path = data_lake_dir / "silver_funding_cross_sectional_daily.parquet"
+        daily_macro.to_parquet(cs_path, index=False)
+        print(f"        -> {cs_path} ({len(daily_macro):,} rows) cross-sectional daily macro")
+    except Exception as exc:
+        print(f"        [WARN] silver_funding_cross_sectional_daily not written: {exc}")
 
     # Task 3: Market Cap
     print("  [3/4] silver_fact_marketcap...")

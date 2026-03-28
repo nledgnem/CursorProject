@@ -452,6 +452,11 @@ def align_datasets(panels: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
     """
     Align all datasets to a complete daily index (full date range).
     Preserves NA values.
+
+    Per data_dictionary.yaml ``prices_daily.date``: daily bars at 00:00 UTC; naive
+    datetime index in parquet is interpreted as UTC. We normalize to midnight and
+    build a contiguous calendar index so missing days appear as NaN rows (not omitted),
+    which preserves cross-sectional alignment for rank-based metrics.
     """
     # Get min and max dates across all datasets
     all_dates = []
@@ -462,14 +467,18 @@ def align_datasets(panels: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
     if not all_dates:
         return panels
     
-    min_date = min(all_dates)
-    max_date = max(all_dates)
+    min_ts = pd.Timestamp(min(all_dates)).normalize()
+    max_ts = pd.Timestamp(max(all_dates)).normalize()
     
-    # Create complete daily range
-    common_index = pd.date_range(start=min_date, end=max_date, freq="D", name="date")
+    # Contiguous UTC calendar day range (stored naive = UTC midnight per project convention)
+    common_index = pd.date_range(start=min_ts, end=max_ts, freq="D", inclusive="both", name="date")
     
     aligned = {}
     for name, df in panels.items():
+        # Normalize existing index to midnight for clean reindex alignment
+        if isinstance(df.index, pd.DatetimeIndex):
+            df = df.copy()
+            df.index = pd.to_datetime(df.index).normalize()
         aligned[name] = df.reindex(common_index)
     
     return aligned

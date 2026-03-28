@@ -21,9 +21,10 @@ def step1_silver_layer_cap_audit() -> tuple[bool, float, float]:
     """Load silver_fact_funding.parquet; assert data intact (cap removed from ETL). Return (ok, min_rate, max_rate)."""
     if not SILVER_FUNDING_PATH.exists():
         return False, float("nan"), float("nan")
-    df = pd.read_parquet(SILVER_FUNDING_PATH, columns=["funding_rate"])
-    min_rate = float(df["funding_rate"].min())
-    max_rate = float(df["funding_rate"].max())
+    df = pd.read_parquet(SILVER_FUNDING_PATH)
+    fr_col = "funding_rate_raw_pct" if "funding_rate_raw_pct" in df.columns else "funding_rate"
+    min_rate = float(df[fr_col].min())
+    max_rate = float(df[fr_col].max())
     # PASS when data exists: cap removed from ETL; we only assert data is physically intact
     return True, min_rate, max_rate
 

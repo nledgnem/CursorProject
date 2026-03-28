@@ -24,8 +24,8 @@ def run_gold_layer_audit(df: pd.DataFrame) -> None:
     """
     Run Zero-Trust data quality tripwires on the final Gold Layer timeseries.
 
-    Expected columns (see DATA_DICTIONARY.md):
-    - F_tk_apr: annualized funding rate (APR %)
+    Expected columns (see data_dictionary.yaml):
+    - F_tk_apr: annualized funding rate as decimal APR (F_tk_apr_dec; e.g. 0.04 = 4%)
     - y: 7-day log return of Long Majors / Short Alts spread
     - btcdom_7d_ret: strict 7-day log return of BTCDOM index (decision_date -> next_date)
     - decision_date, next_date: weekly decision and next decision dates
@@ -43,15 +43,17 @@ def run_gold_layer_audit(df: pd.DataFrame) -> None:
     if not np.isfinite(max_apr):
         raise ValueError("DATA QUALITY GATE: F_tk_apr max is not finite.")
 
-    # Assert: strictly > 10% APR and < 10,000% APR
-    if max_apr <= 10.0:
+    # Assert: decimal APR — for the Top-30 universe the expected scale is typically a few percent APR.
+    # We only flag "unit drift" on catastrophic under-scaling (e.g., another accidental /100).
+    # Lower bound (0.001) == 0.1% APR in decimal terms.
+    if max_apr <= 0.001:
         raise ValueError(
-            "UNIT DRIFT DETECTED: F_tk_apr max is suspiciously low. "
-            "Check API decimal/percentage format."
+            "UNIT DRIFT DETECTED: F_tk_apr max is suspiciously low for decimal APR. "
+            "Check Silver/Gold scaling vs data_dictionary.yaml."
         )
-    if max_apr >= 10000.0:
+    if max_apr >= 100.0:
         raise ValueError(
-            "UNIT DRIFT DETECTED: F_tk_apr max exceeds 10,000% APR. "
+            "UNIT DRIFT DETECTED: F_tk_apr max exceeds 10,000% APR as decimal. "
             "Check for runaway values or unit scaling errors."
         )
 
@@ -94,11 +96,22 @@ def run_gold_layer_audit(df: pd.DataFrame) -> None:
         )
 
     # Optional sanity: enforce consistent weekday for decision_date (typically Monday)
-    weekday_counts = decision_dates.dt.weekday.value_counts()
-    if len(weekday_counts) > 1:
-        # Not fatal, but we surface it for early detection.
+    # Enforce consistent weekday for all HISTORICAL rows, but allow the LIVE (last) row to differ.
+    historical_dates = decision_dates.iloc[:-1]
+    historical_weekday_counts = historical_dates.dt.weekday.value_counts()
+
+    if len(historical_weekday_counts) > 1:
         raise ValueError(
-            "TEMPORAL DESYNC: decision_date weekday is not consistent across the Gold Layer. "
-            f"Observed weekday counts: {weekday_counts.to_dict()}"
+            "TEMPORAL DESYNC: Historical decision_date weekdays are not consistent. "
+            f"Observed counts: {historical_weekday_counts.to_dict()}"
+        )
+
+    # Log the presence of the Live intra-week row
+    last_date = decision_dates.iloc[-1]
+    historical_weekday = historical_weekday_counts.index[0]
+    if last_date.weekday() != historical_weekday:
+        print(
+            f"DATA QUALITY GATE: Validated Live T-0 Row present for {last_date.date()} "
+            f"(Weekday {last_date.weekday()} vs Historical {historical_weekday})."
         )
 

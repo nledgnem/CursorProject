@@ -98,6 +98,7 @@ def select_top_n_alts(
     n: int = 30,
     min_mcap_usd: float = 50_000_000,
     excluded_assets: Optional[Set[str]] = None,
+    candidate_asset_ids: Optional[Set[str]] = None,
 ) -> pl.DataFrame:
     """
     Select top N eligible ALTs by market cap at a specific date.
@@ -108,6 +109,8 @@ def select_top_n_alts(
         n: Number of assets to select
         min_mcap_usd: Minimum market cap threshold
         excluded_assets: Set of asset_ids to exclude
+        candidate_asset_ids: If set, only consider these asset_ids (e.g. assets with funding data).
+            Ensures denominator alignment: basket is drawn from assets we can compute features for.
     
     Returns:
         DataFrame with (asset_id, marketcap, rank) for selected assets
@@ -119,6 +122,8 @@ def select_top_n_alts(
     mcap_at_date = marketcap.filter(
         pl.col("date") <= pl.date(asof_date.year, asof_date.month, asof_date.day)
     )
+    if candidate_asset_ids is not None and len(candidate_asset_ids) > 0:
+        mcap_at_date = mcap_at_date.filter(pl.col("asset_id").is_in(list(candidate_asset_ids)))
     
     if len(mcap_at_date) == 0:
         logger.warning(f"No marketcap data available at or before {asof_date}")

@@ -99,7 +99,7 @@ def main() -> None:
     capped = capped.sort_values(["date", "asset_id", "instrument_id", "exchange"])
     sample = capped.head(5).copy()
     sample["date"] = sample["date"].dt.date
-    cols = [c for c in ["asset_id", "instrument_id", "exchange", "date", "funding_rate", "is_capped"] if c in sample.columns]
+    cols = [c for c in ["asset_id", "instrument_id", "exchange", "date", "funding_rate_raw_pct", "funding_rate", "is_capped"] if c in sample.columns]
     print(sample[cols].to_string(index=False))
 
 
