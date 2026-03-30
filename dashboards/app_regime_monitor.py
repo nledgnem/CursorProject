@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import sqlite3
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Tuple
@@ -12,7 +14,12 @@ from plotly.subplots import make_subplots
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_DB_PATH = REPO_ROOT / "data" / "state" / "macro_state.db"
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from repo_paths import macro_state_db_path  # noqa: E402
+
+DEFAULT_DB_PATH = macro_state_db_path()
 PLOT_BG = "#0F172A"
 GRID = "#334155"
 TEXT_MUTED = "#94a3b8"
@@ -645,8 +652,27 @@ def _render_institutional_chart(df: pd.DataFrame) -> None:
     st.plotly_chart(fig, width="stretch")
 
 
+def _password_gate() -> None:
+    """Optional team login when DASHBOARD_PASSWORD is set (e.g. on Render)."""
+    pwd = os.environ.get("DASHBOARD_PASSWORD", "").strip()
+    if not pwd:
+        return
+    if st.session_state.get("_dashboard_auth_ok"):
+        return
+    st.title("Macro Regime Monitor")
+    entered = st.text_input("Team password", type="password")
+    if st.button("Continue"):
+        if entered == pwd:
+            st.session_state._dashboard_auth_ok = True
+            st.rerun()
+        else:
+            st.error("Incorrect password.")
+    st.stop()
+
+
 def main() -> None:
     st.set_page_config(page_title="Macro Regime Monitor", layout="wide")
+    _password_gate()
 
     # ----------------------------
     # Layer 1 — Header / identity

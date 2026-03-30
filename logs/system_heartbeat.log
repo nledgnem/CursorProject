@@ -3115,3 +3115,19 @@
 2026-03-27 18:11:33,396Z | INFO | Dashboard started (pid=5048).
 2026-03-28 00:05:04,526Z | INFO | Running live pipeline: C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\python.exe C:\Users\Admin\Documents\Cursor\scripts\live\live_data_fetcher.py
 2026-03-28 00:10:37,928Z | ERROR | Live pipeline failed (exit=120). Dashboard remains online using last known state.
+2026-03-28 16:05:04,240Z | INFO | Running live pipeline: C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\python.exe C:\Users\Admin\Documents\Cursor\scripts\live\live_data_fetcher.py
+2026-03-28 16:10:39,981Z | ERROR | Live pipeline failed (exit=120). Dashboard remains online using last known state.
+2026-03-29 00:05:01,306Z | INFO | Running live pipeline: C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\python.exe C:\Users\Admin\Documents\Cursor\scripts\live\live_data_fetcher.py
+2026-03-29 00:10:35,613Z | ERROR | Live pipeline failed (exit=120). Dashboard remains online using last known state.
+2026-03-29 16:05:01,407Z | INFO | Running live pipeline: C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\python.exe C:\Users\Admin\Documents\Cursor\scripts\live\live_data_fetcher.py
+2026-03-29 16:10:35,617Z | ERROR | Live pipeline failed (exit=120). Dashboard remains online using last known state.
+2026-03-30 00:05:04,331Z | INFO | Running live pipeline: C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\python.exe C:\Users\Admin\Documents\Cursor\scripts\live\live_data_fetcher.py
+2026-03-30 00:10:38,708Z | ERROR | Live pipeline failed (exit=120). Dashboard remains online using last known state.
+2026-03-30 08:05:00,815Z | INFO | Running live pipeline: C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\python.exe C:\Users\Admin\Documents\Cursor\scripts\live\live_data_fetcher.py
+2026-03-30 08:10:34,102Z | ERROR | Live pipeline failed (exit=120). Dashboard remains online using last known state.
+2026-03-30 09:47:05,031Z | INFO | System heartbeat starting. Repo root: C:\Users\Admin\Documents\Cursor
+2026-03-30 09:47:05,031Z | INFO | UTC schedule: 00:05, 08:05, 16:05
+2026-03-30 09:47:05,035Z | INFO | Dashboard started (pid=39412).
+2026-03-30 09:47:10,038Z | INFO | Catch-up pipeline: last success date=never, today UTC=2026-03-30
+2026-03-30 09:47:10,038Z | INFO | Live pipeline (catch-up (missed UTC day)): C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\python.exe C:\Users\Admin\Documents\Cursor\scripts\live\live_data_fetcher.py
+2026-03-30 10:38:06,694Z | INFO | Live pipeline completed successfully (catch-up (missed UTC day)).

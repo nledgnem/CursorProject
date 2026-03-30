@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import sqlite3
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -10,7 +11,12 @@ import pandas as pd
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DB_PATH = REPO_ROOT / "data" / "state" / "macro_state.db"
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from repo_paths import macro_state_db_path
+
+DEFAULT_DB_PATH = macro_state_db_path()
 
 
 @dataclass(frozen=True)

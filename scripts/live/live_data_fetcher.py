@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import sqlite3
 import subprocess
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -10,7 +11,12 @@ import pandas as pd
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DB_PATH = REPO_ROOT / "data" / "state" / "macro_state.db"
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from repo_paths import macro_state_db_path
+
+DEFAULT_DB_PATH = macro_state_db_path()
 REPORTS_ROOT = REPO_ROOT / "reports" / "msm_funding_v0"
 
 
@@ -151,7 +157,7 @@ def smoke_test_upsert(master_csv: Path) -> None:
 def run_live_pipeline(repo_root: Path) -> None:
     # Uses the existing production boundary: always through present date.
     subprocess.run(
-        ["python", str(repo_root / "run_live_pipeline.py")],
+        [sys.executable, str(repo_root / "run_live_pipeline.py")],
         check=True,
         cwd=str(repo_root),
     )

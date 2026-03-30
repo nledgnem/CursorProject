@@ -5,17 +5,17 @@ Quality flags: `is_ffilled`, `is_winsorized` (price, market cap), `is_capped` (f
 
 ## silver_fact_price.parquet
 
-- **Total row count:** 1,570,341
-- **Rows flagged `is_winsorized`:** 2,103 (0.1339%)
+- **Total row count:** 1,578,160
+- **Rows flagged `is_winsorized`:** 2,110 (0.1337%)
 - **Rows flagged `is_ffilled`:** 0 (0.0000%)
 
 ## silver_fact_marketcap.parquet
 
-- **Total row count:** 1,569,263
-- **Rows flagged `is_winsorized`:** 489 (0.0312%)
+- **Total row count:** 1,577,082
+- **Rows flagged `is_winsorized`:** 489 (0.0310%)
 
 ## silver_fact_funding.parquet
 
-- **Total row count:** 273,544
+- **Total row count:** 274,059
 - **Rows flagged `is_capped`:** 0 (0.0000%)
 - **Rows flagged `is_ffilled`:** 3 (0.0011%)
