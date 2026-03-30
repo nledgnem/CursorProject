@@ -971,8 +971,39 @@ def main() -> None:
             "Select tickers (symbols) and we will compute **annualized daily APR (%)** from `silver_fact_funding.parquet`."
         )
         st.caption("Computation: daily mean funding_rate_raw_pct × 1095, shown as APR%. Funding_rate_raw_pct is the native 8-hour decimal funding rate.")
-        raw_symbols = st.text_input("Symbols (comma-separated)", value="BTC, ETH")
-        syms = _parse_symbol_list(raw_symbols)
+        sym_map = _load_symbol_to_asset_id()
+        all_symbols = sorted(sym_map.keys())
+
+        filter_q = st.text_input("Filter available symbols", value="", help="Type to search, e.g. 'BTC' or 'SOL'.")
+        if filter_q:
+            q = filter_q.upper().strip()
+            options = [s for s in all_symbols if q in s]
+        else:
+            options = all_symbols
+
+        default_sel = [s for s in ("BTC", "ETH") if s in options][:2]
+        selected_syms = st.multiselect(
+            "Select tickers (dropdown)",
+            options=options,
+            default=default_sel,
+        )
+
+        manual_raw_symbols = st.text_input(
+            "Add symbols manually (comma-separated)",
+            value="",
+            help="Optional: if you know a symbol, you can type it here too.",
+        )
+        manual_syms = _parse_symbol_list(manual_raw_symbols)
+
+        # Union: dropdown selections + manual additions (preserve order).
+        syms: list[str] = []
+        for s in list(selected_syms) + manual_syms:
+            s = str(s).upper().strip()
+            if not s:
+                continue
+            if s in syms:
+                continue
+            syms.append(s)
 
         default_start = None
         default_end = None
@@ -998,6 +1029,11 @@ def main() -> None:
                 )
             else:
                 try:
+                    missing = [s for s in syms if s not in sym_map]
+                    if missing:
+                        st.error(f"Unknown symbols (not found in dim_asset.parquet): {missing}")
+                        st.stop()
+
                     df_apr = _compute_daily_apr_by_ticker(tuple(syms), start_d, end_d)
                     if df_apr.empty:
                         st.warning("No data for the selected symbol(s)/date range.")
