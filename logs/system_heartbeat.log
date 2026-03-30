@@ -3131,3 +3131,5 @@
 2026-03-30 09:47:10,038Z | INFO | Catch-up pipeline: last success date=never, today UTC=2026-03-30
 2026-03-30 09:47:10,038Z | INFO | Live pipeline (catch-up (missed UTC day)): C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\python.exe C:\Users\Admin\Documents\Cursor\scripts\live\live_data_fetcher.py
 2026-03-30 10:38:06,694Z | INFO | Live pipeline completed successfully (catch-up (missed UTC day)).
+2026-03-30 16:05:02,056Z | INFO | Live pipeline (scheduled UTC 08:05): C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\python.exe C:\Users\Admin\Documents\Cursor\scripts\live\live_data_fetcher.py
+2026-03-30 16:11:37,918Z | INFO | Live pipeline completed successfully (scheduled UTC 08:05).

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import pandas as pd
+import polars as pl
 import streamlit as st
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -20,6 +21,11 @@ if str(REPO_ROOT) not in sys.path:
 from repo_paths import macro_state_db_path  # noqa: E402
 
 DEFAULT_DB_PATH = macro_state_db_path()
+
+# Optional explorer inputs (used only when the user opens the ticker APR expander).
+DATA_LAKE_DIR = REPO_ROOT / "data" / "curated" / "data_lake"
+DIM_ASSET_PARQUET = DATA_LAKE_DIR / "dim_asset.parquet"
+SILVER_FACT_FUNDING_PARQUET = DATA_LAKE_DIR / "silver_fact_funding.parquet"
 PLOT_BG = "#0F172A"
 GRID = "#334155"
 TEXT_MUTED = "#94a3b8"
@@ -78,6 +84,93 @@ LIMIT {int(n)}
     df["decision_date"] = pd.to_datetime(df["decision_date"], errors="coerce")
     df = df.dropna(subset=["decision_date"]).sort_values("decision_date")
     return df
+
+
+def _parse_symbol_list(raw: str) -> list[str]:
+    parts = [p.strip() for p in (raw or "").split(",")]
+    syms = [p.upper() for p in parts if p]
+    # de-duplicate while preserving order
+    seen: set[str] = set()
+    out: list[str] = []
+    for s in syms:
+        if s in seen:
+            continue
+        seen.add(s)
+        out.append(s)
+    return out
+
+
+@st.cache_data(ttl=3600)
+def _load_symbol_to_asset_id() -> dict[str, str]:
+    """
+    Map user-entered symbol (e.g. "BTC") to canonical asset_id (used in parquet rows).
+    """
+    if not DIM_ASSET_PARQUET.exists():
+        return {}
+    # Load only the minimal columns needed.
+    df = pd.read_parquet(DIM_ASSET_PARQUET, columns=["asset_id", "symbol"])
+    df["symbol"] = df["symbol"].astype(str).str.upper()
+    df["asset_id"] = df["asset_id"].astype(str)
+    mapping = dict(zip(df["symbol"].tolist(), df["asset_id"].tolist()))
+    return mapping
+
+
+@st.cache_data(ttl=3600)
+def _compute_daily_apr_by_ticker(symbols: tuple[str, ...], start_date, end_date) -> pd.DataFrame:
+    """
+    Compute annualized daily APR (%) per ticker, derived from `silver_fact_funding.parquet`.
+
+    funding_rate_raw_pct is defined as the native 8-hour decimal funding rate.
+    annualized APR decimal = daily_mean_funding_rate * 1095 (365*3 blocks/day).
+    display APR % = annualized_apr_decimal * 100.
+    """
+    if not SILVER_FACT_FUNDING_PARQUET.exists():
+        raise FileNotFoundError(f"Missing parquet: {SILVER_FACT_FUNDING_PARQUET}")
+
+    if not symbols:
+        return pd.DataFrame(columns=["date", "symbol", "daily_apr_pct"])
+
+    mapping = _load_symbol_to_asset_id()
+    missing = [s for s in symbols if s not in mapping]
+    if missing:
+        raise KeyError(f"Symbols not found in dim_asset.parquet: {missing}")
+
+    asset_ids = [mapping[s] for s in symbols]
+
+    rate_col = "funding_rate_raw_pct"
+    # Polars will filter by this column; if schema differs we fail loudly.
+    lf = pl.scan_parquet(str(SILVER_FACT_FUNDING_PARQUET))
+    cols = set(lf.collect_schema().names())
+    if rate_col not in cols:
+        if "funding_rate" in cols:
+            rate_col = "funding_rate"
+        else:
+            raise KeyError(f"Expected funding column not found in parquet. Have: {sorted(cols)}")
+
+    lf = lf.with_columns(pl.col("date").cast(pl.Date))
+    lf = lf.filter(
+        pl.col("asset_id").is_in(asset_ids)
+        & (pl.col("date") >= pl.lit(start_date))
+        & (pl.col("date") <= pl.lit(end_date))
+    )
+
+    daily = (
+        lf.group_by(["asset_id", "date"])
+        .agg(pl.col(rate_col).mean().alias("daily_mean_rate"))
+        .with_columns(
+            (pl.col("daily_mean_rate") * 1095.0 * 100.0).alias("daily_apr_pct")
+        )
+    )
+
+    # Join back symbol labels for plotting (do it in pandas for simplicity).
+    map_pdf = pd.DataFrame({"asset_id": asset_ids, "symbol": list(symbols)})
+    daily_pdf = daily.collect().to_pandas()
+    if not daily_pdf.empty:
+        pdf = daily_pdf.merge(map_pdf, on="asset_id", how="left").loc[:, ["date", "symbol", "daily_apr_pct"]]
+    else:
+        pdf = pd.DataFrame(columns=["date", "symbol", "daily_apr_pct"])
+    pdf = pdf.sort_values(["symbol", "date"]).reset_index(drop=True)
+    return pdf
 
 
 def _regime_from_environment_apr(apr_pct: float) -> Regime:
@@ -872,6 +965,68 @@ def main() -> None:
 
     with st.expander("Raw rows (latest 90)"):
         st.dataframe(window, width="stretch", hide_index=True)
+
+    with st.expander("Daily APR by Ticker (from silver_fact_funding.parquet)"):
+        st.markdown(
+            "Select tickers (symbols) and we will compute **annualized daily APR (%)** from `silver_fact_funding.parquet`."
+        )
+        st.caption("Computation: daily mean funding_rate_raw_pct × 1095, shown as APR%. Funding_rate_raw_pct is the native 8-hour decimal funding rate.")
+        raw_symbols = st.text_input("Symbols (comma-separated)", value="BTC, ETH")
+        syms = _parse_symbol_list(raw_symbols)
+
+        default_start = None
+        default_end = None
+        # Default date range to the last 60 days available in the dashboard DB (fallback if parquet is missing).
+        try:
+            if not window.empty and "decision_date" in window.columns:
+                last_dec = pd.to_datetime(window["decision_date"]).max()
+                default_end = last_dec.date()
+                default_start = (last_dec.date() - pd.Timedelta(days=60)).date()
+        except Exception:
+            default_start = None
+            default_end = None
+
+        start_d = st.date_input("Start date (UTC)", value=default_start) if default_start else st.date_input("Start date (UTC)", value=pd.Timestamp.utcnow().date() - pd.Timedelta(days=60))
+        end_d = st.date_input("End date (UTC)", value=default_end) if default_end else st.date_input("End date (UTC)", value=pd.Timestamp.utcnow().date())
+
+        if st.button("Plot daily APR"):
+            if not syms:
+                st.error("Please enter at least one symbol.")
+            elif not DIM_ASSET_PARQUET.exists() or not SILVER_FACT_FUNDING_PARQUET.exists():
+                st.error(
+                    "Ticker APR explorer is unavailable on this deployment: missing `dim_asset.parquet` and/or `silver_fact_funding.parquet`."
+                )
+            else:
+                try:
+                    df_apr = _compute_daily_apr_by_ticker(tuple(syms), start_d, end_d)
+                    if df_apr.empty:
+                        st.warning("No data for the selected symbol(s)/date range.")
+                    else:
+                        fig = go.Figure()
+                        for sym in sorted(df_apr["symbol"].unique()):
+                            d = df_apr[df_apr["symbol"] == sym].sort_values("date")
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=d["date"],
+                                    y=d["daily_apr_pct"],
+                                    mode="lines",
+                                    name=sym,
+                                )
+                            )
+                        fig.update_layout(
+                            height=450,
+                            template="plotly_dark",
+                            paper_bgcolor=PLOT_BG,
+                            plot_bgcolor=PLOT_BG,
+                            margin=dict(l=10, r=10, t=40, b=10),
+                            legend_title_text="Ticker",
+                            xaxis_title="Date",
+                            yaxis_title="Daily Annualized APR (%)",
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                        st.dataframe(df_apr.tail(20), hide_index=True)
+                except Exception as e:
+                    st.exception(e)
 
 
 if __name__ == "__main__":
