@@ -25,6 +25,16 @@ GRID = "#334155"
 TEXT_MUTED = "#94a3b8"
 TEXT_MAIN = "#e2e8f0"
 
+# Fragmentation Spread hard gate (raw decimal, no percentage scaling).
+# Gate ON requires both:
+#   1) Environment_APR >= 2.0  (Environment_APR is stored as percentage points, e.g. 4.0 == 4% APR)
+#   2) Fragmentation_Spread < 0.000075
+FRAGMENTATION_IDIOSYNCRATIC_TOXIC_CEILING = 0.000075
+ENVIRONMENT_APR_ENTRY_GATE_PCT = 2.0
+
+SPREAD_LABEL_TOXIC = "Chaos/Contagion"
+SPREAD_LABEL_HEALTHY = "Healthy"
+
 
 @dataclass(frozen=True)
 class Regime:
@@ -100,36 +110,27 @@ def _warning_flag(window: pd.DataFrame) -> Tuple[str, str]:
 
 
 def _compute_spread_danger_threshold(d: pd.DataFrame) -> float:
-    s = pd.to_numeric(d.get("Fragmentation_Spread"), errors="coerce")
-    if s is None:
-        return float("nan")
-    s = s.dropna()
-    if len(s) < 20:
-        return float("nan")
-    return float(s.quantile(0.85))
+    # Fixed idiosyncratic toxic ceiling (raw decimal).
+    return float(FRAGMENTATION_IDIOSYNCRATIC_TOXIC_CEILING)
 
 
 def _compute_spread_thresholds(d: pd.DataFrame) -> tuple[float, float]:
     """
-    Returns (elevated_threshold, critical_threshold) using historical quantiles.
+    Fixed spread thresholds to preserve the function signature.
+    Returns (elevated_threshold, critical_threshold) where both map to the
+    idiosyncratic toxic ceiling.
     """
-    s = pd.to_numeric(d.get("Fragmentation_Spread"), errors="coerce")
-    if s is None:
-        return float("nan"), float("nan")
-    s = s.dropna()
-    if len(s) < 20:
-        return float("nan"), float("nan")
-    return float(s.quantile(0.70)), float(s.quantile(0.85))
+    thr = float(FRAGMENTATION_IDIOSYNCRATIC_TOXIC_CEILING)
+    return thr, thr
 
 
 def _spread_severity(value: float, elevated: float, critical: float) -> tuple[str, str]:
     if pd.isna(value):
         return "Unknown", TEXT_MUTED
-    if pd.notna(critical) and value > critical:
-        return "Critical", "#EF4444"
-    if pd.notna(elevated) and value > elevated:
-        return "Elevated", "#F59E0B"
-    return "Normal", "#64748B"
+    toxic_ceiling = float(FRAGMENTATION_IDIOSYNCRATIC_TOXIC_CEILING)
+    if pd.notna(value) and value >= toxic_ceiling:
+        return SPREAD_LABEL_TOXIC, "#EF4444"
+    return SPREAD_LABEL_HEALTHY, "#64748B"
 
 
 def _format_delta(v: Optional[float], suffix: str = "") -> Optional[str]:
@@ -222,19 +223,17 @@ def _stress_regime_consistency(apr_zone: str, stress_tier: str) -> tuple[str, st
     Returns (label, explanation) based on tier vs zone intent.
     """
     if apr_zone == "Cold Flush":
-        if stress_tier in {"Elevated", "Critical"}:
-            return "Consistent with defense", "Stress elevated supports caution in Cold Flush."
-        return "Consistent with defense", "Stress normal; still remain defensive under Cold Flush."
+        if stress_tier == SPREAD_LABEL_TOXIC:
+            return "Consistent with defense", "Chaos/Contagion spread reinforces defense under Cold Flush."
+        return "Consistent with defense", "Spread healthy, but APR < 2% still keeps defense stance."
     if apr_zone == "Golden Pocket":
-        if stress_tier == "Critical":
-            return "Conflict", "Golden Pocket with critical stress: do not trust full risk-on sizing."
-        if stress_tier == "Elevated":
-            return "Caution", "Golden Pocket with elevated stress: monitor for fragmentation / rollover."
-        return "Consistent", "Stress normal supports risk-on deployment."
+        if stress_tier == SPREAD_LABEL_TOXIC:
+            return "Conflict", "Golden Pocket with Chaos/Contagion: gate veto (Gate OFF / Stables)."
+        return "Consistent", "Spread healthy supports risk-on deployment."
     if apr_zone == "Recovery Ramp":
-        if stress_tier == "Critical":
-            return "Conflict", "Recovery with critical stress: scaling in is not supported."
-        return "Contextual", "Recovery depends on stability; use stress tier to modulate sizing."
+        if stress_tier == SPREAD_LABEL_TOXIC:
+            return "Conflict", "Recovery with Chaos/Contagion: scaling veto (Gate OFF / Stables)."
+        return "Contextual", "Recovery depends on stability; spread healthy supports gradual scaling."
     if apr_zone == "Leverage Exhaustion":
         return "Consistent with de-risking", "Overheated zone; stress tier informs urgency but stance remains defensive."
     return "Unknown", "Unable to classify stress-regime relationship."
@@ -277,17 +276,13 @@ def _regime_interpretation(regime: Regime) -> str:
 
 
 def _operational_takeaway(regime: Regime, w_risk_action: str, spread_sev: str) -> str:
+    if spread_sev == SPREAD_LABEL_TOXIC:
+        return "Gate OFF / Stables. Chaos/Contagion veto triggered."
     if regime.name == "The Cold Flush":
-        if spread_sev in {"Elevated", "Critical"}:
-            return "Hold reserve. Stress elevated inside cold regime; avoid aggressive re-risking."
         return "Hold reserve. Wait for Recovery Ramp confirmation before scaling risk."
     if regime.name == "The Recovery Ramp":
-        if spread_sev == "Critical":
-            return "Scale in cautiously. Recovery improving, but stress is critical—reduce sizing."
         return "Scale in gradually. Focus on smooth execution and avoid binary switches."
     if regime.name == "The Golden Pocket":
-        if spread_sev == "Critical":
-            return "Risk-on regime, but stress contradicts—tighten sizing / monitor for exhaustion."
         if w_risk_action == "De-risking":
             return "De-risking while in Golden Pocket—verify if APR is rolling over or stress rising."
         return "Max deployment allowed. Monitor spread for fragmentation early-warning."
@@ -359,8 +354,10 @@ def _render_summary_ribbon(window: pd.DataFrame, latest: pd.Series, regime: Regi
     w_action = _w_risk_action(w_now, w_prev) if (pd.notna(w_now) and pd.notna(w_prev)) else "Unknown"
 
     spread = float(last["Fragmentation_Spread"]) if pd.notna(last.get("Fragmentation_Spread")) else float("nan")
-    spread_thr = _compute_spread_danger_threshold(d)
-    spread_status = "Danger" if pd.notna(spread_thr) and pd.notna(spread) and spread > spread_thr else "Healthy"
+    spread_thr = float(FRAGMENTATION_IDIOSYNCRATIC_TOXIC_CEILING)
+    spread_toxic = pd.notna(spread) and pd.notna(spread_thr) and spread >= spread_thr
+    spread_status = SPREAD_LABEL_TOXIC if spread_toxic else SPREAD_LABEL_HEALTHY
+    gate_allowed = pd.notna(env) and pd.notna(spread) and (env >= ENVIRONMENT_APR_ENTRY_GATE_PCT) and (spread < spread_thr)
 
     c1, c2, c3, c4, c5 = st.columns([1.25, 1.55, 1.2, 1.35, 1.65])
     c1.metric("Regime", regime.name)
@@ -373,9 +370,9 @@ def _render_summary_ribbon(window: pd.DataFrame, latest: pd.Series, regime: Regi
     c4.metric(
         "Fragmentation_Spread",
         f"{spread:.6f}" if pd.notna(spread) else "NaN",
-        delta=f"thr={spread_thr:.6f}" if pd.notna(spread_thr) else None,
+        delta=f"toxic>={spread_thr:.6f}",
     )
-    stance = f"{w_action}" if w_action != "Unknown" else "Unknown"
+    stance = f"{w_action}" if gate_allowed and w_action != "Unknown" else "Gate OFF / Stables"
     c5.markdown(
         f"""
 <div style="padding: 10px 12px; border-radius: 12px; border: 1px solid {GRID}; background: {PLOT_BG};">
@@ -530,34 +527,33 @@ def _render_institutional_chart(df: pd.DataFrame) -> None:
     )
 
     # --- PANE 3: Fragmentation Spread (warning) ---
-    spread_thr = _compute_spread_danger_threshold(d)
+    spread_thr = float(FRAGMENTATION_IDIOSYNCRATIC_TOXIC_CEILING)
     spread = d["Fragmentation_Spread"]
-    if pd.notna(spread_thr):
-        bar_colors = ["#EF4444" if (pd.notna(v) and v > spread_thr) else "#64748B" for v in spread.tolist()]
-    else:
-        bar_colors = ["#64748B"] * len(d)
+    bar_colors = ["#EF4444" if (pd.notna(v) and v >= spread_thr) else "#64748B" for v in spread.tolist()]
 
     fig.add_trace(
         go.Bar(
             x=d["decision_date"],
             y=d["Fragmentation_Spread"],
             marker_color=bar_colors,
-            name="Spread (%)",
+            name="Fragmentation_Spread (raw)",
             hovertemplate="Fragmentation_Spread: %{y:.6f}<br>micro-units: %{customdata:.0f}<extra></extra>",
             customdata=(d["Fragmentation_Spread"] * 1_000_000.0),
         ),
         row=3,
         col=1,
     )
-    if pd.notna(spread_thr):
-        fig.add_hline(
-            y=spread_thr,
-            line_dash="dash",
-            line_color="#EF4444",
-            line_width=1,
-            row=3,
-            col=1,
-        )
+    fig.add_hline(
+        y=spread_thr,
+        line_dash="dash",
+        line_color="#EF4444",
+        line_width=1,
+        row=3,
+        col=1,
+        annotation_text=f"Toxic ceiling {spread_thr:.6f}",
+        annotation_position="top left",
+        annotation_font=dict(color="#EF4444", size=10),
+    )
 
     fig.update_layout(
         height=800,
@@ -594,7 +590,7 @@ def _render_institutional_chart(df: pd.DataFrame) -> None:
         col=1,
     )
     fig.update_yaxes(
-        title_text="Spread (%)",
+        title_text="Fragmentation_Spread (raw)",
         showgrid=True,
         gridcolor=GRID,
         row=3,
@@ -640,7 +636,7 @@ def _render_institutional_chart(df: pd.DataFrame) -> None:
         last_w,
         "#2DD4BF",
     )
-    badge_spread_color = "#EF4444" if stress_tier == "Critical" else "#F59E0B" if stress_tier == "Elevated" else "#64748B"
+    badge_spread_color = "#EF4444" if stress_tier == SPREAD_LABEL_TOXIC else "#64748B"
     _add_terminal_badge(
         fig,
         "y3",
@@ -770,16 +766,12 @@ def main() -> None:
             accent="#2DD4BF",
         )
     with row[3]:
-        thr_txt = (
-            f"Elev>{_format_spread(spread_elev)} · Crit>{_format_spread(spread_crit)}"
-            if pd.notna(spread_crit)
-            else "Thresholds unavailable (insufficient history)"
-        )
+        thr_txt = f"Toxic ceiling >= {_format_spread(spread_crit)} (raw decimal)"
         _decision_card(
             "Stress State",
             _format_spread(spread_now),
             f"{spread_sev} ({thr_txt})",
-            f"Derived from Fragmentation_Spread vs historical thresholds. {_format_spread_micro_label(spread_now)}.",
+            f"Derived from Fragmentation_Spread vs fixed Idiosyncratic Gate {_format_spread(spread_crit)}. {_format_spread_micro_label(spread_now)}.",
             accent=spread_color,
         )
     with row[4]:

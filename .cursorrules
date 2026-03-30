@@ -48,6 +48,14 @@ Rule 6: Prevents the "Production Pipeline Desync" failure mode. It forces Cursor
 
 Rule 7: Locks the exact physical logic of your $1M reserve into Cursor's permanent memory. If Mads asks Cursor a question about the sensor's status next month, Cursor will automatically apply the Asymmetric logic to answer.
 
+## 7.1 🧨 IDEOSYNCRATIC FRAGMENTATION TOXIC CEILING (UI Gate Veto)
+When rendering (or reasoning about) the dashboard’s MSM Macro Sensor *stance/status* that uses `Fragmentation_Spread` and `Environment_APR`, you must apply this fixed **Idiosyncratic Gate** using `Fragmentation_Spread` as a **raw decimal** (no percent scaling):
+* **Environment entry gate:** `Environment_APR >= 2.0` (Environment_APR is stored in percentage points, e.g. 2.0 means 2% APR)
+* **Spread toxic ceiling:** `Fragmentation_Spread >= 0.000075` => **Chaos/Contagion** (Gate veto)
+* **Allowed stance gate:** both conditions must hold:
+  * `Environment_APR >= 2.0` AND `Fragmentation_Spread < 0.000075`
+* **Execution implication:** when the spread toxic ceiling is triggered, the execution stance must reflect **Gate OFF / Stables** (veto), even if other dashboard tiers would otherwise suggest risk-on.
+
 ## 8. 🗂️ NON-DESTRUCTIVE AUDIT TRAIL
 You are strictly forbidden from modifying `msm_run.py` to overwrite a single `msm_timeseries.csv` file. The pipeline must always generate new `run_id` folders to preserve Point-in-Time integrity.
 

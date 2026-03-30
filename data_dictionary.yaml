@@ -28,6 +28,16 @@ layers:
         unit: decimal # Example: 0.04 (representing 4.0% APR)
         frequency: annualized
         pipeline_column: "F_tk_apr"  # msm_timeseries.csv: decimal APR (not percentage points)
+      - name: Environment_APR
+        type: float
+        unit: percentage_points  # Example: 4.0 means 4% APR (stored as pct-points)
+        frequency: decision_date (weekly decision points)
+        definition: "Weekly Environment_APR derived from the macro environment sensor; stored in percentage points so it can be compared directly to APR thresholds like 2.0 / 5.0 / 15.0."
+      - name: Fragmentation_Spread
+        type: float
+        unit: decimal_raw  # Example: 0.000075 means 7.5e-5 (a pure decimal fraction; no percent scaling)
+        frequency: decision_date (weekly decision points)
+        definition: "Cross-sectional funding-rate spread (q75 - q25) computed from native 8-hour funding rates across the altcoin basket; values are stored as raw decimals (no % multipliers/dividers)."
 
 prices_daily:
   close:
