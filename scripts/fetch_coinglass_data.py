@@ -657,6 +657,11 @@ def main():
         action="store_true",
         help="Merge fetched data with existing parquet (recommended for max-range backfills)",
     )
+    parser.add_argument(
+        "--liquidity-gate",
+        action="store_true",
+        help="(Optional) Apply Top-N liquid perpetual universe filter when auto-detecting funding symbols",
+    )
     
     args = parser.parse_args()
 
@@ -765,48 +770,69 @@ def main():
                     print("  [ERROR] No symbols provided and no data sources found")
                     symbols = []
             
-            # LIQUIDITY GATE: Filter for valid perpetuals FIRST (or universe), then Top-N by market cap (avoid spot-only denominator trap)
-            _top_n_fallback = 200
-            try:
-                data_lake_dir = repo_root / "data" / "curated" / "data_lake"
-                mcap_path = data_lake_dir / "fact_marketcap.parquet"
-                if mcap_path.exists():
-                    mcap_df = pd.read_parquet(mcap_path)
-                    if not mcap_df.empty and "date" in mcap_df.columns and "marketcap" in mcap_df.columns and "asset_id" in mcap_df.columns:
-                        max_date = mcap_df["date"].max()
-                        latest = mcap_df[mcap_df["date"] == max_date].copy()
-                        latest = latest.sort_values("marketcap", ascending=False)
+            if args.liquidity_gate:
+                # LIQUIDITY GATE: Filter for valid perpetuals FIRST (or universe), then Top-N by market cap (avoid spot-only denominator trap)
+                _top_n_fallback = 200
+                try:
+                    data_lake_dir = repo_root / "data" / "curated" / "data_lake"
+                    mcap_path = data_lake_dir / "fact_marketcap.parquet"
+                    if mcap_path.exists():
+                        mcap_df = pd.read_parquet(mcap_path)
+                        if (
+                            not mcap_df.empty
+                            and "date" in mcap_df.columns
+                            and "marketcap" in mcap_df.columns
+                            and "asset_id" in mcap_df.columns
+                        ):
+                            max_date = mcap_df["date"].max()
+                            latest = mcap_df[mcap_df["date"] == max_date].copy()
+                            latest = latest.sort_values("marketcap", ascending=False)
 
-                        # ZERO-TRUST PATCH: Filter for known valid symbols FIRST, then take Top N
-                        symbols_set = set(s.upper() for s in symbols)
-                        # Prefer symbols we already have funding for (valid perpetuals) when available
-                        if funding_output_path.exists():
-                            try:
-                                existing = pd.read_parquet(funding_output_path)
-                                col = "asset_id" if "asset_id" in existing.columns else "symbol"
-                                if len(existing) > 0 and col in existing.columns:
-                                    valid_perps = set(existing[col].astype(str).str.upper().tolist())
-                                    if len(valid_perps) >= 30:
-                                        symbols_set = valid_perps
-                            except Exception:
-                                pass
-                        # 1. Get all market cap assets that exist in our valid symbols list
-                        valid_mcap_assets = latest[latest["asset_id"].astype(str).str.upper().isin(symbols_set)]
-                        # 2. NOW take the Top 150 of that filtered list
-                        _top_n_perps = 150
-                        top_perps = set(valid_mcap_assets.head(_top_n_perps)["asset_id"].astype(str).str.upper().tolist())
-                        # 3. Preserve original casing from the current symbols list (universe)
-                        symbols = sorted([s for s in symbols if s.upper() in top_perps])
-                        print(f"  [LIQUIDITY GATE] Reduced universe to {len(symbols)} Top-{_top_n_perps} Liquid Perpetuals (max_date={max_date}).")
+                            # ZERO-TRUST PATCH: Filter for known valid symbols FIRST, then take Top N
+                            symbols_set = set(s.upper() for s in symbols)
+                            # Prefer symbols we already have funding for (valid perpetuals) when available
+                            if funding_output_path.exists():
+                                try:
+                                    existing = pd.read_parquet(funding_output_path)
+                                    col = "asset_id" if "asset_id" in existing.columns else "symbol"
+                                    if len(existing) > 0 and col in existing.columns:
+                                        valid_perps = set(existing[col].astype(str).str.upper().tolist())
+                                        if len(valid_perps) >= 30:
+                                            symbols_set = valid_perps
+                                except Exception:
+                                    pass
+                            # 1. Get all market cap assets that exist in our valid symbols list
+                            valid_mcap_assets = latest[
+                                latest["asset_id"].astype(str).str.upper().isin(symbols_set)
+                            ]
+                            # 2. NOW take the Top 150 of that filtered list
+                            _top_n_perps = 150
+                            top_perps = set(
+                                valid_mcap_assets.head(_top_n_perps)["asset_id"]
+                                .astype(str)
+                                .str.upper()
+                                .tolist()
+                            )
+                            # 3. Preserve original casing from the current symbols list (universe)
+                            symbols = sorted([s for s in symbols if s.upper() in top_perps])
+                            print(
+                                f"  [LIQUIDITY GATE] Reduced universe to {len(symbols)} Top-{_top_n_perps} Liquid Perpetuals (max_date={max_date})."
+                            )
+                        else:
+                            symbols = symbols[:_top_n_fallback]
+                            print(
+                                f"  [LIQUIDITY GATE] fact_marketcap schema missing columns; applied fail-safe slice to {len(symbols)} symbols."
+                            )
                     else:
                         symbols = symbols[:_top_n_fallback]
-                        print(f"  [LIQUIDITY GATE] fact_marketcap schema missing columns; applied fail-safe slice to {len(symbols)} symbols.")
-                else:
+                        print(
+                            f"  [LIQUIDITY GATE] fact_marketcap.parquet not found; applied fail-safe slice to {len(symbols)} symbols."
+                        )
+                except Exception as e:
                     symbols = symbols[:_top_n_fallback]
-                    print(f"  [LIQUIDITY GATE] fact_marketcap.parquet not found; applied fail-safe slice to {len(symbols)} symbols.")
-            except Exception as e:
-                symbols = symbols[:_top_n_fallback]
-                print(f"  [LIQUIDITY GATE] Fallback after error ({e}); applied fail-safe slice to {len(symbols)} symbols.")
+                    print(f"  [LIQUIDITY GATE] Fallback after error ({e}); applied fail-safe slice to {len(symbols)} symbols.")
+            else:
+                print(f"  [NO LIQUIDITY GATE] Using full symbol universe: {len(symbols)} symbols")
         
         if symbols:
             # Load existing data for per-symbol incremental checking
