@@ -658,6 +658,13 @@ def main():
         help="Merge fetched data with existing parquet (recommended for max-range backfills)",
     )
     parser.add_argument(
+        "--symbols-source",
+        type=str,
+        default="auto",
+        choices=["auto", "dim_instrument", "fact_funding", "universe", "perp_listings"],
+        help="Where to auto-detect funding symbols from when --symbols is not provided (default: auto)",
+    )
+    parser.add_argument(
         "--liquidity-gate",
         action="store_true",
         help="(Optional) Apply Top-N liquid perpetual universe filter when auto-detecting funding symbols",
@@ -728,30 +735,53 @@ def main():
         # Get symbols
         symbols = args.symbols
         if symbols is None:
-            universe_path = repo_root / "data" / "curated" / "universe_eligibility.parquet"
-            basket_path = repo_root / "data" / "curated" / "universe_snapshots.parquet"
-            
-            eligible_symbols = set()
-            if universe_path.exists():
+            # Prefer sources that are known-valid funding instruments on Binance, to avoid
+            # wasting hours on invalid/untradeable universe symbols (common on Render).
+
+            def _load_symbols_from_dim_instrument() -> list[str]:
+                p = (repo_root / "data" / "curated" / "data_lake" / "dim_instrument.parquet")
+                if not p.exists():
+                    return []
                 try:
-                    universe_df = pd.read_parquet(universe_path)
-                    if "symbol" in universe_df.columns:
-                        eligible_symbols.update(universe_df["symbol"].unique())
-                except:
-                    pass
-            
-            if basket_path.exists():
+                    d = pd.read_parquet(p, columns=["venue", "instrument_type", "base_asset_symbol"])
+                    d = d[(d["venue"].astype(str).str.lower() == "binance") & (d["instrument_type"] == "perpetual")]
+                    out = sorted(set(d["base_asset_symbol"].astype(str).tolist()))
+                    return [s for s in out if s]
+                except Exception:
+                    return []
+
+            def _load_symbols_from_fact_funding() -> list[str]:
+                if not funding_output_path.exists():
+                    return []
                 try:
-                    basket_df = pd.read_parquet(basket_path)
-                    if "symbol" in basket_df.columns:
-                        eligible_symbols.update(basket_df["symbol"].unique())
-                except:
-                    pass
-            
-            if eligible_symbols:
-                symbols = sorted(list(eligible_symbols))
-                print(f"  Loaded {len(symbols)} symbols from universe eligibility/basket snapshots")
-            else:
+                    d = pd.read_parquet(funding_output_path, columns=["asset_id"])
+                    out = sorted(set(d["asset_id"].astype(str).tolist()))
+                    return [s for s in out if s]
+                except Exception:
+                    return []
+
+            def _load_symbols_from_universe() -> list[str]:
+                universe_path = repo_root / "data" / "curated" / "universe_eligibility.parquet"
+                basket_path = repo_root / "data" / "curated" / "universe_snapshots.parquet"
+                eligible_symbols: set[str] = set()
+                if universe_path.exists():
+                    try:
+                        universe_df = pd.read_parquet(universe_path)
+                        if "symbol" in universe_df.columns:
+                            eligible_symbols.update(universe_df["symbol"].astype(str).unique())
+                    except Exception:
+                        pass
+                if basket_path.exists():
+                    try:
+                        basket_df = pd.read_parquet(basket_path)
+                        if "symbol" in basket_df.columns:
+                            eligible_symbols.update(basket_df["symbol"].astype(str).unique())
+                    except Exception:
+                        pass
+                out = sorted({s for s in eligible_symbols if s and s != "nan"})
+                return out
+
+            def _load_symbols_from_perp_listings() -> list[str]:
                 perp_listings_path = None
                 for default_path in [
                     repo_root / "data" / "raw" / "perp_listings_binance.parquet",
@@ -761,14 +791,48 @@ def main():
                     if default_path.exists():
                         perp_listings_path = default_path
                         break
-                
-                if perp_listings_path:
+                if not perp_listings_path:
+                    return []
+                try:
                     perp_df = pd.read_parquet(perp_listings_path)
-                    symbols = [normalize_symbol(s) for s in perp_df["symbol"].unique() if s]
-                    print(f"  Loaded {len(symbols)} symbols from Binance perp listings")
+                    out = [normalize_symbol(s) for s in perp_df["symbol"].astype(str).unique().tolist() if s]
+                    return sorted(set(out))
+                except Exception:
+                    return []
+
+            source = args.symbols_source
+            if source == "dim_instrument":
+                symbols = _load_symbols_from_dim_instrument()
+                print(f"  Loaded {len(symbols)} symbols from dim_instrument (Binance perpetuals)")
+            elif source == "fact_funding":
+                symbols = _load_symbols_from_fact_funding()
+                print(f"  Loaded {len(symbols)} symbols from existing fact_funding.parquet")
+            elif source == "universe":
+                symbols = _load_symbols_from_universe()
+                print(f"  Loaded {len(symbols)} symbols from universe eligibility/basket snapshots")
+            elif source == "perp_listings":
+                symbols = _load_symbols_from_perp_listings()
+                print(f"  Loaded {len(symbols)} symbols from Binance perp listings")
+            else:
+                # AUTO: dim_instrument -> fact_funding -> perp_listings -> universe
+                symbols = _load_symbols_from_dim_instrument()
+                if symbols:
+                    print(f"  Loaded {len(symbols)} symbols from dim_instrument (Binance perpetuals)")
                 else:
-                    print("  [ERROR] No symbols provided and no data sources found")
-                    symbols = []
+                    symbols = _load_symbols_from_fact_funding()
+                    if symbols:
+                        print(f"  Loaded {len(symbols)} symbols from existing fact_funding.parquet")
+                    else:
+                        symbols = _load_symbols_from_perp_listings()
+                        if symbols:
+                            print(f"  Loaded {len(symbols)} symbols from Binance perp listings")
+                        else:
+                            symbols = _load_symbols_from_universe()
+                            if symbols:
+                                print(f"  Loaded {len(symbols)} symbols from universe eligibility/basket snapshots")
+                            else:
+                                print("  [ERROR] No symbols provided and no data sources found")
+                                symbols = []
             
             if args.liquidity_gate:
                 # LIQUIDITY GATE: Filter for valid perpetuals FIRST (or universe), then Top-N by market cap (avoid spot-only denominator trap)
