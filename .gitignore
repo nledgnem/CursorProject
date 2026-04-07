@@ -7,8 +7,25 @@ __pycache__/
 
 # Virtual environments (large, machine-specific)
 venv/
+.venv/
 env/
 ENV/
+
+# Python packaging / tooling
+*.egg-info/
+.eggs/
+dist/
+build/
+pip-wheel-metadata/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
 
 # IDE
 .vscode/
@@ -26,10 +43,42 @@ Thumbs.db
 # Secrets and env (never commit)
 .env
 .env.local
-*.env
+.env.*
+!.env.example
 *_secret.json
 *_keys.json
 secrets/
 
-# Heartbeat runtime marker (do not commit; see repo_paths.heartbeat_last_success_path)
+# Streamlit (local secrets only; config.toml may be committed)
+.streamlit/secrets.toml
+
+# --- Local / runtime application state ---
+# SQLite / DuckDB local databases (dashboard state, research DBs)
+data/state/*.db
+**/macro_state.db
+*.duckdb
+
+# Heartbeat last-success marker (see repo_paths.heartbeat_last_success_path)
 **/heartbeat_last_pipeline_success.txt
+
+# --- Logs (runtime; rotate / machine-specific) ---
+logs/
+!logs/.gitkeep
+
+# --- Generated MSM pipeline report runs (timestamped folders) ---
+reports/msm_funding_v0/20*/
+
+# --- Scratch / one-off test outputs ---
+data/panel_*.csv
+data/panel_*.log
+data/panel_*.txt
+data/tmp_*.csv
+single_coin_panel.csv
+
+# Large zip bundles produced by pipelines (regenerate from source)
+data/**/*.zip
+
+# Temp directories
+tmp/
+temp/
+scratch/
