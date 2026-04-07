@@ -19,3 +19,13 @@ def macro_state_db_path() -> Path:
     if raw:
         return Path(raw).expanduser().resolve()
     return (REPO_ROOT / "data" / "state" / "macro_state.db").resolve()
+
+
+def heartbeat_last_success_path() -> Path:
+    """
+    Marker file written by system_heartbeat after a successful live pipeline run.
+
+    Kept next to macro_state.db so on Render it lives on the persistent disk
+    (e.g. /data/heartbeat_last_pipeline_success.txt) and is not reset on deploy.
+    """
+    return (macro_state_db_path().parent / "heartbeat_last_pipeline_success.txt").resolve()

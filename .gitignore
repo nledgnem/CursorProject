@@ -30,3 +30,6 @@ Thumbs.db
 *_secret.json
 *_keys.json
 secrets/
+
+# Heartbeat runtime marker (do not commit; see repo_paths.heartbeat_last_success_path)
+**/heartbeat_last_pipeline_success.txt

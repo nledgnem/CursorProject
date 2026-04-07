@@ -12,11 +12,13 @@ from typing import Optional
 
 import schedule
 
+from repo_paths import heartbeat_last_success_path
+
 
 REPO_ROOT = Path(__file__).resolve().parent
 LOG_DIR = REPO_ROOT / "logs"
 LOG_PATH = LOG_DIR / "system_heartbeat.log"
-LAST_PIPELINE_SUCCESS_PATH = LOG_DIR / "heartbeat_last_pipeline_success.txt"
+LAST_PIPELINE_SUCCESS_PATH = heartbeat_last_success_path()
 
 
 UTC_RUN_TIMES = ("00:05", "08:05", "16:05")  # UTC daily
@@ -57,7 +59,7 @@ def _load_last_pipeline_success_date() -> Optional[date]:
 
 
 def _save_last_pipeline_success_date(d: date) -> None:
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    LAST_PIPELINE_SUCCESS_PATH.parent.mkdir(parents=True, exist_ok=True)
     LAST_PIPELINE_SUCCESS_PATH.write_text(d.isoformat() + "\n", encoding="utf-8")
 
 
