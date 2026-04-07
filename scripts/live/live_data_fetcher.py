@@ -254,7 +254,8 @@ def _init_in_memory_schema(conn: sqlite3.Connection, df: pd.DataFrame) -> None:
     conn.commit()
 
 
-def _slice_terminal_row(df: pd.DataFrame) -> pd.DataFrame:
+def _prepare_macro_history_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Normalize master_macro_features.csv for SQLite: sort, dedupe by day, string decision_date."""
     if df is None or df.empty:
         return df
     if "decision_date" not in df.columns:
@@ -264,16 +265,17 @@ def _slice_terminal_row(df: pd.DataFrame) -> pd.DataFrame:
     d = d.dropna(subset=["decision_date"]).sort_values("decision_date")
     if d.empty:
         raise SystemExit("No valid decision_date rows found to ingest.")
-    # Persist decision_date as canonical YYYY-MM-DD string for SQLite key stability.
-    out = d.tail(1).reset_index(drop=True)
-    out["decision_date"] = out["decision_date"].dt.strftime("%Y-%m-%d")
-    return out
+    d = d.drop_duplicates(subset=["decision_date"], keep="last").reset_index(drop=True)
+    d["decision_date"] = d["decision_date"].dt.strftime("%Y-%m-%d")
+    return d
 
 
 def smoke_test_upsert(master_csv: Path) -> None:
-    df_full = pd.read_csv(master_csv)
-    df = _slice_terminal_row(df_full)
-    decision_date = str(df.loc[0, "decision_date"])
+    df = _prepare_macro_history_df(pd.read_csv(master_csv))
+    if df.empty:
+        raise SystemExit("SMOKE TEST FAILED: empty dataframe after prepare.")
+    n_expected = len(df)
+    last_date = str(df.iloc[-1]["decision_date"])
 
     with sqlite3.connect(":memory:") as conn:
         _init_in_memory_schema(conn, df)
@@ -283,12 +285,12 @@ def smoke_test_upsert(master_csv: Path) -> None:
         cur = conn.cursor()
         cur.execute("SELECT COUNT(*) FROM macro_features;")
         total = int(cur.fetchone()[0])
-        cur.execute("SELECT COUNT(*) FROM macro_features WHERE decision_date = ?;", (decision_date,))
+        cur.execute("SELECT COUNT(*) FROM macro_features WHERE decision_date = ?;", (last_date,))
         by_key = int(cur.fetchone()[0])
 
-    if total != 1 or by_key != 1:
+    if total != n_expected or by_key != 1:
         raise SystemExit(
-            f"SMOKE TEST FAILED: expected 1 row total and 1 row for decision_date={decision_date}. "
+            f"SMOKE TEST FAILED: expected {n_expected} rows total and 1 for last decision_date={last_date}. "
             f"got total={total}, by_key={by_key}"
         )
 
@@ -303,7 +305,7 @@ def run_live_pipeline(repo_root: Path) -> None:
 
 
 def ingest_latest_master_csv(db_path: Path, master_csv: Path) -> None:
-    df = _slice_terminal_row(pd.read_csv(master_csv))
+    df = _prepare_macro_history_df(pd.read_csv(master_csv))
     if "decision_date" not in df.columns:
         raise SystemExit(f"master csv missing decision_date: {master_csv}")
     with sqlite3.connect(db_path) as conn:
@@ -314,7 +316,7 @@ def ingest_latest_master_csv(db_path: Path, master_csv: Path) -> None:
 
         # Telegram alerts are strictly non-fatal to the pipeline.
         try:
-            new_row = df.iloc[0].to_dict()
+            new_row = df.iloc[-1].to_dict()
             new_regime = _regime_label(new_row)
             decision_date = str(new_row.get("decision_date", ""))
             apr = _safe_float(new_row.get("Environment_APR"))
@@ -343,7 +345,7 @@ def ingest_latest_master_csv(db_path: Path, master_csv: Path) -> None:
 
 def main() -> None:
     p = argparse.ArgumentParser(
-        description="8-hour pulse: run pipeline then append latest macro features into SQLite"
+        description="8-hour pulse: run pipeline then upsert full macro feature history into SQLite"
     )
     p.add_argument(
         "--db",
