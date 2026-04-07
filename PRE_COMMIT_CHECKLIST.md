@@ -55,10 +55,10 @@ COINGLASS_API_KEY = "YOUR_COINGLASS_API_KEY_HERE"
 ## Complete Pre-Commit Checklist
 
 - [ ] **Remove/redact all API keys** from code
-- [ ] **Verify `.gitignore`** excludes sensitive files
+- [ ] **Verify `.gitignore`** excludes secrets and runtime artifacts (see `GITHUB_SETUP_GUIDE.md` — curated `data/` may still be tracked intentionally)
 - [ ] **Check for hardcoded secrets** (grep for "api.*key", "secret", "password")
-- [ ] **Exclude data files** (already in .gitignore)
-- [ ] **Exclude output files** (already in .gitignore)
+- [ ] **Do not commit** local DBs (`*.duckdb`, `macro_state.db`, `data/state/*.db`), logs, or `heartbeat_last_pipeline_success.txt`
+- [ ] **Large data commits** — only if intentional; consider Git LFS for heavy parquet
 - [ ] **Review temporary test files** (should be excluded)
 - [ ] **Create README.md** with setup instructions
 - [ ] **Document environment variables** needed

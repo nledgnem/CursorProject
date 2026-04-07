@@ -61,97 +61,68 @@ gh repo create crypto-backtesting-platform --public --source=. --remote=origin -
 
 ---
 
-## Important: Check .gitignore First
+## Important: Check `.gitignore` First
 
-Before pushing, verify that sensitive data is excluded:
+**Source of truth:** rules live in **`.gitignore`** at the project root. This section summarizes current policy; when in doubt, read that file.
 
-### ✅ Already Excluded (in .gitignore):
-- `data/raw/*` - Raw data files
-- `data/curated/*` - Curated data files (except .gitkeep)
-- `outputs/*` - Pipeline outputs (except .gitkeep)
-- `venv/` - Python virtual environment
-- `__pycache__/` - Python cache
+### ✅ Typically excluded (see `.gitignore`)
 
-### ⚠️ Check for Sensitive Data:
+| Area | What |
+|------|------|
+| **Secrets & env** | `.env`, `.env.local`, `.env.*` (except `.env.example`), `*_secret.json`, `secrets/`, `.streamlit/secrets.toml` |
+| **Python / tooling** | `venv/`, `.venv/`, `__pycache__/`, `*.egg-info/`, `dist/`, `build/`, `.pytest_cache/`, `.mypy_cache/`, `.ruff_cache/`, coverage artifacts |
+| **Runtime databases** | `*.duckdb`, `data/state/*.db`, `**/macro_state.db` |
+| **Heartbeat state** | `**/heartbeat_last_pipeline_success.txt` (do not commit; a snapshot would confuse catch-up on deploy) |
+| **Logs** | Everything under `logs/` except `logs/.gitkeep` |
+| **Generated MSM runs** | New paths matching `reports/msm_funding_v0/20*/` (timestamped pipeline outputs) |
+| **Scratch / one-offs** | e.g. `data/panel_*`, `data/tmp_*.csv`, `single_coin_panel.csv` |
+| **Bundles** | `data/**/*.zip` |
+| **Temp dirs** | `tmp/`, `temp/`, `scratch/` |
 
-**API Keys**: Search for any hardcoded API keys:
+### ✅ Often still tracked (intentional for this repo)
+
+- **Curated data** under `data/curated/` (e.g. `.parquet`) may be committed as shared snapshots—large, but not secrets. Use **Git LFS** if clones are too heavy.
+- Older files under `reports/` may remain tracked; **new** MSM timestamped runs are covered by the ignore pattern above.
+
+Do **not** paste a generic “ignore all `*.parquet` / `*.csv`” block: it would conflict with intentional data in the tree. Change `.gitignore` deliberately when adding a new category.
+
+### ⚠️ Check for sensitive data
+
+**API keys:** search before pushing:
+
 ```bash
-# Search for API keys in code
 grep -r "api.*key\|API.*KEY" --include="*.py" .
 ```
 
-**Files to Review Before Committing**:
-- `scripts/fetch_coinglass_funding.py` - Check for hardcoded API keys
-- `scripts/run_pipeline.py` - Check for hardcoded credentials
-- Any config files with secrets
+**Files to review:**
 
-**If you find API keys**, either:
-1. Remove them and use environment variables
-2. Add them to `.gitignore`
-3. Use a `.env` file (and add `.env` to `.gitignore`)
+- `scripts/fetch_coinglass_funding.py` — credentials via args/env, not hardcoded
+- `scripts/run_pipeline.py` — same
+- Any config or notebook that might embed secrets
 
----
-
-## Recommended .gitignore Additions
-
-Add these to `.gitignore` if not already present:
-
-```
-# Environment variables
-.env
-.env.local
-*.env
-
-# API keys and secrets
-*_secret.json
-*_keys.json
-secrets/
-
-# Large data files
-*.parquet
-*.csv
-*.json
-!configs/*.json
-!configs/*.yaml
-
-# Database files
-*.duckdb
-*.db
-*.sqlite
-
-# Logs
-*.log
-logs/
-
-# Temporary files
-*.tmp
-*.temp
-test_*.py
-verify_*.py
-quick_*.py
-```
+**If you find API keys:** remove them, use environment variables, and use a local `.env` (ignored).
 
 ---
 
 ## What to Include in Repository
 
-### ✅ Include:
-- All source code (`src/`)
-- All scripts (`scripts/`)
-- Configuration files (`configs/`)
+### ✅ Include
+
+- Source code (`src/`, `majors_alts_monitor/`, etc.)
+- Scripts (`scripts/`)
+- Configuration (`configs/`, committed `*.yaml` / `*.json` with **no** secrets)
 - Documentation (`docs/`, `*.md`)
 - Tests (`tests/`)
-- Requirements (`requirements.txt`, `pyproject.toml`)
-- `.gitignore`
-- `README.md`
+- `requirements.txt`, `pyproject.toml`, `.gitignore`, `README.md`
+- Optional: curated datasets under `data/` when you want a reproducible snapshot (watch repo size)
 
-### ❌ Exclude:
-- Data files (`data/raw/`, `data/curated/*.parquet`)
-- Output files (`outputs/`)
-- Virtual environment (`venv/`)
-- API keys and secrets
-- Large binary files
-- Personal notes/temporary files
+### ❌ Do not commit
+
+- API keys, tokens, `.env` files, Streamlit `secrets.toml`
+- Virtual environments (`venv/`, `.venv/`)
+- Local SQLite/DuckDB state (`macro_state.db`, `*.duckdb`, `data/state/*.db`)
+- Log files and heartbeat marker files (see table above)
+- Fresh timestamped MSM outputs under `reports/msm_funding_v0/20*/` (regenerate from the pipeline)
 
 ---
 
@@ -201,7 +172,7 @@ See `docs/architecture.md` for detailed architecture documentation.
 
 ## Step-by-Step Checklist
 
-- [ ] Review `.gitignore` - ensure sensitive data excluded
+- [ ] Review `.gitignore` - ensure secrets and runtime artifacts excluded (see “Important: Check `.gitignore` First” above)
 - [ ] Search for API keys in code - remove or use env vars
 - [ ] Initialize git repository (`git init`)
 - [ ] Add files (`git add .`)
@@ -220,12 +191,8 @@ See `docs/architecture.md` for detailed architecture documentation.
 - Or use GitHub Desktop: https://desktop.github.com/
 
 ### Large Files
-- If you accidentally commit large files, use `git-lfs`:
-```bash
-git lfs install
-git lfs track "*.parquet"
-git add .gitattributes
-```
+- This repo may track large `.parquet` snapshots on purpose. If clones are slow, consider **Git LFS** for specific paths (e.g. `git lfs track "data/curated/**/*.parquet"`) after team agreement.
+- If you accidentally commit a huge or secret file, remove it from history with BFG or `git filter-repo` and rotate any exposed credentials.
 
 ### Authentication Issues
 - Use Personal Access Token (not password)
@@ -239,9 +206,9 @@ git add .gitattributes
 **Before pushing, ensure**:
 1. ✅ No API keys in code
 2. ✅ No secrets in config files
-3. ✅ `.gitignore` excludes sensitive data
-4. ✅ Data files excluded (too large anyway)
-5. ✅ Output files excluded
+3. ✅ `.gitignore` excludes secrets and runtime artifacts (see table in “Important: Check `.gitignore` First”)
+4. ✅ Large data commits are intentional (curated snapshots); use Git LFS if needed
+5. ✅ Local DBs, logs, and heartbeat marker files are not committed
 
 **If you accidentally push secrets**:
 1. Remove them from code immediately
