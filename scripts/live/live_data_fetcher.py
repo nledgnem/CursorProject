@@ -131,15 +131,15 @@ def send_telegram_alert(old_regime: str, new_regime: str, apr: float, spread: fl
         return
 
     text_payload = (
-        "*MACRO REGIME CHANGE DETECTED*\n\n"
-        f"Shift: `{old_regime}` ➡️ `{new_regime}`\n"
-        f"Environment APR: `{apr:.2f}%`\n"
-        f"Fragmentation Spread: `{spread:.6f}`\n\n"
+        "MACRO REGIME CHANGE DETECTED\n\n"
+        f"Shift: {old_regime} -> {new_regime}\n"
+        f"Environment APR: {apr:.2f}%\n"
+        f"Fragmentation Spread: {spread:.6f}\n\n"
         "Check the Streamlit dashboard for full details."
     )
 
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    payload = {"chat_id": chat_id, "text": text_payload, "parse_mode": "Markdown"}
+    payload = {"chat_id": chat_id, "text": text_payload}
 
     try:
         resp = requests.post(url, json=payload, timeout=5)
@@ -159,17 +159,17 @@ def send_telegram_daily_status(regime: str, decision_date: str, apr: float, spre
 
     today_utc = _utc_today_iso()
     text_payload = (
-        "*DAILY MACRO REGIME STATUS*\n\n"
-        f"UTC Day: `{today_utc}`\n"
-        f"Latest decision_date: `{decision_date}`\n"
-        f"Regime: `{regime}`\n"
-        f"Environment APR: `{apr:.2f}%`\n"
-        f"Fragmentation Spread: `{spread:.6f}`\n\n"
+        "DAILY MACRO REGIME STATUS\n\n"
+        f"UTC Day: {today_utc}\n"
+        f"Latest decision_date: {decision_date}\n"
+        f"Regime: {regime}\n"
+        f"Environment APR: {apr:.2f}%\n"
+        f"Fragmentation Spread: {spread:.6f}\n\n"
         "Check the Streamlit dashboard for full details."
     )
 
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    payload = {"chat_id": chat_id, "text": text_payload, "parse_mode": "Markdown"}
+    payload = {"chat_id": chat_id, "text": text_payload}
 
     try:
         resp = requests.post(url, json=payload, timeout=5)
