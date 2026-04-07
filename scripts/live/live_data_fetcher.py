@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import argparse
+import logging
+import os
 import sqlite3
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
 import pandas as pd
+import requests
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -18,6 +22,8 @@ from repo_paths import macro_state_db_path
 
 DEFAULT_DB_PATH = macro_state_db_path()
 REPORTS_ROOT = REPO_ROOT / "reports" / "msm_funding_v0"
+
+logger = logging.getLogger(__name__)
 
 
 def _find_latest_file(path: Path, name: str) -> Optional[Path]:
@@ -39,6 +45,139 @@ def _ensure_db_has_table(db_path: Path) -> None:
             raise SystemExit(
                 f"DB missing macro_features table. Initialize first. db={db_path}"
             )
+
+
+def _safe_float(v) -> float:
+    try:
+        if v is None or pd.isna(v):
+            return float("nan")
+        return float(v)
+    except Exception:
+        return float("nan")
+
+
+def _regime_label(row: dict) -> str:
+    # Stable, human-readable label for comparisons + alerts.
+    funding = str(row.get("funding_regime", "Unknown"))
+    btcd = str(row.get("BTCDOM_Trend", "Unknown"))
+    gate = row.get("is_mrf_active", None)
+    try:
+        gate_on = bool(int(gate)) if isinstance(gate, (int, str)) and str(gate).isdigit() else bool(gate)
+    except Exception:
+        gate_on = False
+    gate_label = "GATE:ON" if gate_on else "GATE:OFF"
+    return f"{funding} | {btcd} | {gate_label}"
+
+
+def _load_latest_row(conn: sqlite3.Connection) -> Optional[dict]:
+    cur = conn.cursor()
+    cur.execute(
+        """
+SELECT decision_date, funding_regime, BTCDOM_Trend, is_mrf_active, Environment_APR, Fragmentation_Spread
+FROM macro_features
+ORDER BY decision_date DESC
+LIMIT 1;
+        """.strip()
+    )
+    r = cur.fetchone()
+    if r is None:
+        return None
+    cols = ["decision_date", "funding_regime", "BTCDOM_Trend", "is_mrf_active", "Environment_APR", "Fragmentation_Spread"]
+    return dict(zip(cols, r))
+
+
+def _ensure_meta_table(conn: sqlite3.Connection) -> None:
+    cur = conn.cursor()
+    cur.execute(
+        """
+CREATE TABLE IF NOT EXISTS meta (
+  key TEXT PRIMARY KEY,
+  value TEXT
+);
+        """.strip()
+    )
+    conn.commit()
+
+
+def _meta_get(conn: sqlite3.Connection, key: str) -> Optional[str]:
+    cur = conn.cursor()
+    cur.execute("SELECT value FROM meta WHERE key = ? LIMIT 1;", (key,))
+    r = cur.fetchone()
+    return None if r is None else str(r[0])
+
+
+def _meta_set(conn: sqlite3.Connection, key: str, value: str) -> None:
+    cur = conn.cursor()
+    cur.execute(
+        """
+INSERT INTO meta(key, value) VALUES(?, ?)
+ON CONFLICT(key) DO UPDATE SET value=excluded.value;
+        """.strip(),
+        (key, value),
+    )
+    conn.commit()
+
+
+def _utc_today_iso() -> str:
+    return datetime.now(timezone.utc).date().isoformat()
+
+
+def send_telegram_alert(old_regime: str, new_regime: str, apr: float, spread: float) -> None:
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+    chat_id = os.getenv("TELEGRAM_CHAT_ID", "").strip()
+
+    if not bot_token or not chat_id:
+        logger.warning("Missing Telegram credentials (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID). Skipping alert.")
+        return
+
+    text_payload = (
+        "*MACRO REGIME CHANGE DETECTED*\n\n"
+        f"Shift: `{old_regime}` ➡️ `{new_regime}`\n"
+        f"Environment APR: `{apr:.2f}%`\n"
+        f"Fragmentation Spread: `{spread:.6f}`\n\n"
+        "Check the Streamlit dashboard for full details."
+    )
+
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    payload = {"chat_id": chat_id, "text": text_payload, "parse_mode": "Markdown"}
+
+    try:
+        resp = requests.post(url, json=payload, timeout=5)
+        resp.raise_for_status()
+        logger.info("Telegram alert dispatched successfully.")
+    except Exception as e:
+        logger.error("Telegram delivery failed (non-fatal): %s", e)
+
+
+def send_telegram_daily_status(regime: str, decision_date: str, apr: float, spread: float) -> None:
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+    chat_id = os.getenv("TELEGRAM_CHAT_ID", "").strip()
+
+    if not bot_token or not chat_id:
+        logger.warning("Missing Telegram credentials (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID). Skipping alert.")
+        return
+
+    today_utc = _utc_today_iso()
+    text_payload = (
+        "*DAILY MACRO REGIME STATUS*\n\n"
+        f"UTC Day: `{today_utc}`\n"
+        f"Latest decision_date: `{decision_date}`\n"
+        f"Regime: `{regime}`\n"
+        f"Environment APR: `{apr:.2f}%`\n"
+        f"Fragmentation Spread: `{spread:.6f}`\n\n"
+        "Check the Streamlit dashboard for full details."
+    )
+
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    payload = {"chat_id": chat_id, "text": text_payload, "parse_mode": "Markdown"}
+
+    try:
+        resp = requests.post(url, json=payload, timeout=5)
+        resp.raise_for_status()
+        logger.info("Telegram daily status dispatched successfully.")
+    except Exception as e:
+        logger.error("Telegram delivery failed (non-fatal): %s", e)
+
 
 def _ensure_unique_index_on_decision_date(conn: sqlite3.Connection) -> None:
     cur = conn.cursor()
@@ -168,8 +307,38 @@ def ingest_latest_master_csv(db_path: Path, master_csv: Path) -> None:
     if "decision_date" not in df.columns:
         raise SystemExit(f"master csv missing decision_date: {master_csv}")
     with sqlite3.connect(db_path) as conn:
+        prev = _load_latest_row(conn)
+        _ensure_meta_table(conn)
         _ensure_unique_index_on_decision_date(conn)
         _upsert_dataframe(conn, df)
+
+        # Telegram alerts are strictly non-fatal to the pipeline.
+        try:
+            new_row = df.iloc[0].to_dict()
+            new_regime = _regime_label(new_row)
+            decision_date = str(new_row.get("decision_date", ""))
+            apr = _safe_float(new_row.get("Environment_APR"))
+            spread = _safe_float(new_row.get("Fragmentation_Spread"))
+
+            # Fire every day (once per UTC day), regardless of regime change.
+            today_utc = _utc_today_iso()
+            last_sent = _meta_get(conn, "telegram_daily_status_last_sent_utc_day")
+            if last_sent != today_utc:
+                send_telegram_daily_status(
+                    regime=new_regime,
+                    decision_date=decision_date,
+                    apr=apr,
+                    spread=spread,
+                )
+                _meta_set(conn, "telegram_daily_status_last_sent_utc_day", today_utc)
+
+            # Keep the regime-change ping as an extra high-signal alert.
+            if prev is not None:
+                old_regime = _regime_label(prev)
+                if old_regime != new_regime:
+                    send_telegram_alert(old_regime=old_regime, new_regime=new_regime, apr=apr, spread=spread)
+        except Exception as e:
+            logger.warning("Regime change alert evaluation failed (non-fatal): %s", e, exc_info=True)
 
 
 def main() -> None:
@@ -193,6 +362,8 @@ def main() -> None:
         help="Run an in-memory UPSERT smoke test and exit without touching production DB.",
     )
     args = p.parse_args()
+
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
     if not args.skip_pipeline:
         run_live_pipeline(REPO_ROOT)
