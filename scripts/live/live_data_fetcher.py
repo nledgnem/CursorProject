@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import logging
-import os
 import sqlite3
 import subprocess
 import sys
@@ -11,7 +10,6 @@ from pathlib import Path
 from typing import Optional
 
 import pandas as pd
-import requests
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -19,6 +17,12 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from repo_paths import macro_state_db_path
+from src.notifications.telegram_client import send_telegram_alert, send_telegram_daily_status
+from src.macro_regime.gate_policy import (
+    ENVIRONMENT_APR_ENTRY_GATE_PCT,
+    FRAGMENTATION_IDIOSYNCRATIC_TOXIC_CEILING,
+    calculate_risk_weight,
+)
 
 DEFAULT_DB_PATH = macro_state_db_path()
 REPORTS_ROOT = REPO_ROOT / "reports" / "msm_funding_v0"
@@ -120,63 +124,6 @@ ON CONFLICT(key) DO UPDATE SET value=excluded.value;
 
 def _utc_today_iso() -> str:
     return datetime.now(timezone.utc).date().isoformat()
-
-
-def send_telegram_alert(old_regime: str, new_regime: str, apr: float, spread: float) -> None:
-    bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
-    chat_id = os.getenv("TELEGRAM_CHAT_ID", "").strip()
-
-    if not bot_token or not chat_id:
-        logger.warning("Missing Telegram credentials (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID). Skipping alert.")
-        return
-
-    text_payload = (
-        "MACRO REGIME CHANGE DETECTED\n\n"
-        f"Shift: {old_regime} -> {new_regime}\n"
-        f"Environment APR: {apr:.2f}%\n"
-        f"Fragmentation Spread: {spread:.6f}\n\n"
-        "Check the Streamlit dashboard for full details."
-    )
-
-    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    payload = {"chat_id": chat_id, "text": text_payload}
-
-    try:
-        resp = requests.post(url, json=payload, timeout=5)
-        resp.raise_for_status()
-        logger.info("Telegram alert dispatched successfully.")
-    except Exception as e:
-        logger.error("Telegram delivery failed (non-fatal): %s", e)
-
-
-def send_telegram_daily_status(regime: str, decision_date: str, apr: float, spread: float) -> None:
-    bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
-    chat_id = os.getenv("TELEGRAM_CHAT_ID", "").strip()
-
-    if not bot_token or not chat_id:
-        logger.warning("Missing Telegram credentials (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID). Skipping alert.")
-        return
-
-    today_utc = _utc_today_iso()
-    text_payload = (
-        "DAILY MACRO REGIME STATUS\n\n"
-        f"UTC Day: {today_utc}\n"
-        f"Latest decision_date: {decision_date}\n"
-        f"Regime: {regime}\n"
-        f"Environment APR: {apr:.2f}%\n"
-        f"Fragmentation Spread: {spread:.6f}\n\n"
-        "Check the Streamlit dashboard for full details."
-    )
-
-    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    payload = {"chat_id": chat_id, "text": text_payload}
-
-    try:
-        resp = requests.post(url, json=payload, timeout=5)
-        resp.raise_for_status()
-        logger.info("Telegram daily status dispatched successfully.")
-    except Exception as e:
-        logger.error("Telegram delivery failed (non-fatal): %s", e)
 
 
 def _ensure_unique_index_on_decision_date(conn: sqlite3.Connection) -> None:
@@ -322,6 +269,14 @@ def ingest_latest_master_csv(db_path: Path, master_csv: Path) -> None:
             apr = _safe_float(new_row.get("Environment_APR"))
             spread = _safe_float(new_row.get("Fragmentation_Spread"))
 
+            gate_on = (
+                pd.notna(apr)
+                and pd.notna(spread)
+                and apr >= ENVIRONMENT_APR_ENTRY_GATE_PCT
+                and spread < FRAGMENTATION_IDIOSYNCRATIC_TOXIC_CEILING
+            )
+            risk_weight = float(calculate_risk_weight(apr)) if gate_on else 0.0
+
             # Fire every day (once per UTC day), regardless of regime change.
             today_utc = _utc_today_iso()
             last_sent = _meta_get(conn, "telegram_daily_status_last_sent_utc_day")
@@ -331,6 +286,8 @@ def ingest_latest_master_csv(db_path: Path, master_csv: Path) -> None:
                     decision_date=decision_date,
                     apr=apr,
                     spread=spread,
+                    gate_on=gate_on,
+                    risk_weight=risk_weight,
                 )
                 _meta_set(conn, "telegram_daily_status_last_sent_utc_day", today_utc)
 
@@ -338,7 +295,14 @@ def ingest_latest_master_csv(db_path: Path, master_csv: Path) -> None:
             if prev is not None:
                 old_regime = _regime_label(prev)
                 if old_regime != new_regime:
-                    send_telegram_alert(old_regime=old_regime, new_regime=new_regime, apr=apr, spread=spread)
+                    send_telegram_alert(
+                        old_regime=old_regime,
+                        new_regime=new_regime,
+                        apr=apr,
+                        spread=spread,
+                        gate_on=gate_on,
+                        risk_weight=risk_weight,
+                    )
         except Exception as e:
             logger.warning("Regime change alert evaluation failed (non-fatal): %s", e, exc_info=True)
 

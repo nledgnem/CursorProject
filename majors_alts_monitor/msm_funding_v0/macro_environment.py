@@ -15,6 +15,7 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 
+from src.macro_regime.gate_policy import calculate_risk_weight
 
 def calculate_spread(group: pd.DataFrame) -> float:
     """Cross-sectional spread for one epoch (one calendar day in Silver grain)."""
@@ -100,21 +101,6 @@ def build_daily_environment_table(funding: pd.DataFrame) -> pd.DataFrame:
 def _zscore_90d_on_series(s: pd.Series) -> pd.Series:
     rolling_90d = s.rolling(window=90, min_periods=30)
     return (s - rolling_90d.mean()) / rolling_90d.std()
-
-
-def calculate_risk_weight(apr_pct: float) -> float:
-    """Continuous safety dome w_risk from weekly Environment_APR (% points)."""
-    if pd.isna(apr_pct):
-        return 0.0
-    if apr_pct < 2.0:
-        return 0.0
-    if 2.0 <= apr_pct < 5.0:
-        return (apr_pct - 2.0) / 3.0
-    if 5.0 <= apr_pct <= 15.0:
-        return 1.0
-    if 15.0 < apr_pct <= 35.0:
-        return 1.0 - ((apr_pct - 15.0) / 20.0)
-    return 0.0
 
 
 def weekly_lookback_means(

@@ -19,6 +19,11 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from repo_paths import macro_state_db_path  # noqa: E402
+from src.macro_regime.gate_policy import (  # noqa: E402
+    ENVIRONMENT_APR_ENTRY_GATE_PCT,
+    FRAGMENTATION_IDIOSYNCRATIC_TOXIC_CEILING,
+    calculate_risk_weight,
+)
 
 DEFAULT_DB_PATH = macro_state_db_path()
 
@@ -32,11 +37,7 @@ TEXT_MUTED = "#94a3b8"
 TEXT_MAIN = "#e2e8f0"
 
 # Fragmentation Spread hard gate (raw decimal, no percentage scaling).
-# Gate ON requires both:
-#   1) Environment_APR >= 2.0  (Environment_APR is stored as percentage points, e.g. 4.0 == 4% APR)
-#   2) Fragmentation_Spread < 0.000075
-FRAGMENTATION_IDIOSYNCRATIC_TOXIC_CEILING = 0.000075
-ENVIRONMENT_APR_ENTRY_GATE_PCT = 2.0
+# Canonical values live in src/macro_regime/gate_policy.py.
 
 SPREAD_LABEL_TOXIC = "Chaos/Contagion"
 SPREAD_LABEL_HEALTHY = "Healthy"
@@ -177,9 +178,9 @@ def _regime_from_environment_apr(apr_pct: float) -> Regime:
     # Pure presentation mapping for the UI, calibrated by .cursorrules.
     if pd.isna(apr_pct):
         return Regime("Unknown", "#6b7280")
-    if apr_pct < 2.0:
+    if apr_pct < ENVIRONMENT_APR_ENTRY_GATE_PCT:
         return Regime("The Cold Flush", "#2563eb")
-    if 2.0 <= apr_pct < 5.0:
+    if ENVIRONMENT_APR_ENTRY_GATE_PCT <= apr_pct < 5.0:
         return Regime("The Recovery Ramp", "#f59e0b")
     if 5.0 <= apr_pct <= 15.0:
         return Regime("The Golden Pocket", "#16a34a")
@@ -265,10 +266,18 @@ def _classify_apr_zone(env_apr_pct: float) -> tuple[str, str, str]:
     """
     if pd.isna(env_apr_pct):
         return "Unknown", "APR is NaN", "Cannot classify regime; verify upstream data."
-    if env_apr_pct < 2.0:
-        return "Cold Flush", "<2% APR", "Capital defense regime; deployment should be near zero."
-    if 2.0 <= env_apr_pct < 5.0:
-        return "Recovery Ramp", "2–5% APR", "Scale risk gradually; avoid binary switches."
+    if env_apr_pct < ENVIRONMENT_APR_ENTRY_GATE_PCT:
+        return (
+            "Cold Flush",
+            f"<{ENVIRONMENT_APR_ENTRY_GATE_PCT:.0f}% APR",
+            "Capital defense regime; deployment should be near zero.",
+        )
+    if ENVIRONMENT_APR_ENTRY_GATE_PCT <= env_apr_pct < 5.0:
+        return (
+            "Recovery Ramp",
+            f"{ENVIRONMENT_APR_ENTRY_GATE_PCT:.0f}–5% APR",
+            "Scale risk gradually; avoid binary switches.",
+        )
     if 5.0 <= env_apr_pct <= 15.0:
         return "Golden Pocket", "5–15% APR", "Max deployment allowed; monitor stress for divergence."
     return "Leverage Exhaustion", ">15% APR", "De-risk mechanically; asymmetry increases in right tail."
@@ -564,7 +573,7 @@ def _render_institutional_chart(df: pd.DataFrame) -> None:
     )  # Recovery (Green)
     fig.add_hrect(
         y0=-30,
-        y1=2,
+        y1=float(ENVIRONMENT_APR_ENTRY_GATE_PCT),
         fillcolor="rgba(37, 99, 235, 0.12)",
         line_width=0,
         row=1,
@@ -593,10 +602,10 @@ def _render_institutional_chart(df: pd.DataFrame) -> None:
         col=1,
     )
     fig.add_hline(
-        y=2,
+        y=float(ENVIRONMENT_APR_ENTRY_GATE_PCT),
         line_dash="dot",
         line_color="rgba(255, 255, 255, 0.3)",
-        annotation_text="2% (Recovery Ramp Entry)",
+        annotation_text=f"{ENVIRONMENT_APR_ENTRY_GATE_PCT:.0f}% (Recovery Ramp Entry)",
         annotation_position="top left",
         annotation_font=dict(color="rgba(255,255,255,0.5)", size=10),
         row=1,
@@ -692,7 +701,7 @@ def _render_institutional_chart(df: pd.DataFrame) -> None:
 
     # Regime transition flags: draw faint vertical dotted lines when crossing boundaries.
     env = d["Environment_APR"].astype(float)
-    bounds = (2.0, 5.0, 15.0)
+    bounds = (ENVIRONMENT_APR_ENTRY_GATE_PCT, 5.0, 15.0)
     for b in bounds:
         crossed = (env.shift(1) < b) & (env >= b) | (env.shift(1) >= b) & (env < b)
         for x in d.loc[crossed.fillna(False), "decision_date"].tolist():

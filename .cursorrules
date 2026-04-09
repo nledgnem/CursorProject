@@ -50,10 +50,14 @@ Rule 7: Locks the exact physical logic of your $1M reserve into Cursor's permane
 
 ## 7.1 🧨 IDEOSYNCRATIC FRAGMENTATION TOXIC CEILING (UI Gate Veto)
 When rendering (or reasoning about) the dashboard’s MSM Macro Sensor *stance/status* that uses `Fragmentation_Spread` and `Environment_APR`, you must apply this fixed **Idiosyncratic Gate** using `Fragmentation_Spread` as a **raw decimal** (no percent scaling):
-* **Environment entry gate:** `Environment_APR >= 2.0` (Environment_APR is stored in percentage points, e.g. 2.0 means 2% APR)
-* **Spread toxic ceiling:** `Fragmentation_Spread >= 0.000075` => **Chaos/Contagion** (Gate veto)
+* **Canonical source:** `src/macro_regime/gate_policy.py` is the single source of truth for:
+  * `ENVIRONMENT_APR_ENTRY_GATE_PCT`
+  * `FRAGMENTATION_IDIOSYNCRATIC_TOXIC_CEILING`
+  * `calculate_risk_weight()` taper logic
+* **Environment entry gate:** `Environment_APR >= ENVIRONMENT_APR_ENTRY_GATE_PCT` (Environment_APR is stored in percentage points)
+* **Spread toxic ceiling:** `Fragmentation_Spread >= FRAGMENTATION_IDIOSYNCRATIC_TOXIC_CEILING` => **Chaos/Contagion** (Gate veto)
 * **Allowed stance gate:** both conditions must hold:
-  * `Environment_APR >= 2.0` AND `Fragmentation_Spread < 0.000075`
+  * `Environment_APR >= ENVIRONMENT_APR_ENTRY_GATE_PCT` AND `Fragmentation_Spread < FRAGMENTATION_IDIOSYNCRATIC_TOXIC_CEILING`
 * **Execution implication:** when the spread toxic ceiling is triggered, the execution stance must reflect **Gate OFF / Stables** (veto), even if other dashboard tiers would otherwise suggest risk-on.
 
 ## 8. 🗂️ NON-DESTRUCTIVE AUDIT TRAIL
@@ -83,10 +87,10 @@ The AI must natively understand the following market states based on the `Enviro
 
 **Target Output:** `w_risk` (Continuous Allocation Weight multiplier from 0.0 to 1.0) governing the $1M stablecoin reserve.
 
-* **Regime 1: The Cold Flush (Environment_APR < 2.0%)**
+* **Regime 1: The Cold Flush (Environment_APR < ENVIRONMENT_APR_ENTRY_GATE_PCT%)**
   * **Physics:** Market is in backwardation/liquidation flush.
   * **Action:** `w_risk = 0.0`. Full capital defense. 100% of reserve in baseline on-chain stablecoin yield (e.g., Aave). Zero Polymarket exposure.
-* **Regime 2: The Recovery Ramp (2.0% <= Environment_APR < 5.0%)**
+* **Regime 2: The Recovery Ramp (ENVIRONMENT_APR_ENTRY_GATE_PCT% <= Environment_APR < 5.0%)**
   * **Physics:** Organic Open Interest rebuilding. Waking up from flush.
   * **Action:** `w_risk` scales linearly from 0.0 to 1.0. Incremental deployment to prevent whipsaw.
 * **Regime 3: The Golden Pocket (5.0% <= Environment_APR <= 15.0%)**
