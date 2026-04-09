@@ -75,6 +75,11 @@ data/panel_*.txt
 data/tmp_*.csv
 single_coin_panel.csv
 
+# --- Apathy Bleed runtime artifacts (do not commit) ---
+# The trade book snapshot may be committed intentionally; do NOT ignore it here.
+data/curated/data_lake/apathy_alert_log.csv
+data/curated/data_lake/apathy_*_state.json
+
 # Large zip bundles produced by pipelines (regenerate from source)
 data/**/*.zip
 

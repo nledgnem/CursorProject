@@ -1,0 +1,31 @@
+# Apathy Bleed monitoring (read-only). Thresholds are adverse move fractions for SHORT legs:
+# adverse_move = (mark_price - entry_price) / entry_price
+
+hold_days: 150
+warning_threshold_pct: 0.45
+critical_threshold_pct: 0.55
+stop_threshold_pct: 0.60
+
+exit_reminder_days: [7, 3, 1]
+# Fire when (today - max OPEN entry_date) equals one of these (UTC calendar days).
+scan_reminder_milestone_days: [40, 43, 45]
+formation_window_days: 45
+
+price_check_interval_minutes: 60
+daily_snapshot_utc_hour: 8
+
+# Variational public stats (GET, no auth). Must match operational endpoint.
+variational:
+  base_url: "https://omni-client-api.prod.ap-northeast-1.variational.io"
+  stats_path: "/metadata/stats"
+  timeout_seconds: 20
+
+# Paths under data/curated/data_lake/ (relative to repo root)
+paths:
+  book_csv: "/data/apathy_bleed_book.csv"
+  alert_log_csv: "/data/apathy_alert_log.csv"
+  stop_proximity_state_json: "/data/apathy_stop_proximity_state.json"
+  exit_reminder_state_json: "/data/apathy_exit_reminder_state.json"
+  scanner_reminder_state_json: "/data/apathy_scanner_reminder_state.json"
+  daily_snapshot_state_json: "/data/apathy_daily_snapshot_state.json"
+  daily_bundle_state_json: "/data/apathy_daily_bundle_state.json"

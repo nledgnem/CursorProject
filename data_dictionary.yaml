@@ -62,3 +62,120 @@ Live_State_Database:
 System_Time:
   timezone: UTC
   cron_offsets: +5 minutes past the 8-hour epoch (e.g., 08:05) to ensure exchange API settlement.
+
+# ------------------------------------------------------------------------------
+# Apathy Bleed (pair trade book + read-only monitoring)
+# All paths under data/curated/data_lake/ unless noted. UTC calendar dates for *_date_utc columns.
+# ------------------------------------------------------------------------------
+Apathy_Bleed:
+  description: >
+    Manual trade ledger for Long BTC / Short alt (Apathy Bleed). The book CSV is the source of truth;
+    there is no execution API. Monitoring joins the book to Variational public GET /metadata/stats mark prices.
+  config_file:
+    path: configs/apathy_alerts.yaml
+    definition: "Thresholds (warning/critical/stop fractions, hold_days, scan milestones, Variational URL); strategy parameters are not hardcoded in Python."
+
+  apathy_bleed_book_csv:
+    path: data/curated/data_lake/apathy_bleed_book.csv
+    write_protocol: >
+      Append new legs; closing a trade rewrites the matching row in place (status, exit fields, PnL).
+      Rows are never deleted (append-only audit of lifecycle).
+    columns:
+      - name: trade_id
+        type: string
+        unit: uuid
+        definition: "Unique row identifier."
+      - name: cohort
+        type: string
+        definition: "Cohort label (e.g. C1, C2, TEST)."
+      - name: ticker
+        type: string
+        definition: "Base symbol as used for Variational mark lookup (e.g. ZEC, BTC for LONG_BTC leg)."
+      - name: side
+        type: string
+        definition: "SHORT (alt leg) or LONG_BTC (hedge)."
+      - name: entry_date_utc
+        type: date
+        unit: UTC_calendar_day
+      - name: entry_price_usd
+        type: float
+        unit: USD_per_coin
+      - name: notional_usd
+        type: float
+        unit: USD
+        definition: "Notional sized at entry (short leg notional; LONG_BTC row matches sum of cohort short notionals at hedge time)."
+      - name: quantity
+        type: float
+        unit: coins
+        definition: "notional_usd / entry_price_usd."
+      - name: stop_price_usd
+        type: float
+        unit: USD_per_coin
+        definition: "SHORT legs: entry_price_usd * 1.60. LONG_BTC may be blank."
+      - name: exit_date_target_utc
+        type: date
+        unit: UTC_calendar_day
+        definition: "entry_date_utc + hold_days (default from config)."
+      - name: status
+        type: string
+        definition: "OPEN | CLOSED_EXPIRY | CLOSED_STOP | CLOSED_MANUAL."
+      - name: exit_date_utc
+        type: date
+        unit: UTC_calendar_day
+        nullable: true
+      - name: exit_price_usd
+        type: float
+        unit: USD_per_coin
+        nullable: true
+      - name: pnl_usd
+        type: float
+        unit: USD
+        nullable: true
+        definition: "pnl_pct * notional_usd at close."
+      - name: pnl_pct
+        type: float
+        unit: decimal_fraction
+        nullable: true
+        definition: "SHORT: (entry - exit) / entry. LONG_BTC: (exit - entry) / entry."
+      - name: notes
+        type: string
+        nullable: true
+
+  apathy_alert_log_csv:
+    path: data/curated/data_lake/apathy_alert_log.csv
+    write_protocol: "Append-only audit of Telegram alerts emitted by scripts/apathy_alert_runner.py."
+    columns:
+      - name: timestamp_utc
+        type: string
+        definition: "ISO-8601 UTC from datetime.now(timezone.utc)."
+      - name: alert_type
+        type: string
+      - name: trade_id
+        type: string
+        nullable: true
+      - name: cohort
+        type: string
+        nullable: true
+      - name: ticker
+        type: string
+        nullable: true
+      - name: dedup_bucket
+        type: string
+        definition: "Key used for de-duplication (e.g. UTC hour + tier, or snapshot day)."
+      - name: message
+        type: string
+        definition: "Single-line text copy of alert body."
+
+  apathy_monitoring_state_json:
+    description: "Small JSON sidecars for deduplication and daily bundle bookkeeping (not human trade data)."
+    files:
+      - path: data/curated/data_lake/apathy_stop_proximity_state.json
+        definition: "Last adverse tier per OPEN short trade_id; hourly per-tier send markers."
+      - path: data/curated/data_lake/apathy_exit_reminder_state.json
+        definition: "Keys for exit-date reminders already sent."
+      - path: data/curated/data_lake/apathy_scanner_reminder_state.json
+        definition: "Scanner milestone sends per UTC day."
+      - path: data/curated/data_lake/apathy_daily_snapshot_state.json
+        definition: "Last daily snapshot UTC day."
+      - path: data/curated/data_lake/apathy_daily_bundle_state.json
+        definition: "Last UTC day the 08:00 bundle (exit + scanner + snapshot) ran."

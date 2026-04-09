@@ -122,11 +122,29 @@ If the pipeline fails, logs will show errors; the dashboard may still load with 
 
 ---
 
+## Apathy Bleed alert runner (companion process)
+
+Render persistent disks are **not shareable across services**, so the alert runner is started **inside the same Web Service** as the heartbeat (same `/data` disk).
+
+- **Start command**: keep `bash start_render.sh`
+- `start_render.sh` launches:
+  - `system_heartbeat.py` as the **foreground** process (Render monitors health)
+  - `scripts/apathy_alert_runner.py` as a **background watchdog loop** (auto-restarts on crash)
+
+**Environment:** set `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, and `MACRO_STATE_DB_PATH=/data/macro_state.db`.
+
+**Persistence:** Apathy artifacts live on the disk:
+- `/data/apathy_bleed_book.csv` (seeded from the repo snapshot on first boot if missing)
+- `/data/apathy_alert_log.csv` and JSON state files (paths configured in `configs/apathy_alerts.yaml`)
+
+---
+
 ## Local vs Render summary
 
 | Topic | Local | Render |
 |--------|--------|--------|
 | Start | `python system_heartbeat.py` | `bash start_render.sh` |
+| Apathy alerts | `python scripts/apathy_alert_runner.py` | Started by `start_render.sh` (same service, same disk) |
 | DB path | `data/state/macro_state.db` | Set `MACRO_STATE_DB_PATH=/data/macro_state.db` |
 | Streamlit port | Often `8501` | Render sets `PORT` automatically |
 | Password | Optional | Set `DASHBOARD_PASSWORD` if you want a simple team gate |
