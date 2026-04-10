@@ -14,8 +14,8 @@ formation_window_days: 45
 price_check_interval_minutes: 60
 # Exit reminders + scanner: once per UTC day in this hour (first five minutes).
 daily_bundle_utc_hour: 8
-# Variational portfolio summary to Telegram (deduped per UTC hour).
-portfolio_snapshot_interval_minutes: 60
+# Variational portfolio summary to Telegram (once per UTC day in this hour; first five minutes).
+portfolio_snapshot_utc_hour: 8
 
 # Variational public stats (GET, no auth). Must match operational endpoint.
 variational:

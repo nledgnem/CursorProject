@@ -319,18 +319,18 @@ def _cohort_stats(
 
 def run_portfolio_snapshot(cfg: ApathyAlertsConfig, rows: list[dict[str, str]], prices: dict[str, float]) -> None:
     state_path = cfg.daily_snapshot_state_json
-    state = _load_json(state_path, {"last_portfolio_snapshot_utc_hour": ""})
+    state = _load_json(state_path, {"last_portfolio_snapshot_utc_day": ""})
     now = _utc_now()
-    hour_key = now.strftime("%Y-%m-%dT%H")
-    if state.get("last_portfolio_snapshot_utc_hour") == hour_key:
-        logger.info("Portfolio snapshot skip: already sent for UTC hour %s.", hour_key)
+    day_key = now.date().isoformat()
+    if state.get("last_portfolio_snapshot_utc_day") == day_key:
+        logger.info("Portfolio snapshot skip: already sent for UTC day %s.", day_key)
         return
 
     summ = book_summary(rows)
     if summ.total_open_count == 0:
-        state["last_portfolio_snapshot_utc_hour"] = hour_key
+        state["last_portfolio_snapshot_utc_day"] = day_key
         _save_json(state_path, state)
-        logger.info("Portfolio snapshot skip: no OPEN rows (UTC hour %s).", hour_key)
+        logger.info("Portfolio snapshot skip: no OPEN rows (UTC day %s).", day_key)
         return
     open_shorts = [r for r in rows if (r.get("status") or "").upper() == "OPEN" and (r.get("side") or "").upper() == "SHORT"]
 
@@ -368,7 +368,7 @@ def run_portfolio_snapshot(cfg: ApathyAlertsConfig, rows: list[dict[str, str]], 
     regime_line = format_regime_apathy_line(db_path)
 
     lines = [
-        f"📊 APATHY BLEED PORTFOLIO SNAPSHOT (UTC {now:%Y-%m-%d %H:00})",
+        f"📊 APATHY BLEED PORTFOLIO SNAPSHOT (UTC {now:%Y-%m-%d})",
         f"Open positions: {summ.total_open_count} | Short legs: {summ.open_short_count} | Total short notional: ${summ.total_short_notional_usd:,.0f}",
     ]
     if nearest_exp:
@@ -403,13 +403,13 @@ def run_portfolio_snapshot(cfg: ApathyAlertsConfig, rows: list[dict[str, str]], 
             "trade_id": "",
             "cohort": "",
             "ticker": "",
-            "dedup_bucket": f"snapshot|{hour_key}",
+            "dedup_bucket": f"snapshot|{day_key}",
             "message": msg.replace("\n", " / "),
         },
     )
-    state["last_portfolio_snapshot_utc_hour"] = hour_key
+    state["last_portfolio_snapshot_utc_day"] = day_key
     _save_json(state_path, state)
-    logger.info("Portfolio snapshot sent (UTC hour %s).", hour_key)
+    logger.info("Portfolio snapshot sent (UTC day %s).", day_key)
 
 
 def run_daily_snapshot(cfg: ApathyAlertsConfig, rows: list[dict[str, str]], prices: dict[str, float]) -> None:

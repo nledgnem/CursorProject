@@ -53,15 +53,14 @@ def main() -> None:
     book_path = cfg.book_csv
 
     last_stop_mono = 0.0
-    last_portfolio_mono = 0.0
     interval_s = max(60, cfg.price_check_interval_minutes * 60)
-    portfolio_interval_s = max(60, cfg.portfolio_snapshot_interval_minutes * 60)
 
     logger.info(
-        "Apathy alert runner started. Book=%s stop_interval=%s min portfolio_snapshot=%s min",
+        "Apathy alert runner started. Book=%s stop_interval=%s min portfolio_snapshot_utc_hour=%s daily_bundle_utc_hour=%s",
         book_path,
         cfg.price_check_interval_minutes,
-        cfg.portfolio_snapshot_interval_minutes,
+        cfg.portfolio_snapshot_utc_hour,
+        cfg.daily_bundle_utc_hour,
     )
 
     while True:
@@ -94,16 +93,14 @@ def main() -> None:
                 logger.warning("Stop proximity failed (non-fatal): %s", e, exc_info=True)
             last_stop_mono = time.monotonic()
 
-        # Variational portfolio snapshot (Telegram) on interval, deduped per UTC hour in alert_ops.
-        elapsed_p = time.monotonic() - last_portfolio_mono
-        if last_portfolio_mono == 0.0 or elapsed_p >= portfolio_interval_s:
+        # Variational portfolio snapshot (Telegram): once per UTC day in configured hour (first five minutes).
+        if now.hour == cfg.portfolio_snapshot_utc_hour and 0 <= now.minute < 5:
             try:
                 run_portfolio_snapshot(cfg, rows, prices)
             except Exception as e:
                 logger.warning("Portfolio snapshot failed (non-fatal): %s", e, exc_info=True)
-            last_portfolio_mono = time.monotonic()
 
-        # Daily bundle: exit reminders + scanner at configured UTC hour (portfolio is hourly above).
+        # Daily bundle: exit reminders + scanner at configured UTC hour.
         if now.hour == cfg.daily_bundle_utc_hour and 0 <= now.minute < 5:
             bundle_path = cfg.daily_bundle_state_json
             bundle = _load_json(bundle_path, {"last_bundle_utc_day": ""})

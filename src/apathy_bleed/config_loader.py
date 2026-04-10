@@ -18,7 +18,7 @@ class ApathyAlertsConfig:
     formation_window_days: int
     price_check_interval_minutes: int
     daily_bundle_utc_hour: int
-    portfolio_snapshot_interval_minutes: int
+    portfolio_snapshot_utc_hour: int
     variational_base_url: str
     variational_stats_path: str
     variational_timeout_seconds: float
@@ -58,8 +58,8 @@ def load_apathy_alerts_config(repo_root: Path | None = None) -> ApathyAlertsConf
         daily_bundle_utc_hour=int(
             raw.get("daily_bundle_utc_hour", raw.get("daily_snapshot_utc_hour", 8))
         ),
-        portfolio_snapshot_interval_minutes=max(
-            1, int(raw.get("portfolio_snapshot_interval_minutes", 60))
+        portfolio_snapshot_utc_hour=int(
+            raw.get("portfolio_snapshot_utc_hour", raw.get("daily_bundle_utc_hour", 8))
         ),
         variational_base_url=str(var.get("base_url", "")).rstrip("/"),
         variational_stats_path=str(var.get("stats_path", "/metadata/stats")),
