@@ -104,9 +104,19 @@ ALERT_PID=$!
 done) &
 DANLONGSHORT_PID=$!
 
+# Background watchdog: respawn danlongshort Telegram command bot on crash.
+(while true; do
+  python scripts/danlongshort_bot.py
+  code=$?
+  echo "[DANLONGSHORT BOT] exited with code ${code}, restarting in 10s..."
+  sleep 10
+done) &
+DANLONGSHORT_BOT_PID=$!
+
 cleanup() {
   kill "${ALERT_PID}" 2>/dev/null || true
   kill "${DANLONGSHORT_PID}" 2>/dev/null || true
+  kill "${DANLONGSHORT_BOT_PID}" 2>/dev/null || true
 }
 trap cleanup EXIT SIGTERM SIGINT
 

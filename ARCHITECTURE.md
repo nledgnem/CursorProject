@@ -86,3 +86,18 @@ The system has transitioned from a static historical backtest to a live, automat
 - **Runner:** `scripts/danlongshort_alert_runner.py` (separate process from apathy)
 - **Config:** `configs/danlongshort_alerts.yaml`
 - **Labeling:** Every message is prefixed with **`[danlongshort]`** for visual separation in shared Telegram groups.
+
+### Telegram bot commands (Render)
+- **Bot:** `scripts/danlongshort_bot.py` (separate long-poll loop; same bot token + group)
+- **Security:** responds only when `message.chat.id == TELEGRAM_CHAT_ID`
+- **Commands (read-only unless noted):**
+  - `/beta <TICKER> <SIDE> <NOTIONAL>`: single-position beta + BTC neutralization suggestion
+  - `/add <TICKER> <SIDE> <NOTIONAL> [ENTRY_PRICE]`: appends a row to `/data/danlongshort_positions.csv`
+  - `/remove <TICKER>`: removes rows for ticker from `/data/danlongshort_positions.csv`
+  - `/snapshot`: on-demand portfolio snapshot (same as scheduled runner)
+  - `/rebalance`: BTC adjustment needed to reach beta neutrality (adjust BTC only)
+- **State:** `/data/danlongshort_bot_state.json` stores Telegram update offset to avoid duplicate handling.
+
+### Streamlit UI (Render)
+- **Page:** `dashboards/pages/2_danlongshort.py` (Streamlit multipage; added without modifying `dashboards/app_regime_monitor.py`)
+- **Features:** read-only beta calculator, CSV-backed portfolio manager, live snapshot table, neutrality indicator, and HTML snapshot preview.
