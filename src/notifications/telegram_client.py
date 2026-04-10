@@ -1,10 +1,81 @@
 from __future__ import annotations
 
+import html
 import logging
 import os
+import socket
+import subprocess
+from pathlib import Path
+
 import requests
 
 logger = logging.getLogger(__name__)
+
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _git_short_sha() -> str:
+    try:
+        out = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=str(_REPO_ROOT),
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=2.0,
+        ).strip()
+        return out or "unknown"
+    except Exception:
+        return "unknown"
+
+
+_HOSTNAME = socket.gethostname()
+_GIT_SHA = _git_short_sha()
+
+
+def _fingerprint_footer(*, parse_mode: str | None) -> str:
+    deploy_tag = os.getenv("DEPLOY_TAG", "").strip() or "unknown"
+    footer_text = f"📍 sent from {_HOSTNAME} | {_GIT_SHA} | {deploy_tag}"
+
+    if parse_mode == "HTML":
+        return f"<code>{html.escape(footer_text)}</code>"
+    if parse_mode == "MarkdownV2":
+        # Minimal escaping for MarkdownV2; best-effort only.
+        escaped = (
+            footer_text.replace("_", "\\_")
+            .replace("*", "\\*")
+            .replace("[", "\\[")
+            .replace("]", "\\]")
+            .replace("(", "\\(")
+            .replace(")", "\\)")
+            .replace("~", "\\~")
+            .replace("`", "\\`")
+            .replace(">", "\\>")
+            .replace("#", "\\#")
+            .replace("+", "\\+")
+            .replace("-", "\\-")
+            .replace("=", "\\=")
+            .replace("|", "\\|")
+            .replace("{", "\\{")
+            .replace("}", "\\}")
+            .replace(".", "\\.")
+            .replace("!", "\\!")
+        )
+        return escaped
+    return footer_text
+
+
+def _with_fingerprint(text: str, *, parse_mode: str | None) -> str:
+    text = (text or "").rstrip()
+    footer = _fingerprint_footer(parse_mode=parse_mode)
+    combined = f"{text}\n\n{footer}" if text else footer
+
+    # Telegram hard limit is 4096 chars for sendMessage.
+    if len(combined) <= 4096:
+        return combined
+
+    logger.warning("Telegram payload too long (%s chars); dropping fingerprint footer.", len(combined))
+    return (text or "")[:4096]
 
 
 def send_telegram_text(text: str, *, timeout_seconds: float = 5.0) -> bool:
@@ -35,7 +106,7 @@ def send_telegram_message(
         return False
 
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    payload = {"chat_id": chat_id, "text": text}
+    payload = {"chat_id": chat_id, "text": _with_fingerprint(text, parse_mode=parse_mode)}
     if parse_mode:
         payload["parse_mode"] = parse_mode
 

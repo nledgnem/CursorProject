@@ -5,6 +5,18 @@ cd "$(dirname "$0")"
 export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$(pwd)"
 export PYTHONUNBUFFERED=1
 
+# One-shot boot ping (non-fatal). Useful to catch duplicate deployments sending alerts.
+python - <<'PY' || true
+from __future__ import annotations
+
+from datetime import datetime, timezone
+
+from src.notifications.telegram_client import send_telegram_text
+
+ts = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+send_telegram_text(f"[BOOT] macro-regime-monitor started at {ts}")
+PY
+
 # Seed the Apathy book onto the persistent disk on first boot.
 # Never overwrite /data once it exists (book is source of truth).
 if [[ -d "/data" ]]; then
