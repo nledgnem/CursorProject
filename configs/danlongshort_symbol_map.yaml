@@ -1,0 +1,11 @@
+# Override mapping for niche tickers not present in data/perp_allowlist.csv.
+# Keys are symbols as used in danlongshort positions (case-insensitive).
+# Values are CoinGecko coin IDs.
+#
+# Example:
+#   2Z: "2z"
+#   ZEREBRO: "zerebro"
+#   LAYER: "layer"
+
+{}
+

@@ -83,10 +83,20 @@ fi
 done) &
 ALERT_PID=$!
 
+# Background watchdog: respawn danlongshort alert runner on crash.
+(while true; do
+  python scripts/danlongshort_alert_runner.py
+  code=$?
+  echo "[DANLONGSHORT RUNNER] exited with code ${code}, restarting in 10s..."
+  sleep 10
+done) &
+DANLONGSHORT_PID=$!
+
 cleanup() {
   kill "${ALERT_PID}" 2>/dev/null || true
+  kill "${DANLONGSHORT_PID}" 2>/dev/null || true
 }
-trap cleanup EXIT INT TERM
+trap cleanup EXIT SIGTERM SIGINT
 
 # Foreground process: Render monitors this for health.
 python system_heartbeat.py

@@ -13,6 +13,20 @@ def send_telegram_text(text: str, *, timeout_seconds: float = 5.0) -> bool:
 
     Returns True if the message was accepted by Telegram (HTTP 2xx).
     """
+    return send_telegram_message(text, timeout_seconds=timeout_seconds, parse_mode=None)
+
+
+def send_telegram_message(
+    text: str,
+    *,
+    timeout_seconds: float = 5.0,
+    parse_mode: str | None = None,
+) -> bool:
+    """
+    Send a Telegram message. Non-fatal: logs and returns False on failure.
+
+    parse_mode: None | "HTML" | "MarkdownV2"
+    """
     bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
     chat_id = os.getenv("TELEGRAM_CHAT_ID", "").strip()
 
@@ -22,6 +36,8 @@ def send_telegram_text(text: str, *, timeout_seconds: float = 5.0) -> bool:
 
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     payload = {"chat_id": chat_id, "text": text}
+    if parse_mode:
+        payload["parse_mode"] = parse_mode
 
     try:
         resp = requests.post(url, json=payload, timeout=timeout_seconds)

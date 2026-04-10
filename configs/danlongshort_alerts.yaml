@@ -1,0 +1,17 @@
+# danlongshort monitoring (independent from apathy_bleed).
+# Telegram credentials come from env: TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID
+
+# How often to send a full portfolio snapshot to Telegram.
+snapshot_interval_hours: 12
+
+paths:
+  # Persistent disk paths on Render (mounted at /data)
+  positions_csv: "/data/danlongshort_positions.csv"
+  price_cache_parquet: "/data/danlongshort_price_cache.parquet"
+  alert_log_csv: "/data/danlongshort_alert_log.csv"
+  snapshot_state_json: "/data/danlongshort_snapshot_state.json"
+
+  # Repo file used only for symbol -> coingecko_id mapping
+  allowlist_csv: "data/perp_allowlist.csv"
+  symbol_map_yaml: "configs/danlongshort_symbol_map.yaml"
+

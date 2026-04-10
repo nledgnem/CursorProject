@@ -53,3 +53,36 @@ The system has transitioned from a static historical backtest to a live, automat
 * **The ETL Engine:** `run_live_pipeline.py` computes the feature space. It utilizes a robust 730-day lookback window to safely and accurately calculate all rolling features (e.g., 90-Day Z-Score, Environment APR) across the Data Lake.
 * **The State Ingestion:** `scripts/live/live_data_fetcher.py` handles the database write-path. It slices off only the terminal `decision_date` row and UPSERTs it into `macro_state.db` (`macro_features`) keyed strictly on `decision_date` via `ON CONFLICT(decision_date) DO UPDATE`.
 * **The Presentation Layer:** `dashboards/app_regime_monitor.py` (Streamlit) strictly reads from the database. It is forbidden from performing raw mathematical transformations.
+
+## 🧾 Strategy: danlongshort (independent)
+**Purpose:** Beta-neutral long/short crypto portfolio (beta vs BTC). Target is zero net beta exposure to BTC.  
+**Relationship to other strategies:** Fully independent from `apathy_bleed` (separate config, state, CSVs, and runner).
+
+### Inputs / State (Render persistent disk)
+- **Positions (manual ledger):** `/data/danlongshort_positions.csv`
+  - Template in repo root: `danlongshort_positions.csv`
+  - Columns: `ticker, side, notional_usd, entry_price, entry_date`
+- **Optional cache (30d daily closes):** `/data/danlongshort_price_cache.parquet` (freshness gate < 12h)
+- **Alert runner state/logs:**
+  - `/data/danlongshort_snapshot_state.json`
+  - `/data/danlongshort_alert_log.csv`
+
+### Price data
+- **Source:** Live fetch each run using CoinGecko via `src/providers/coingecko.py` → `fetch_price_history()`.
+- **Window:** 30-day rolling window of daily closes; daily log returns are computed and aligned in UTC calendar time.
+- **Storage dependency:** **No dependency** on local Parquet panels for danlongshort.
+
+### Beta calculation
+- **Method:** 30-day OLS regression of each alt’s daily log returns vs BTC daily log returns.
+- **Definition:** BTC beta to itself is **1.0** by construction.
+- **Portfolio beta exposure:** \(\sum_i \text{notional}_i \times \text{direction}_i \times \beta_i\) where LONG=+1 and SHORT=-1.
+- **Rebalancing:** Manual. Script prints suggested BTC adjustment and (with `--rebalance`) the exact BTC leg notional to neutralize beta (adjust BTC only).
+
+### Funding rates (risk/drag)
+- **Source:** Live fetch via CCXT (Binance USD-M perps).
+- **Output:** Per-position current funding rate (per 8h) and estimated daily funding PnL in USD (approx \(3 \times\) 8h rate).
+
+### Telegram alerts (Render)
+- **Runner:** `scripts/danlongshort_alert_runner.py` (separate process from apathy)
+- **Config:** `configs/danlongshort_alerts.yaml`
+- **Labeling:** Every message is prefixed with **`[danlongshort]`** for visual separation in shared Telegram groups.
