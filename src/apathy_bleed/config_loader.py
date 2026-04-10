@@ -17,7 +17,8 @@ class ApathyAlertsConfig:
     scan_reminder_milestone_days: list[int]
     formation_window_days: int
     price_check_interval_minutes: int
-    daily_snapshot_utc_hour: int
+    daily_bundle_utc_hour: int
+    portfolio_snapshot_interval_minutes: int
     variational_base_url: str
     variational_stats_path: str
     variational_timeout_seconds: float
@@ -54,7 +55,12 @@ def load_apathy_alerts_config(repo_root: Path | None = None) -> ApathyAlertsConf
         scan_reminder_milestone_days=list(raw.get("scan_reminder_milestone_days") or [40, 43, 45]),
         formation_window_days=int(raw.get("formation_window_days", 45)),
         price_check_interval_minutes=int(raw.get("price_check_interval_minutes", 60)),
-        daily_snapshot_utc_hour=int(raw.get("daily_snapshot_utc_hour", 8)),
+        daily_bundle_utc_hour=int(
+            raw.get("daily_bundle_utc_hour", raw.get("daily_snapshot_utc_hour", 8))
+        ),
+        portfolio_snapshot_interval_minutes=max(
+            1, int(raw.get("portfolio_snapshot_interval_minutes", 60))
+        ),
         variational_base_url=str(var.get("base_url", "")).rstrip("/"),
         variational_stats_path=str(var.get("stats_path", "/metadata/stats")),
         variational_timeout_seconds=float(var.get("timeout_seconds", 20)),

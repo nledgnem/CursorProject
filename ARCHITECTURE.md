@@ -49,7 +49,7 @@ The pipeline utilizes a **Non-Destructive Audit Trail** for its Gold Layer data.
 ## LIVE PRODUCTION ARCHITECTURE
 The system has transitioned from a static historical backtest to a live, automated operational state. 
 
-* **The Orchestrator:** `system_heartbeat.py` is the master daemon. It runs continuously, schedules the ETL pipeline every 8 hours (00:05, 08:05, 16:05 UTC), and keeps the dashboard alive.
+* **The Orchestrator:** `system_heartbeat.py` is the master daemon. It runs continuously, schedules the ETL pipeline once per day (00:05 UTC), and keeps the dashboard alive.
 * **The ETL Engine:** `run_live_pipeline.py` computes the feature space. It utilizes a robust 730-day lookback window to safely and accurately calculate all rolling features (e.g., 90-Day Z-Score, Environment APR) across the Data Lake.
 * **The State Ingestion:** `scripts/live/live_data_fetcher.py` handles the database write-path. It slices off only the terminal `decision_date` row and UPSERTs it into `macro_state.db` (`macro_features`) keyed strictly on `decision_date` via `ON CONFLICT(decision_date) DO UPDATE`.
 * **The Presentation Layer:** `dashboards/app_regime_monitor.py` (Streamlit) strictly reads from the database. It is forbidden from performing raw mathematical transformations.

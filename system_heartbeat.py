@@ -21,7 +21,7 @@ LOG_PATH = LOG_DIR / "system_heartbeat.log"
 LAST_PIPELINE_SUCCESS_PATH = heartbeat_last_success_path()
 
 
-UTC_RUN_TIMES = ("00:05", "08:05", "16:05")  # UTC daily
+UTC_RUN_TIMES = ("00:05",)  # UTC once per day (early UTC morning)
 RUN_WINDOW_SECONDS = 55  # trigger if within this window after HH:MM
 
 # If the PC was asleep and missed all UTC slots, catch up once per UTC day after wake.
@@ -226,7 +226,7 @@ def main() -> None:
                     pass
                 return
 
-            # Catch-up: missed all slots while asleep (GMT+8 night, etc.) — run once per UTC day.
+            # Catch-up: missed the daily slot while asleep — run once per UTC day.
             if not scheduled_fired and _needs_catchup_pipeline(now, last_success):
                 elapsed = time.time() - last_pipeline_attempt_wall_s
                 if last_pipeline_attempt_wall_s > 0 and elapsed < CATCHUP_RETRY_AFTER_FAIL_SECONDS:

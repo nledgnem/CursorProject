@@ -12,7 +12,10 @@ scan_reminder_milestone_days: [40, 43, 45]
 formation_window_days: 45
 
 price_check_interval_minutes: 60
-daily_snapshot_utc_hour: 8
+# Exit reminders + scanner: once per UTC day in this hour (first five minutes).
+daily_bundle_utc_hour: 8
+# Variational portfolio summary to Telegram (deduped per UTC hour).
+portfolio_snapshot_interval_minutes: 60
 
 # Variational public stats (GET, no auth). Must match operational endpoint.
 variational:

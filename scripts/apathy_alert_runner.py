@@ -12,8 +12,8 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from src.apathy_bleed.alert_ops import (
-    run_daily_snapshot,
     run_exit_reminders,
+    run_portfolio_snapshot,
     run_scanner_reminders,
     run_stop_proximity,
 )
@@ -53,9 +53,16 @@ def main() -> None:
     book_path = cfg.book_csv
 
     last_stop_mono = 0.0
+    last_portfolio_mono = 0.0
     interval_s = max(60, cfg.price_check_interval_minutes * 60)
+    portfolio_interval_s = max(60, cfg.portfolio_snapshot_interval_minutes * 60)
 
-    logger.info("Apathy alert runner started. Book=%s interval=%s min", book_path, cfg.price_check_interval_minutes)
+    logger.info(
+        "Apathy alert runner started. Book=%s stop_interval=%s min portfolio_snapshot=%s min",
+        book_path,
+        cfg.price_check_interval_minutes,
+        cfg.portfolio_snapshot_interval_minutes,
+    )
 
     while True:
         now = _utc_now()
@@ -87,8 +94,17 @@ def main() -> None:
                 logger.warning("Stop proximity failed (non-fatal): %s", e, exc_info=True)
             last_stop_mono = time.monotonic()
 
-        # Daily bundle: exit reminders + scanner + snapshot at configured UTC hour
-        if now.hour == cfg.daily_snapshot_utc_hour and 0 <= now.minute < 5:
+        # Variational portfolio snapshot (Telegram) on interval, deduped per UTC hour in alert_ops.
+        elapsed_p = time.monotonic() - last_portfolio_mono
+        if last_portfolio_mono == 0.0 or elapsed_p >= portfolio_interval_s:
+            try:
+                run_portfolio_snapshot(cfg, rows, prices)
+            except Exception as e:
+                logger.warning("Portfolio snapshot failed (non-fatal): %s", e, exc_info=True)
+            last_portfolio_mono = time.monotonic()
+
+        # Daily bundle: exit reminders + scanner at configured UTC hour (portfolio is hourly above).
+        if now.hour == cfg.daily_bundle_utc_hour and 0 <= now.minute < 5:
             bundle_path = cfg.daily_bundle_state_json
             bundle = _load_json(bundle_path, {"last_bundle_utc_day": ""})
             today_s = now.date().isoformat()
@@ -101,10 +117,6 @@ def main() -> None:
                     run_scanner_reminders(cfg, rows)
                 except Exception as e:
                     logger.warning("Scanner reminders failed (non-fatal): %s", e, exc_info=True)
-                try:
-                    run_daily_snapshot(cfg, rows, prices)
-                except Exception as e:
-                    logger.warning("Daily snapshot failed (non-fatal): %s", e, exc_info=True)
                 bundle["last_bundle_utc_day"] = today_s
                 _save_json(bundle_path, bundle)
 
