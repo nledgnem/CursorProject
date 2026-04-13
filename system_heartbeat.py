@@ -195,6 +195,14 @@ def main() -> None:
             logging.info("Live pipeline completed successfully (%s).", reason)
             _save_last_pipeline_success_date(_utc_now().date())
 
+            # Nightly export hook (non-fatal): runs once per UTC day after successful pipeline.
+            try:
+                from src.exports.nightly_export import run as run_nightly_export
+
+                run_nightly_export()
+            except Exception:
+                logging.exception("Nightly export failed (non-fatal).")
+
         def heartbeat_tick() -> None:
             nonlocal dashboard_proc, last_trigger_key
 

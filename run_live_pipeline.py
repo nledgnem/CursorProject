@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import subprocess
 import sys
 from datetime import date, timedelta, datetime, timezone
@@ -159,13 +160,18 @@ def main() -> int:
         if not SCRIPT_BUILD_SILVER.exists():
             logger.error("Silver layer builder not found: %s", SCRIPT_BUILD_SILVER)
             return 1
+
+        data_lake_override = os.environ.get("RENDER_DATA_LAKE_PATH", "").strip()
+        data_lake_path = Path(data_lake_override).expanduser() if data_lake_override else (PROJECT_ROOT / "data" / "curated" / "data_lake")
+        if not data_lake_path.is_absolute():
+            data_lake_path = (PROJECT_ROOT / data_lake_path).resolve()
         ok = run_step(
             cwd=PROJECT_ROOT,
             cmd=[
                 sys.executable,
                 str(SCRIPT_BUILD_SILVER),
                 "--data-lake",
-                str(PROJECT_ROOT / "data" / "curated" / "data_lake"),
+                str(data_lake_path),
             ],
             step_name="Step 3.5: Build Silver Layer (scripts/data_ingestion/build_silver_layer.py)",
         )

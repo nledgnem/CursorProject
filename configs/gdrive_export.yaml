@@ -1,0 +1,35 @@
+export_gdrive:
+  enabled: true
+
+  # Persistent base on Render
+  base_dir: "/data"
+
+  sources:
+    silver_fact_price_parquet: "/data/curated/data_lake/silver_fact_price.parquet"
+    universe_eligibility_parquet: "/data/universe_eligibility.parquet"
+    single_coin_panel_csv: "/data/single_coin_panel.csv"
+    msm_timeseries_csv: "/data/exports/msm_timeseries.csv"
+    stablecoins_csv: "/data/stablecoins.csv"
+
+  # Used to produce the stable MSM snapshot after each pipeline run.
+  msm_reports_root: "reports/msm_funding_v0"
+
+  gdrive:
+    service_account_json_path: "/data/secrets/gdrive_service_account.json"
+    target_folder_id: "1-bi-bItWYKd2Df6KCMacCgFcqyKHKyoo"
+    overwrite: true
+
+    # Static filenames so downstream always reads “latest”
+    filenames:
+      silver_fact_price_parquet: "silver_fact_price.parquet"
+      universe_eligibility_parquet: "universe_eligibility.parquet"
+      single_coin_panel_csv: "single_coin_panel.csv"
+      msm_timeseries_csv: "msm_timeseries.csv"
+      stablecoins_csv: "stablecoins.csv"
+
+  retry:
+    max_attempts: 5
+    initial_backoff_seconds: 5
+    max_backoff_seconds: 120
+    backoff_multiplier: 2.0
+    jitter: true

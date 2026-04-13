@@ -5,6 +5,34 @@ cd "$(dirname "$0")"
 export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$(pwd)"
 export PYTHONUNBUFFERED=1
 
+# Ensure persistent disk directories exist (Render mounts at /data).
+if [[ -d "/data" ]]; then
+  mkdir -p "/data/exports" "/data/secrets" "/data/curated/data_lake"
+fi
+
+# Service account credential (base64 JSON) -> persistent file
+if [[ -d "/data" ]]; then
+  if [[ ! -f "/data/secrets/gdrive_service_account.json" ]]; then
+    if [[ -n "${GDRIVE_SERVICE_ACCOUNT_JSON:-}" ]]; then
+      echo "${GDRIVE_SERVICE_ACCOUNT_JSON}" | base64 -d > "/data/secrets/gdrive_service_account.json"
+      chmod 600 "/data/secrets/gdrive_service_account.json" || true
+      echo "[GDRIVE] wrote /data/secrets/gdrive_service_account.json from env."
+    fi
+  fi
+fi
+
+# Seed static export inputs onto the persistent disk (never overwrite).
+if [[ -d "/data" ]]; then
+  if [[ ! -f "/data/stablecoins.csv" && -f "data/stablecoins.csv" ]]; then
+    cp "data/stablecoins.csv" "/data/stablecoins.csv"
+    echo "[SEED] seeded /data/stablecoins.csv from repo snapshot."
+  fi
+  if [[ ! -f "/data/universe_eligibility.parquet" && -f "data/curated/universe_eligibility.parquet" ]]; then
+    cp "data/curated/universe_eligibility.parquet" "/data/universe_eligibility.parquet"
+    echo "[SEED] seeded /data/universe_eligibility.parquet from repo snapshot."
+  fi
+fi
+
 # One-shot boot ping (non-fatal). Useful to catch duplicate deployments sending alerts.
 python - <<'PY' || true
 from __future__ import annotations

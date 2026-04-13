@@ -24,3 +24,7 @@ polars>=1.0.0
 
 ccxt==4.5.26
 
+# Google Drive nightly export (Render)
+google-api-python-client>=2.120.0
+google-auth>=2.29.0
+
