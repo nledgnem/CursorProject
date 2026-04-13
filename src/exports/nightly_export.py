@@ -213,6 +213,7 @@ def run(*, config_path: Path | None = None) -> None:
             retry=cfg.retry,
         )
 
+    send_telegram_text(f"✅ Nightly Drive export complete — 5 files uploaded [{_utc_today_iso()} UTC]")
     _mark_export_done(LAST_EXPORT_MARKER)
     logger.info("Nightly export completed successfully for UTC day=%s", _utc_today_iso())
 

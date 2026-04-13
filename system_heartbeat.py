@@ -195,6 +195,14 @@ def main() -> None:
             logging.info("Live pipeline completed successfully (%s).", reason)
             _save_last_pipeline_success_date(_utc_now().date())
 
+            # Panel generation (non-fatal): once per UTC day on /data, before export.
+            try:
+                from src.exports.panel_generation import run as run_panel_generation
+
+                run_panel_generation(repo_root=REPO_ROOT)
+            except Exception:
+                logging.exception("Panel generation failed (non-fatal).")
+
             # Nightly export hook (non-fatal): runs once per UTC day after successful pipeline.
             try:
                 from src.exports.nightly_export import run as run_nightly_export
