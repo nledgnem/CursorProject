@@ -45,7 +45,7 @@ def _default_persistent_dir() -> Path:
 
 def load_positions_csv(path: Path) -> list[Position]:
     if not path.exists():
-        raise FileNotFoundError(f"Positions CSV not found: {path}")
+        return []
 
     df = pd.read_csv(path)
     required = {"ticker", "side", "notional_usd", "entry_price", "entry_date"}

@@ -114,6 +114,14 @@ PY
   fi
 fi
 
+# Seed danlongshort positions CSV on first boot (headers only if missing; never overwrite).
+if [[ -d "/data" ]]; then
+  if [[ ! -f "/data/danlongshort_positions.csv" ]]; then
+    echo "ticker,side,notional_usd,entry_price,entry_date" > /data/danlongshort_positions.csv
+    echo "[DANLONGSHORT] seeded empty positions CSV."
+  fi
+fi
+
 # Background watchdog: respawn alert runner on crash.
 (while true; do
   python scripts/apathy_alert_runner.py
