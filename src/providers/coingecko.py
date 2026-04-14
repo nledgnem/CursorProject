@@ -13,6 +13,28 @@ COINGECKO_BASE = "https://pro-api.coingecko.com/api/v3"
 COINGECKO_API_KEY = os.environ.get("COINGECKO_API_KEY", "")  # Set in env; never commit keys
 
 
+def get_coingecko_api_key() -> str:
+    """Return the CoinGecko API key from env (empty string if unset)."""
+    return str(COINGECKO_API_KEY or "").strip()
+
+
+def coingecko_v3_get(path: str, params: Dict) -> requests.Response:
+    """
+    Generic CoinGecko Pro v3 GET helper.
+
+    Auth pattern matches `fetch_price_history`:
+    - If a key is present, include `x_cg_pro_api_key` in query params.
+    - If absent, omit the key param (still targets Pro base URL).
+    """
+    url = f"{COINGECKO_BASE}{path}"
+    merged: Dict = dict(params or {})
+    key = get_coingecko_api_key()
+    if key:
+        merged["x_cg_pro_api_key"] = key
+
+    return requests.get(url, params=merged, timeout=30, proxies={"http": None, "https": None})
+
+
 def _repo_root() -> Path:
     """src/providers/coingecko.py -> repository root."""
     return Path(__file__).resolve().parent.parent.parent
