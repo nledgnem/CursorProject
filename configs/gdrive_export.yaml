@@ -4,6 +4,10 @@ export_gdrive:
   # Persistent base on Render
   base_dir: "/data"
 
+  # Sync everything inside the curated data lake (auto-picks up new tables).
+  sync_directory: "/data/curated/data_lake"
+  sync_patterns: ["*.parquet", "*.csv"]
+
   sources:
     silver_fact_price_parquet: "/data/curated/data_lake/silver_fact_price.parquet"
     fact_markets_snapshot_parquet: "/data/curated/data_lake/fact_markets_snapshot.parquet"

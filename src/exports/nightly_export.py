@@ -32,6 +32,8 @@ class ExportConfig:
     enabled: bool
     base_dir: Path
     sources: dict[str, Path]
+    sync_directory: Path | None
+    sync_patterns: list[str]
     msm_reports_root: Path
     service_account_json_path: Path
     target_folder_id: str
@@ -64,6 +66,16 @@ def _parse_config(cfg_path: Path) -> ExportConfig:
         raise ValueError("export_gdrive.sources must be a mapping")
     sources: dict[str, Path] = {str(k): Path(str(v)) for k, v in sources_raw.items()}
 
+    sync_directory_raw = root.get("sync_directory")
+    sync_directory: Path | None = None
+    if sync_directory_raw is not None and str(sync_directory_raw).strip():
+        sync_directory = Path(str(sync_directory_raw))
+
+    sync_patterns_raw = root.get("sync_patterns", ["*.parquet", "*.csv"])
+    if not isinstance(sync_patterns_raw, list):
+        raise ValueError("export_gdrive.sync_patterns must be a list")
+    sync_patterns = [str(p) for p in sync_patterns_raw if str(p).strip()]
+
     msm_reports_root = Path(str(root.get("msm_reports_root", "reports/msm_funding_v0")))
 
     gdrive = root.get("gdrive", {})
@@ -91,6 +103,8 @@ def _parse_config(cfg_path: Path) -> ExportConfig:
         enabled=enabled,
         base_dir=base_dir,
         sources=sources,
+        sync_directory=sync_directory,
+        sync_patterns=sync_patterns,
         msm_reports_root=msm_reports_root,
         service_account_json_path=service_account_json_path,
         target_folder_id=target_folder_id,
@@ -159,6 +173,19 @@ def _mark_export_done(marker_path: Path) -> None:
     marker_path.write_text(_utc_today_iso() + "\n", encoding="utf-8")
 
 
+def _iter_sync_files(sync_dir: Path, patterns: list[str]) -> list[Path]:
+    """
+    Discover files under sync_dir matching any of the provided glob patterns.
+    Patterns should be compatible with `Path.rglob()` (e.g. "*.parquet").
+    """
+    found: set[Path] = set()
+    for pat in patterns:
+        for p in sync_dir.rglob(pat):
+            if p.is_file():
+                found.add(p)
+    return sorted(found, key=lambda x: str(x))
+
+
 def run(*, config_path: Path | None = None) -> None:
     """
     Nightly export entrypoint.
@@ -209,11 +236,15 @@ def run(*, config_path: Path | None = None) -> None:
     )
     cache = DriveIdCache(DRIVE_ID_CACHE_PATH, folder_id=folder_id)
 
-    # Upload all 5 files.
+    uploaded_drive_names: set[str] = set()
+    n_uploaded = 0
+
+    # Upload explicit sources first (handles files outside data_lake).
     for key, local_path in cfg.sources.items():
         drive_name = cfg.filenames.get(key)
         if not drive_name:
             raise ValueError(f"Missing gdrive.filenames entry for key={key}")
+        uploaded_drive_names.add(str(drive_name))
         upload_or_update_file(
             service=service,
             folder_id=folder_id,
@@ -222,8 +253,46 @@ def run(*, config_path: Path | None = None) -> None:
             cache=cache,
             retry=cfg.retry,
         )
+        n_uploaded += 1
 
-    send_telegram_text(f"✅ Nightly Drive export complete — 5 files uploaded [{_utc_today_iso()} UTC]")
+    # Sync entire curated data lake directory (auto-picks up new tables).
+    if cfg.sync_directory is not None:
+        sync_dir = cfg.sync_directory
+        if not sync_dir.is_absolute():
+            repo_root = Path(__file__).resolve().parents[2]
+            sync_dir = (repo_root / sync_dir).resolve()
+
+        if not sync_dir.exists():
+            raise FileNotFoundError(f"export_gdrive.sync_directory not found: {sync_dir}")
+
+        discovered = _iter_sync_files(sync_dir, cfg.sync_patterns)
+        logger.info(
+            "Syncing %s files from sync_directory=%s with patterns=%s",
+            len(discovered),
+            sync_dir,
+            cfg.sync_patterns,
+        )
+
+        for p in discovered:
+            # Drive filenames must match local filenames exactly.
+            drive_name = p.name
+            if drive_name in uploaded_drive_names:
+                logger.info("[EXPORT] Sync skip (already uploaded explicitly): %s", p)
+                continue
+
+            logger.info("[EXPORT] Sync upload: local=%s drive_name=%s", p, drive_name)
+            upload_or_update_file(
+                service=service,
+                folder_id=folder_id,
+                local_path=p,
+                drive_name=drive_name,
+                cache=cache,
+                retry=cfg.retry,
+            )
+            uploaded_drive_names.add(drive_name)
+            n_uploaded += 1
+
+    send_telegram_text(f"✅ Nightly Drive export complete — {n_uploaded} files uploaded [{_utc_today_iso()} UTC]")
     _mark_export_done(LAST_EXPORT_MARKER)
     logger.info("Nightly export completed successfully for UTC day=%s", _utc_today_iso())
 
