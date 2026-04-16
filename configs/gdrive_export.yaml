@@ -6,6 +6,7 @@ export_gdrive:
 
   sources:
     silver_fact_price_parquet: "/data/curated/data_lake/silver_fact_price.parquet"
+    fact_markets_snapshot_parquet: "/data/curated/data_lake/fact_markets_snapshot.parquet"
     universe_eligibility_parquet: "/data/universe_eligibility.parquet"
     single_coin_panel_csv: "/data/single_coin_panel.csv"
     msm_timeseries_csv: "/data/exports/msm_timeseries.csv"
@@ -22,6 +23,7 @@ export_gdrive:
     # Static filenames so downstream always reads “latest”
     filenames:
       silver_fact_price_parquet: "silver_fact_price.parquet"
+      fact_markets_snapshot_parquet: "fact_markets_snapshot.parquet"
       universe_eligibility_parquet: "universe_eligibility.parquet"
       single_coin_panel_csv: "single_coin_panel.csv"
       msm_timeseries_csv: "msm_timeseries.csv"
