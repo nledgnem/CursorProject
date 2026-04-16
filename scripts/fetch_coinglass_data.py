@@ -22,6 +22,8 @@ if sys.platform == 'win32':
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from repo_paths import data_lake_root
+
 from src.utils.metadata import get_git_commit_hash
 
 
@@ -607,13 +609,13 @@ def main():
     parser.add_argument(
         "--funding-output",
         type=Path,
-        default=Path("data/curated/data_lake/fact_funding.parquet"),
+        default=(data_lake_root() / "fact_funding.parquet"),
         help="Output path for funding rates parquet file",
     )
     parser.add_argument(
         "--oi-output",
         type=Path,
-        default=Path("data/curated/data_lake/fact_open_interest.parquet"),
+        default=(data_lake_root() / "fact_open_interest.parquet"),
         help="Output path for OI parquet file",
     )
     parser.add_argument(
@@ -739,7 +741,7 @@ def main():
             # wasting hours on invalid/untradeable universe symbols (common on Render).
 
             def _load_symbols_from_dim_instrument() -> list[str]:
-                p = (repo_root / "data" / "curated" / "data_lake" / "dim_instrument.parquet")
+                p = (data_lake_root() / "dim_instrument.parquet")
                 if not p.exists():
                     return []
                 try:
@@ -838,7 +840,7 @@ def main():
                 # LIQUIDITY GATE: Filter for valid perpetuals FIRST (or universe), then Top-N by market cap (avoid spot-only denominator trap)
                 _top_n_fallback = 200
                 try:
-                    data_lake_dir = repo_root / "data" / "curated" / "data_lake"
+                    data_lake_dir = data_lake_root()
                     mcap_path = data_lake_dir / "fact_marketcap.parquet"
                     if mcap_path.exists():
                         mcap_df = pd.read_parquet(mcap_path)

@@ -15,8 +15,10 @@ import polars as pl
 import numpy as np
 import matplotlib.pyplot as plt
 
+from repo_paths import data_lake_root
 
-DEF_RELATIVE_PARQUET = Path("data/curated/data_lake/silver_fact_funding.parquet")
+
+DEF_RELATIVE_PARQUET = data_lake_root() / "silver_fact_funding.parquet"
 
 
 def resolve_project_root() -> Path:
@@ -29,7 +31,7 @@ def resolve_parquet_path(cli_path: Optional[str]) -> Path:
     if cli_path:
         path = Path(cli_path).expanduser().resolve()
     else:
-        path = resolve_project_root() / DEF_RELATIVE_PARQUET
+        path = DEF_RELATIVE_PARQUET
 
     if not path.exists():
         raise FileNotFoundError(

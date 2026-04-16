@@ -17,7 +17,9 @@ import pandera.pandas as pa
 
 # Repo root: script lives in scripts/data_ingestion/
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-DATA_LAKE = REPO_ROOT / "data" / "curated" / "data_lake"
+from repo_paths import data_lake_root
+
+DATA_LAKE = data_lake_root()
 
 # Gold macro sensor: daily cross-sectional fragmentation + IQM (coin-level Silver grain)
 if str(REPO_ROOT) not in sys.path:
@@ -535,7 +537,7 @@ def main() -> None:
         "--data-lake",
         type=Path,
         default=DATA_LAKE,
-        help="Data lake directory (default: repo data/curated/data_lake)",
+        help="Data lake directory (default: repo_paths.data_lake_root())",
     )
     args = parser.parse_args()
     data_lake_dir = args.data_lake.resolve()

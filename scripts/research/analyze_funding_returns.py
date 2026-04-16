@@ -18,6 +18,8 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
+from repo_paths import data_lake_root
+
 
 REGIME_ORDER = [
     "Cold Flush",
@@ -114,7 +116,7 @@ def load_prices_with_fallback(
         primary_path,
         Path("sol_eth_bnb_prices.csv"),
         Path("data/curated/prices_daily.parquet"),
-        Path("data/curated/data_lake/fact_price.parquet"),
+        (data_lake_root() / "fact_price.parquet"),
     ]
     seen = set()
     for path in candidates:

@@ -1,6 +1,7 @@
 """One-off diagnostic: check fact_price.parquet for date continuity between 2026-01-20 and 2026-03-02."""
+from repo_paths import data_lake_root
 import pandas as pd
-df = pd.read_parquet("data/curated/data_lake/fact_price.parquet")
+df = pd.read_parquet(data_lake_root() / "fact_price.parquet")
 # Normalize date column for comparison
 df["date"] = pd.to_datetime(df["date"], utc=True).dt.date
 start, end = pd.to_datetime("2026-01-20").date(), pd.to_datetime("2026-03-02").date()

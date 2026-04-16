@@ -29,3 +29,38 @@ def heartbeat_last_success_path() -> Path:
     (e.g. /data/heartbeat_last_pipeline_success.txt) and is not reset on deploy.
     """
     return (macro_state_db_path().parent / "heartbeat_last_pipeline_success.txt").resolve()
+
+
+def data_lake_root() -> Path:
+    """
+    Curated data lake root directory.
+
+    On Render (persistent disk mounted at /data), use:
+      /data/curated/data_lake
+
+    Locally, fall back to:
+      <repo_root>/data/curated/data_lake
+
+    Optional override for testing / custom deployments:
+      - RENDER_DATA_LAKE_PATH
+      - DATA_LAKE_ROOT
+    """
+    override = (os.environ.get("RENDER_DATA_LAKE_PATH", "") or os.environ.get("DATA_LAKE_ROOT", "")).strip()
+    if override:
+        p = Path(override).expanduser().resolve()
+        p.mkdir(parents=True, exist_ok=True)
+        return p
+
+    render_base = Path("/data")
+    if render_base.exists() and render_base.is_dir():
+        p = (render_base / "curated" / "data_lake").resolve()
+        p.mkdir(parents=True, exist_ok=True)
+        return p
+
+    p = (REPO_ROOT / "data" / "curated" / "data_lake").resolve()
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+# Convenience constant (evaluated at import time).
+DATA_LAKE_ROOT = data_lake_root()

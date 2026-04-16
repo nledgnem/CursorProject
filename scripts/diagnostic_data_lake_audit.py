@@ -10,10 +10,12 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
+from repo_paths import data_lake_root
+
 # Paths relative to repo root (run from Cursor repo root)
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MSM_CSV = REPO_ROOT / "reports/msm_funding_v0/20260310_103356/msm_timeseries.csv"
-FACT_PRICE_PATH = REPO_ROOT / "data/curated/data_lake/fact_price.parquet"
+FACT_PRICE_PATH = data_lake_root() / "fact_price.parquet"
 
 DECISION_2024_01_01 = pd.Timestamp("2024-01-01").date()
 NEXT_DATE_2024_01_08 = pd.Timestamp("2024-01-08").date()

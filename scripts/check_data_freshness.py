@@ -16,10 +16,12 @@ if sys.platform == 'win32':
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from repo_paths import data_lake_root
+
 def check_data_freshness():
     """Check freshness of all data tables."""
     repo_root = Path(__file__).parent.parent
-    data_lake_dir = repo_root / "data" / "curated" / "data_lake"
+    data_lake_dir = data_lake_root()
     curated_dir = repo_root / "data" / "curated"
     
     print("=" * 80)
@@ -30,7 +32,7 @@ def check_data_freshness():
     
     # Check data lake tables
     print("\n" + "=" * 80)
-    print("DATA LAKE TABLES (data/curated/data_lake/)")
+    print(f"DATA LAKE TABLES ({data_lake_dir})")
     print("=" * 80)
     
     data_lake_tables = {

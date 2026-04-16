@@ -19,6 +19,8 @@ if sys.platform == 'win32':
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from repo_paths import data_lake_root
+
 
 def add_asset_id_to_dim_instrument(data_lake_dir: Path) -> None:
     """Add asset_id column to dim_instrument by linking with dim_asset."""
@@ -107,14 +109,14 @@ def main():
     parser.add_argument(
         "--data-lake-dir",
         type=Path,
-        default=Path("data/curated/data_lake"),
-        help="Data lake directory (default: data/curated/data_lake)",
+        default=data_lake_root(),
+        help="Data lake directory (default: repo_paths.data_lake_root())",
     )
     
     args = parser.parse_args()
     
     repo_root = Path(__file__).parent.parent
-    data_lake_dir = (repo_root / args.data_lake_dir).resolve()
+    data_lake_dir = args.data_lake_dir.resolve() if args.data_lake_dir.is_absolute() else (repo_root / args.data_lake_dir).resolve()
     
     add_asset_id_to_dim_instrument(data_lake_dir)
 

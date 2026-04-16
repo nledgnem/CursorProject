@@ -17,6 +17,8 @@ if sys.platform == 'win32':
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from repo_paths import data_lake_root
+
 from src.data_lake.schema import (
     DIM_ASSET_SCHEMA,
     DIM_INSTRUMENT_SCHEMA,
@@ -580,8 +582,8 @@ def main():
     parser.add_argument(
         "--data-lake-dir",
         type=Path,
-        default=Path("data/curated/data_lake"),
-        help="Data lake directory (default: data/curated/data_lake)",
+        default=data_lake_root(),
+        help="Data lake directory (default: repo_paths.data_lake_root())",
     )
     parser.add_argument(
         "--curated-dir",

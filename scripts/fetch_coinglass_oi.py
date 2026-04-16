@@ -22,6 +22,8 @@ if sys.platform == 'win32':
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from repo_paths import data_lake_root
+
 from src.utils.metadata import get_git_commit_hash
 
 
@@ -272,7 +274,7 @@ def main():
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("data/curated/data_lake/fact_open_interest.parquet"),
+        default=(data_lake_root() / "fact_open_interest.parquet"),
         help="Output path for OI parquet file",
     )
     parser.add_argument(

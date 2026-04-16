@@ -18,6 +18,8 @@ if sys.platform == 'win32':
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from repo_paths import data_lake_root
+
 
 def check_unlinked_instruments(data_lake_dir: Path, show_all: bool = False) -> None:
     """Show instruments without asset_id."""
@@ -123,8 +125,8 @@ def main():
     parser.add_argument(
         "--data-lake-dir",
         type=Path,
-        default=Path("data/curated/data_lake"),
-        help="Data lake directory (default: data/curated/data_lake)",
+        default=data_lake_root(),
+        help="Data lake directory (default: repo_paths.data_lake_root())",
     )
     parser.add_argument(
         "--show-all",
@@ -135,7 +137,7 @@ def main():
     args = parser.parse_args()
     
     repo_root = Path(__file__).parent.parent
-    data_lake_dir = (repo_root / args.data_lake_dir).resolve()
+    data_lake_dir = args.data_lake_dir.resolve() if args.data_lake_dir.is_absolute() else (repo_root / args.data_lake_dir).resolve()
     
     check_unlinked_instruments(data_lake_dir, show_all=args.show_all)
 

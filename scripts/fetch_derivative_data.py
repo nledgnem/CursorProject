@@ -17,6 +17,8 @@ import time
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from repo_paths import data_lake_root
+
 COINGECKO_BASE = "https://pro-api.coingecko.com/api/v3"
 COINGECKO_API_KEY = os.environ.get("COINGECKO_API_KEY", "")  # Set in env; never commit keys
 
@@ -303,7 +305,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     repo_root = Path(__file__).parent.parent
-    data_lake_dir = repo_root / "data" / "curated" / "data_lake"
+    data_lake_dir = data_lake_root()
     
     if args.all:
         args.volumes = True

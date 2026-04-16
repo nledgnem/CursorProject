@@ -23,6 +23,8 @@ import pandas as pd
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from repo_paths import data_lake_root
+
 from src.providers.coingecko import download_all_coins
 from src.data_lake.schema import (
     FACT_PRICE_SCHEMA,
@@ -254,7 +256,7 @@ def main():
     parser.add_argument(
         "--data-lake-dir",
         type=Path,
-        default=Path("data/curated/data_lake"),
+        default=data_lake_root(),
         help="Data lake directory",
     )
     parser.add_argument(
@@ -268,7 +270,7 @@ def main():
     
     repo_root = Path(__file__).parent.parent
     curated_dir = (repo_root / args.curated_dir).resolve()
-    data_lake_dir = (repo_root / args.data_lake_dir).resolve()
+    data_lake_dir = args.data_lake_dir.resolve() if args.data_lake_dir.is_absolute() else (repo_root / args.data_lake_dir).resolve()
     allowlist_path = repo_root / "data" / "perp_allowlist.csv"
     
     print("=" * 80)

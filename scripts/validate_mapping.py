@@ -10,6 +10,8 @@ import json
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from repo_paths import data_lake_root
+
 from src.data_lake.mapping_validation import (
     run_full_mapping_validation,
     generate_sql_queries_for_duckdb,
@@ -23,20 +25,20 @@ def main():
         epilog="""
 Examples:
   # Validate all dates
-  python scripts/validate_mapping.py --data-lake-dir data/curated/data_lake
+  python scripts/validate_mapping.py --data-lake-dir /data/curated/data_lake
 
   # Validate specific snapshot date
-  python scripts/validate_mapping.py --data-lake-dir data/curated/data_lake --snapshot-date 2024-01-01
+  python scripts/validate_mapping.py --data-lake-dir /data/curated/data_lake --snapshot-date 2024-01-01
 
   # Stricter coverage threshold
-  python scripts/validate_mapping.py --data-lake-dir data/curated/data_lake --min-coverage 90.0
+  python scripts/validate_mapping.py --data-lake-dir /data/curated/data_lake --min-coverage 90.0
         """
     )
     
     parser.add_argument(
         "--data-lake-dir",
         type=Path,
-        required=True,
+        default=data_lake_root(),
         help="Directory with data lake parquet files",
     )
     parser.add_argument(
@@ -71,7 +73,7 @@ Examples:
     args = parser.parse_args()
     
     repo_root = Path(__file__).parent.parent
-    data_lake_dir = (repo_root / args.data_lake_dir).resolve()
+    data_lake_dir = args.data_lake_dir.resolve() if args.data_lake_dir.is_absolute() else (repo_root / args.data_lake_dir).resolve()
     
     if not data_lake_dir.exists():
         print(f"[ERROR] Data lake directory not found: {data_lake_dir}")

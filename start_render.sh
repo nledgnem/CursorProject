@@ -31,6 +31,22 @@ if [[ -d "/data" ]]; then
     cp "data/curated/universe_eligibility.parquet" "/data/universe_eligibility.parquet"
     echo "[SEED] seeded /data/universe_eligibility.parquet from repo snapshot."
   fi
+
+  # One-time migration seed: copy repo snapshot lake files onto /data (never overwrite).
+  # This preserves existing history on first boot after deploy.
+  if [[ -d "data/curated/data_lake" ]]; then
+    shopt -s nullglob globstar
+    for f in data/curated/data_lake/**/*.{parquet,csv}; do
+      [[ -f "$f" ]] || continue
+      rel="${f#data/curated/data_lake/}"
+      dst="/data/curated/data_lake/${rel}"
+      if [[ ! -f "${dst}" ]]; then
+        mkdir -p "$(dirname "${dst}")"
+        cp "$f" "${dst}"
+        echo "[SEED] seeded ${dst} from repo snapshot."
+      fi
+    done
+  fi
 fi
 
 # One-shot boot ping (non-fatal). Useful to catch duplicate deployments sending alerts.

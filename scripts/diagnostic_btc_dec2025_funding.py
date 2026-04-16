@@ -8,9 +8,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from repo_paths import data_lake_root
+
 
 def main() -> None:
-    data_lake = Path("data/curated/data_lake")
+    data_lake = data_lake_root()
     path = data_lake / "silver_fact_funding.parquet"
     print(f"Loading {path} ...")
     df = pd.read_parquet(path)

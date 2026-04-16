@@ -9,7 +9,9 @@ import pandas as pd
 
 
 # Default: relative to cwd. Override via base_path when running from different working dirs.
-DATA_LAKE_BASE = Path("data/curated/data_lake")
+from repo_paths import data_lake_root
+
+DATA_LAKE_BASE = data_lake_root()
 
 
 @dataclass

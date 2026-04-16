@@ -19,6 +19,8 @@ import json
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from repo_paths import data_lake_root
+
 from src.providers.coingecko_analyst import (
     fetch_trending_searches,
     fetch_coins_categories,
@@ -28,7 +30,7 @@ from src.providers.coingecko_analyst import (
 )
 from src.data_lake.mapping import generate_asset_id
 
-DATA_LAKE_DIR = Path("data/curated/data_lake")
+DATA_LAKE_DIR = data_lake_root()
 
 
 def safe_print(text: str) -> None:

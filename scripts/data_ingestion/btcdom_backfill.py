@@ -20,10 +20,12 @@ from data_loader import DataLoader
 from index_calculator import IndexCalculator, compare_to_benchmark
 from state_storage import StateStorage, RebalanceSnapshot
 
+from repo_paths import data_lake_root
+
 
 # Project root: script lives at scripts/data_ingestion/btcdom_backfill.py
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DATA_LAKE_DIR = PROJECT_ROOT / "data" / "curated" / "data_lake"
+DATA_LAKE_DIR = data_lake_root()
 OUT_CSV_PATH = DATA_LAKE_DIR / "btcdom_reconstructed.csv"
 STATE_DB_PATH = PROJECT_ROOT / "btcdom_state.db"
 

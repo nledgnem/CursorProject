@@ -15,6 +15,8 @@ import polars as pl
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from repo_paths import data_lake_root
+
 from src.providers.coingecko_analyst import (
     fetch_exchanges_list,
     fetch_derivative_exchange_details,
@@ -22,7 +24,7 @@ from src.providers.coingecko_analyst import (
 )
 from scripts.fetch_derivative_data import fetch_derivatives_exchanges
 
-DATA_LAKE_DIR = Path("data/curated/data_lake")
+DATA_LAKE_DIR = data_lake_root()
 
 
 def safe_print(text: str) -> None:

@@ -80,6 +80,10 @@ single_coin_panel.csv
 data/curated/data_lake/apathy_alert_log.csv
 data/curated/data_lake/apathy_*_state.json
 
+# --- Curated data lake artifacts (never commit) ---
+data/curated/data_lake/*.parquet
+data/curated/data_lake/**/*.parquet
+
 # Large zip bundles produced by pipelines (regenerate from source)
 data/**/*.zip
 
