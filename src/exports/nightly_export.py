@@ -10,7 +10,13 @@ from typing import Any
 
 import yaml
 
-from src.exports.gdrive_uploader import DriveIdCache, RetryConfig, build_drive_service, upload_or_update_file
+from src.exports.gdrive_uploader import (
+    DriveIdCache,
+    RetryConfig,
+    build_drive_service,
+    resolve_target_folder_id,
+    upload_or_update_file,
+)
 from src.notifications.telegram_client import send_telegram_text
 
 logger = logging.getLogger(__name__)
@@ -18,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 LAST_EXPORT_MARKER = Path("/data/.last_export_utc_day")
 DRIVE_ID_CACHE_PATH = Path("/data/exports/.drive_file_ids.json")
+DRIVE_FOLDER_STATE_PATH = Path("/data/exports/.drive_target_folder_id.txt")
 
 
 @dataclass(frozen=True)
@@ -64,8 +71,6 @@ def _parse_config(cfg_path: Path) -> ExportConfig:
         raise ValueError("export_gdrive.gdrive must be a mapping")
     service_account_json_path = Path(str(gdrive.get("service_account_json_path", "/data/secrets/gdrive_service_account.json")))
     target_folder_id = str(gdrive.get("target_folder_id", "")).strip()
-    if not target_folder_id:
-        raise ValueError("export_gdrive.gdrive.target_folder_id must be set")
     filenames_raw = gdrive.get("filenames", {})
     if not isinstance(filenames_raw, dict):
         raise ValueError("export_gdrive.gdrive.filenames must be a mapping")
@@ -197,7 +202,12 @@ def run(*, config_path: Path | None = None) -> None:
 
     # Auth + uploader
     service = build_drive_service(cfg.service_account_json_path)
-    cache = DriveIdCache(DRIVE_ID_CACHE_PATH, folder_id=cfg.target_folder_id)
+    folder_id = resolve_target_folder_id(
+        service,
+        configured_folder_id=cfg.target_folder_id,
+        state_path=DRIVE_FOLDER_STATE_PATH,
+    )
+    cache = DriveIdCache(DRIVE_ID_CACHE_PATH, folder_id=folder_id)
 
     # Upload all 5 files.
     for key, local_path in cfg.sources.items():
@@ -206,7 +216,7 @@ def run(*, config_path: Path | None = None) -> None:
             raise ValueError(f"Missing gdrive.filenames entry for key={key}")
         upload_or_update_file(
             service=service,
-            folder_id=cfg.target_folder_id,
+            folder_id=folder_id,
             local_path=Path(local_path),
             drive_name=drive_name,
             cache=cache,

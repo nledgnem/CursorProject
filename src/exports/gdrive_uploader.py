@@ -8,7 +8,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
-from google.oauth2 import service_account
+import os
+
+from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
@@ -16,7 +18,7 @@ from googleapiclient.http import MediaFileUpload
 logger = logging.getLogger(__name__)
 
 
-DRIVE_SCOPES = ("https://www.googleapis.com/auth/drive",)
+DRIVE_SCOPES = ("https://www.googleapis.com/auth/drive.file",)
 
 
 @dataclass(frozen=True)
@@ -58,14 +60,83 @@ def _atomic_write_json(path: Path, obj: dict[str, Any]) -> None:
     tmp.replace(path)
 
 
-def build_drive_service(service_account_json_path: Path):
-    if not service_account_json_path.exists():
-        raise FileNotFoundError(f"Google service account JSON not found: {service_account_json_path}")
-    creds = service_account.Credentials.from_service_account_file(
-        str(service_account_json_path),
+def build_drive_service(service_account_json_path: Path | None = None):
+    """
+    Build a Drive v3 service using OAuth refresh token from env vars.
+
+    `service_account_json_path` is accepted for backwards compatibility but ignored.
+    """
+    client_id = os.environ.get("GDRIVE_OAUTH_CLIENT_ID")
+    client_secret = os.environ.get("GDRIVE_OAUTH_CLIENT_SECRET")
+    refresh_token = os.environ.get("GDRIVE_OAUTH_REFRESH_TOKEN")
+
+    if not all([client_id, client_secret, refresh_token]):
+        raise RuntimeError(
+            "Missing OAuth env vars. Need: GDRIVE_OAUTH_CLIENT_ID, "
+            "GDRIVE_OAUTH_CLIENT_SECRET, GDRIVE_OAUTH_REFRESH_TOKEN"
+        )
+
+    creds = Credentials(
+        token=None,
+        refresh_token=refresh_token,
+        client_id=client_id,
+        client_secret=client_secret,
+        token_uri="https://oauth2.googleapis.com/token",
         scopes=list(DRIVE_SCOPES),
     )
     return build("drive", "v3", credentials=creds, cache_discovery=False)
+
+
+def resolve_target_folder_id(
+    service,
+    *,
+    configured_folder_id: str,
+    state_path: Path,
+    folder_name: str = "Render Exports",
+) -> str:
+    """
+    Resolve a writable folder id for `drive.file` scope.
+
+    - If `state_path` exists, use the persisted id.
+    - Else if `configured_folder_id` is accessible, persist and use it.
+    - Else create a new folder in the user's My Drive root, persist and use it.
+    """
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        raw = state_path.read_text(encoding="utf-8").strip()
+        if raw:
+            return raw
+    except FileNotFoundError:
+        pass
+    except Exception:
+        logger.warning("Could not read Drive folder state; will re-resolve. path=%s", state_path, exc_info=True)
+
+    cfg = (configured_folder_id or "").strip()
+    if cfg:
+        try:
+            # `drive.file` can only access folders the app created / has access to.
+            service.files().get(fileId=cfg, fields="id").execute()
+            state_path.write_text(cfg + "\n", encoding="utf-8")
+            logger.info("Using configured Drive target folder id=%s", cfg)
+            return cfg
+        except HttpError as e:
+            # Commonly 404/403 under drive.file if folder wasn't created by this OAuth app.
+            logger.warning(
+                "Configured Drive folder not accessible under drive.file; creating app folder. folder_id=%s status=%s",
+                cfg,
+                getattr(getattr(e, "resp", None), "status", None),
+            )
+        except Exception:
+            logger.warning("Configured Drive folder check failed; creating app folder. folder_id=%s", cfg, exc_info=True)
+
+    body = {"name": folder_name, "mimeType": "application/vnd.google-apps.folder"}
+    resp = service.files().create(body=body, fields="id").execute()
+    folder_id = str(resp.get("id", "") or "").strip()
+    if not folder_id:
+        raise RuntimeError("Drive folder creation returned empty id")
+    state_path.write_text(folder_id + "\n", encoding="utf-8")
+    logger.info("Created Drive folder in My Drive root: name=%s id=%s", folder_name, folder_id)
+    return folder_id
 
 
 def _list_files_by_name_in_folder(service, *, folder_id: str) -> dict[str, str]:
