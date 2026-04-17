@@ -84,6 +84,13 @@ data/curated/data_lake/apathy_*_state.json
 data/curated/data_lake/*.parquet
 data/curated/data_lake/**/*.parquet
 
+# --- Generated perp listings artifacts (never commit; persist on /data) ---
+data/curated/data_lake/perps_hyperliquid.csv
+data/curated/data_lake/perps_variational.csv
+data/curated/data_lake/perp_coverage_summary.csv
+data/curated/data_lake/perp_ticker_mapping.csv
+data/curated/data_lake/perp_unmatched_panel_tickers_*.txt
+
 # Large zip bundles produced by pipelines (regenerate from source)
 data/**/*.zip
 

@@ -26,6 +26,20 @@ This is the production-grade execution module. All backtesting, data-loading, an
 - On Render boot, `start_render.sh` ensures `/data/...` directories exist.
 - If `/data` is empty on first boot, `start_render.sh` **seeds** the persistent disk from the repo snapshot (e.g. `data/curated/data_lake/**`) and **never overwrites existing `/data` files** on subsequent deploys.
 
+### 🧾 Perp listings snapshots (Hyperliquid + Variational)
+
+- **What it is**: daily append-only CSV snapshots of perp listings/metadata for two venues:
+  - `perps_hyperliquid.csv`
+  - `perps_variational.csv`
+  - plus derived coverage/mapping reports:
+    - `perp_coverage_summary.csv`
+    - `perp_ticker_mapping.csv`
+- **How it’s triggered**: currently **manual-only** (not wired into `system_heartbeat.py` or `run_live_pipeline.py`)
+  - Code entrypoint: `src/data_lake/perp_listings.py` → `run_daily_perp_ingestion(repo_root=...)`
+  - Operator xref tool (reads snapshots): `scripts/xref_perp_listings.py`
+- **Why it lives on `/data` (not git)**: these are **generated artifacts** that accumulate by date, similar to other lake outputs; they’re gitignored.
+- **Backup**: the nightly Google Drive export syncs `/data/curated/data_lake/` (including these CSVs), so a wiped Render disk can be restored/rebuilt from Drive history (but first boot seeding from repo will not include prior perp snapshot history).
+
 ### 🧾 Core fact tables (curated lake)
 
 - **`fact_funding`**: perp funding history by exchange/instrument (CoinGlass)
