@@ -5,6 +5,50 @@
 2. ALWAYS load and read the `data_dictionary.yaml` file before generating or modifying any analytical code, pandas transformations, or feature engineering logic.
 3. If a variable is not explicitly defined in the data dictionary, you must HALT and ask for the unit definition. DO NOT GUESS.
 
+# ==========================================
+# Cursor Agent Rules for macro-regime-monitor
+# (Documentation discipline — mandatory)
+# ==========================================
+
+## Before doing anything
+
+- Read `ARCHITECTURE.md` for current system state
+- Read any relevant file in `docs/runbooks/` for the area you're working in
+- If `docs/decisions/` exists, check for relevant ADRs
+
+## Documentation discipline (mandatory)
+
+When making changes to any of the following, you MUST update documentation in the same PR/commit:
+
+| Change type | Required doc update |
+|---|---|
+| Infra / deploy config (`start_render.sh`, `render.yaml`, env vars) | `ARCHITECTURE.md` |
+| New data source or schema change | `data_dictionary.yaml` AND `ARCHITECTURE.md` |
+| Pipeline step changes (add/remove/reorder) | `ARCHITECTURE.md` "Live Pipeline DAG" section |
+| Auth / secrets / env var changes | `ARCHITECTURE.md` AND relevant runbook |
+| Architectural decision with tradeoffs | new ADR in `docs/decisions/NNN-title.md` |
+| Operational procedure (recovery, rotation, debugging) | new/updated runbook in `docs/runbooks/` |
+
+Before committing, ask: "If a fresh agent opened this repo tomorrow, would they know this change happened and why?" If no, update the docs.
+
+## Conventions
+
+- Never hardcode data lake paths — use `repo_paths.data_lake_root()`
+- Never commit `.parquet` files (gitignored; don't force-add)
+- Never put secret values in docs — reference env var names only
+- Always commit AND push when finishing a task; don't leave changes local unless explicitly instructed
+
+## Verification before pushing
+
+- Run `py_compile` or equivalent on changed Python files
+- Read back your own diff to check for obvious errors
+- For infra changes, flag any Render-dashboard actions needed in the commit body (e.g., "manually delete GDRIVE_SERVICE_ACCOUNT_JSON env var after deploy")
+
+## Communication
+
+- When your task depends on context you don't have, ask rather than guess
+- Report what you did concretely — which files changed, which commit hash, which branch
+
 # Global Rules for Cursor AI
 
 ## 1. 🛑 ZERO ROOT BLOAT (The Quarantine Rule)
