@@ -1,0 +1,31 @@
+hyperliquid:
+  base_url: "https://api.hyperliquid.xyz"
+  timeout_seconds: 20
+  # Hyperliquid /info POST payload for perp metadata
+  meta_payload:
+    type: "meta"
+
+variational:
+  base_url: "https://omni-client-api.prod.ap-northeast-1.variational.io"
+  timeout_seconds: 20
+  stats_path: "/metadata/stats"
+
+ticker_normalization:
+  # Applied when matching venue tickers -> panel tickers (case-insensitive).
+  strip_suffixes:
+    - "-PERP"
+    - "PERP"
+    - "/USD"
+    - "/USDT"
+    - "-USD"
+    - "-USDT"
+    - "USD"
+    - "USDT"
+  strip_prefixes: []
+
+output:
+  curated_data_lake_dir: "data/curated/data_lake"
+  perps_hyperliquid_csv: "perps_hyperliquid.csv"
+  perps_variational_csv: "perps_variational.csv"
+  perp_ticker_mapping_csv: "perp_ticker_mapping.csv"
+  perp_coverage_summary_csv: "perp_coverage_summary.csv"
