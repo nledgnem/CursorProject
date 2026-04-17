@@ -7,6 +7,7 @@ PRODUCTION LIVE PIPELINE — SINGLE ENTRY POINT FOR CRON / SCHEDULER
 This is the only script that should be triggered by the production cron job.
 
 It runs the full live pipeline DAG in order (halt-on-failure):
+  Step 0.5: Ingest Perp Listings (Hyperliquid + Variational)
   Step 1: Ingest Raw Funding (fact_funding.parquet) via CoinGlass API
   Step 2: Ingest Raw Prices/Marketcap (fact_price.parquet / fact_marketcap.parquet)
   Step 3: Build Macro Indices (btcdom_reconstructed.csv)
@@ -43,6 +44,7 @@ logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 SCRIPT_MARKETS_SNAPSHOT = PROJECT_ROOT / "scripts" / "fetch_high_priority_data.py"
+SCRIPT_PERP_LISTINGS = PROJECT_ROOT / "scripts" / "run_perp_listings_ingestion.py"
 SCRIPT_FUNDING = PROJECT_ROOT / "scripts" / "fetch_coinglass_data.py"
 SCRIPT_PRICES_MCAP = PROJECT_ROOT / "scripts" / "incremental_update.py"
 SCRIPT_MACRO = PROJECT_ROOT / "scripts" / "data_ingestion" / "btcdom_backfill.py"
@@ -125,6 +127,21 @@ def main() -> int:
             )
             if not ok:
                 logger.warning("Step 0 (market snapshot) failed — continuing pipeline.")
+
+        # ------------------------------------------------------------------
+        # Step 0.5 — Perp Listings Snapshot (Hyperliquid + Variational)
+        # ------------------------------------------------------------------
+        # Non-fatal: if upstream APIs are down, continue with the rest of the pipeline.
+        if not SCRIPT_PERP_LISTINGS.exists():
+            logger.warning("Perp listings script not found: %s — continuing pipeline.", SCRIPT_PERP_LISTINGS)
+        else:
+            ok = run_step(
+                PROJECT_ROOT,
+                [sys.executable, str(SCRIPT_PERP_LISTINGS)],
+                "Step 0.5 — Perp Listings Snapshot (Hyperliquid + Variational)",
+            )
+            if not ok:
+                logger.warning("Step 0.5 (perp listings) failed — continuing pipeline.")
 
         # Step 1: Funding (CoinGlass -> fact_funding.parquet)
         if not SCRIPT_FUNDING.exists():
