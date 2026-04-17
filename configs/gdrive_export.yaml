@@ -20,7 +20,6 @@ export_gdrive:
   msm_reports_root: "reports/msm_funding_v0"
 
   gdrive:
-    service_account_json_path: "/data/secrets/gdrive_service_account.json"
     target_folder_id: "1-bi-bItWYKd2Df6KCMacCgFcqyKHKyoo"
     overwrite: true
 

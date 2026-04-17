@@ -10,17 +10,6 @@ if [[ -d "/data" ]]; then
   mkdir -p "/data/exports" "/data/secrets" "/data/curated/data_lake"
 fi
 
-# Service account credential (base64 JSON) -> persistent file
-if [[ -d "/data" ]]; then
-  if [[ ! -f "/data/secrets/gdrive_service_account.json" ]]; then
-    if [[ -n "${GDRIVE_SERVICE_ACCOUNT_JSON:-}" ]]; then
-      echo "${GDRIVE_SERVICE_ACCOUNT_JSON}" | base64 -d > "/data/secrets/gdrive_service_account.json"
-      chmod 600 "/data/secrets/gdrive_service_account.json" || true
-      echo "[GDRIVE] wrote /data/secrets/gdrive_service_account.json from env."
-    fi
-  fi
-fi
-
 # Seed static export inputs onto the persistent disk (never overwrite).
 if [[ -d "/data" ]]; then
   if [[ ! -f "/data/stablecoins.csv" && -f "data/stablecoins.csv" ]]; then

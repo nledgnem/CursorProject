@@ -60,11 +60,9 @@ def _atomic_write_json(path: Path, obj: dict[str, Any]) -> None:
     tmp.replace(path)
 
 
-def build_drive_service(service_account_json_path: Path | None = None):
+def build_drive_service():
     """
     Build a Drive v3 service using OAuth refresh token from env vars.
-
-    `service_account_json_path` is accepted for backwards compatibility but ignored.
     """
     client_id = os.environ.get("GDRIVE_OAUTH_CLIENT_ID")
     client_secret = os.environ.get("GDRIVE_OAUTH_CLIENT_SECRET")

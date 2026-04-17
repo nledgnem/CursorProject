@@ -35,7 +35,6 @@ class ExportConfig:
     sync_directory: Path | None
     sync_patterns: list[str]
     msm_reports_root: Path
-    service_account_json_path: Path
     target_folder_id: str
     filenames: dict[str, str]
     retry: RetryConfig
@@ -81,7 +80,6 @@ def _parse_config(cfg_path: Path) -> ExportConfig:
     gdrive = root.get("gdrive", {})
     if not isinstance(gdrive, dict):
         raise ValueError("export_gdrive.gdrive must be a mapping")
-    service_account_json_path = Path(str(gdrive.get("service_account_json_path", "/data/secrets/gdrive_service_account.json")))
     target_folder_id = str(gdrive.get("target_folder_id", "")).strip()
     filenames_raw = gdrive.get("filenames", {})
     if not isinstance(filenames_raw, dict):
@@ -106,7 +104,6 @@ def _parse_config(cfg_path: Path) -> ExportConfig:
         sync_directory=sync_directory,
         sync_patterns=sync_patterns,
         msm_reports_root=msm_reports_root,
-        service_account_json_path=service_account_json_path,
         target_folder_id=target_folder_id,
         filenames=filenames,
         retry=retry,
@@ -228,7 +225,7 @@ def run(*, config_path: Path | None = None) -> None:
         raise FileNotFoundError(f"Missing export sources: {missing}")
 
     # Auth + uploader
-    service = build_drive_service(cfg.service_account_json_path)
+    service = build_drive_service()
     folder_id = resolve_target_folder_id(
         service,
         configured_folder_id=cfg.target_folder_id,
