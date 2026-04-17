@@ -34,7 +34,8 @@ This is the production-grade execution module. All backtesting, data-loading, an
   - plus derived coverage/mapping reports:
     - `perp_coverage_summary.csv`
     - `perp_ticker_mapping.csv`
-- **How it’s triggered**: currently **manual-only** (not wired into `system_heartbeat.py` or `run_live_pipeline.py`)
+- **How it’s triggered**: **automated daily** as **Step 0.5** in `run_live_pipeline.py` (invoked by `system_heartbeat.py`)
+  - Wrapper script: `scripts/run_perp_listings_ingestion.py`
   - Code entrypoint: `src/data_lake/perp_listings.py` → `run_daily_perp_ingestion(repo_root=...)`
   - Operator xref tool (reads snapshots): `scripts/xref_perp_listings.py`
 - **Why it lives on `/data` (not git)**: these are **generated artifacts** that accumulate by date, similar to other lake outputs; they’re gitignored.
@@ -112,6 +113,7 @@ The system has transitioned from a static historical backtest to a live, automat
 - **Step 0 (non-fatal)**: market snapshot via `scripts/fetch_high_priority_data.py`
   - Non-fatal by design (pipeline continues if this step fails)
   - Note: CoinGecko exchange volume endpoints returning **401** on Analyst tier is expected; snapshot is the critical output
+- **Step 0.5 (non-fatal)**: perp listings snapshot (Hyperliquid + Variational)
 - **Step 1 (fatal)**: funding via CoinGlass
 - **Step 2 (fatal)**: price/mcap via CoinGecko
 - **Step 3 (fatal)**: macro index build
