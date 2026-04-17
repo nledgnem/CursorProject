@@ -4,7 +4,7 @@
 
 ### Core Documentation
 - `README.md` - Main project readme
-- `docs/architecture.md` - Architecture documentation
+- `ARCHITECTURE.md` - Architecture documentation
 - `docs/PARQUET_VS_DATABASE.md` - Technical docs
 - `docs/query_examples.md` - Query examples
 - `docs/snapshot_schema.md` - Schema documentation

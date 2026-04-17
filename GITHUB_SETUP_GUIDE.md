@@ -165,7 +165,7 @@ Institutional-light crypto backtesting platform with data lake architecture.
 
 ## Architecture
 
-See `docs/architecture.md` for detailed architecture documentation.
+See `ARCHITECTURE.md` for detailed architecture documentation.
 ```
 
 ---

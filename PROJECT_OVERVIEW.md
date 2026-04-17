@@ -21,7 +21,7 @@ This is a **production-grade crypto backtesting platform** for evaluating long-s
 
 ### Core Documentation
 - **README.md**: Main user guide with setup, usage, and pipeline steps
-- **docs/architecture.md**: System architecture, data flow, key concepts
+- **ARCHITECTURE.md**: System architecture, data flow, key concepts
 - **DATA_LAKE_FORMAT_EXPLANATION.md**: Detailed explanation of normalized data lake format
 - **docs/VALIDATION_FRAMEWORK.md**: Golden run + invariant checks framework
 - **DETAILED_EXPLANATION_FOR_MADS.md**: Complete explanation of monitor evaluation process
@@ -484,7 +484,7 @@ When explaining this project to an AI, emphasize:
 
 **Key Files to Reference:**
 - `README.md`: User guide
-- `docs/architecture.md`: System architecture
+- `ARCHITECTURE.md`: System architecture
 - `DETAILED_EXPLANATION_FOR_MADS.md`: Monitor evaluation explanation
 - `DATA_LAKE_FORMAT_EXPLANATION.md`: Data lake format details
 - `MONITOR_EVAL_FRAMEWORK.md`: Monitor evaluation implementation

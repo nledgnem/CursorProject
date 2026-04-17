@@ -217,10 +217,15 @@ Metadata files:
 
 ## Architecture
 
-See `docs/architecture.md` for:
-- System architecture diagram
-- Explanation of Universe vs Basket
-- Data flow
+### Start here (production + infra)
+
+If you’re new to this repo (or a fresh Cursor agent), read these first:
+
+- `ARCHITECTURE.md` — current production architecture (Render `/data` disk, live pipeline DAG, Drive export)
+- `docs/runbooks/drive_export.md` — operational steps for OAuth refresh tokens + Drive export recovery
+- `docs/decisions/` — short ADRs documenting why the current infrastructure exists
+
+Other helpful docs live under `docs/` (validation framework, query examples, schema notes).
 
 ## Querying Data with DuckDB
 

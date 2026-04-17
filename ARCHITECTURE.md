@@ -8,6 +8,33 @@ This is the production-grade execution module. All backtesting, data-loading, an
 ### 💾 The Data Lake (`/data`)
 * `/curated/data_lake`: The single source of truth. Contains standardized Parquet files and CSV extracts.
 
+## 💾 Data Lake Storage (Render persistent disk)
+
+### 📍 Location + path resolution (hard rule)
+
+- **Production (Render)**: `/data/curated/data_lake/` (Render persistent disk mounted at `/data`)
+- **Local**: `<repo_root>/data/curated/data_lake/`
+- **How code resolves it**: all ingestion + pipeline code must call `repo_paths.data_lake_root()` (or use `repo_paths.DATA_LAKE_ROOT`)
+- **Never do**: hardcode `data/curated/data_lake/` anywhere in ingestion/ETL scripts
+
+### 🧹 Git hygiene (hard rule)
+
+- **Parquet files are gitignored** — do not commit new `.parquet` outputs to git.
+
+### 🚀 Render boot seeding behavior
+
+- On Render boot, `start_render.sh` ensures `/data/...` directories exist.
+- If `/data` is empty on first boot, `start_render.sh` **seeds** the persistent disk from the repo snapshot (e.g. `data/curated/data_lake/**`) and **never overwrites existing `/data` files** on subsequent deploys.
+
+### 🧾 Core fact tables (curated lake)
+
+- **`fact_funding`**: perp funding history by exchange/instrument (CoinGlass)
+- **`fact_price`**: daily close prices by asset (CoinGecko)
+- **`fact_marketcap`**: daily market caps by asset (CoinGecko)
+- **`fact_volume`**: daily spot volumes by asset (CoinGecko)
+- **`fact_open_interest`**: open interest history (CoinGlass); **BTC-only currently**
+- **`fact_markets_snapshot`**: daily market snapshot (circulating + total supply, etc.); **daily accumulating**
+
 **Rule 1 – Curated Lake Only**
 * The AI is **strictly forbidden** from reading any CSV or Parquet files **outside** of `data/curated/data_lake/`.
 * **Primary Macro Signal**: `data/curated/data_lake/btcdom_reconstructed.csv`  
@@ -53,6 +80,60 @@ The system has transitioned from a static historical backtest to a live, automat
 * **The ETL Engine:** `run_live_pipeline.py` computes the feature space. It utilizes a robust 730-day lookback window to safely and accurately calculate all rolling features (e.g., 90-Day Z-Score, Environment APR) across the Data Lake.
 * **The State Ingestion:** `scripts/live/live_data_fetcher.py` handles the database write-path. It slices off only the terminal `decision_date` row and UPSERTs it into `macro_state.db` (`macro_features`) keyed strictly on `decision_date` via `ON CONFLICT(decision_date) DO UPDATE`.
 * **The Presentation Layer:** `dashboards/app_regime_monitor.py` (Streamlit) strictly reads from the database. It is forbidden from performing raw mathematical transformations.
+
+## 🧬 Live Pipeline DAG (production)
+
+### ⏱️ Trigger + orchestration chain
+
+- **Trigger**: `system_heartbeat.py` runs continuously in the foreground of the Render web service
+- **Schedule**: runs daily at **00:05 UTC** via `UTC_RUN_TIMES` in `system_heartbeat.py`
+- **Chain**:
+  - `system_heartbeat.py`
+  - → `scripts/live/live_data_fetcher.py`
+  - → `run_live_pipeline.py`
+  - → Steps **0–4** (below)
+
+### 🧱 Steps 0–4 (halt-on-failure except Step 0)
+
+- **Step 0 (non-fatal)**: market snapshot via `scripts/fetch_high_priority_data.py`
+  - Non-fatal by design (pipeline continues if this step fails)
+  - Note: CoinGecko exchange volume endpoints returning **401** on Analyst tier is expected; snapshot is the critical output
+- **Step 1 (fatal)**: funding via CoinGlass
+- **Step 2 (fatal)**: price/mcap via CoinGecko
+- **Step 3 (fatal)**: macro index build
+- **Step 3.5 (fatal)**: silver layer build
+- **Step 4 (fatal)**: strategy run
+
+### 📤 Drive export hook (heartbeat-only)
+
+- After a **successful** pipeline run, `system_heartbeat.py` invokes `src/exports/nightly_export.run()` to push exports to Google Drive.
+- Manual `python run_live_pipeline.py` runs the DAG but **does not** trigger Drive export (only the heartbeat chain does).
+
+## 📤 Google Drive Export (nightly)
+
+### 🔐 Auth (OAuth delegation)
+
+- **Auth**: OAuth refresh token (user-delegated)
+- **Env vars**:
+  - `GDRIVE_OAUTH_CLIENT_ID`
+  - `GDRIVE_OAUTH_CLIENT_SECRET`
+  - `GDRIVE_OAUTH_REFRESH_TOKEN`
+- **Scope**: `https://www.googleapis.com/auth/drive.file` (can only access files the app creates)
+
+### 🎯 Target folder + persistence
+
+- Target is a folder named **`Render Exports`** in the owning Google account’s **My Drive**
+- Folder ID persistence file: `/data/exports/.drive_target_folder_id.txt`
+  - If missing, the exporter resolves/creates the folder and persists the ID
+
+### 🔄 Sync behavior
+
+- **Directory sync**: uploads all `.parquet` and `.csv` under `/data/curated/data_lake/` when `sync_directory` is configured
+- **Explicit sources**: also uploads the explicit files listed in `export_gdrive.sources` (for files outside the data lake)
+
+### 🧯 Historical note
+
+- Service account auth was removed (commit **`chore: remove unused service account auth code after oauth migration`**) — do not reintroduce it.
 
 ## 🧾 Strategy: danlongshort (independent)
 **Purpose:** Beta-neutral long/short crypto portfolio (beta vs BTC). Target is zero net beta exposure to BTC.  
