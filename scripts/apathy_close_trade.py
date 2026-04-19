@@ -67,6 +67,12 @@ def main() -> None:
     p.add_argument("--exit-price", type=float, required=True)
     p.add_argument("--reason", required=True, choices=sorted(REASON_STATUS.keys()))
     p.add_argument("--side", default="SHORT", help="SHORT or LONG_BTC")
+    p.add_argument(
+        "--exit-date",
+        default="",
+        help="Exit date in UTC as YYYY-MM-DD (default: today UTC).",
+    )
+    p.add_argument("--notes", default="", help="Optional free-text notes stored on the row.")
     args = p.parse_args()
 
     if args.exit_price <= 0:
@@ -84,7 +90,14 @@ def main() -> None:
     notional = float(target["notional_usd"])
     side = (target.get("side") or "").strip().upper()
     pnl_usd, pnl_pct = _compute_pnl(side, entry, args.exit_price, notional)
-    exit_day = _utc_today()
+    exit_raw = (args.exit_date or "").strip()
+    if exit_raw:
+        try:
+            exit_day = date.fromisoformat(exit_raw)
+        except ValueError as e:
+            raise SystemExit(f"Invalid --exit-date (use YYYY-MM-DD): {exit_raw}") from e
+    else:
+        exit_day = _utc_today()
     status = REASON_STATUS[args.reason.strip().lower()]
 
     target["status"] = status
@@ -92,6 +105,8 @@ def main() -> None:
     target["exit_price_usd"] = f"{args.exit_price:.8f}".rstrip("0").rstrip(".")
     target["pnl_usd"] = f"{pnl_usd:.4f}".rstrip("0").rstrip(".")
     target["pnl_pct"] = f"{pnl_pct:.8f}".rstrip("0").rstrip(".")
+    if (args.notes or "").strip():
+        target["notes"] = args.notes.strip()
 
     rows[idx] = target
     atomic_write_book(book_path, rows)
