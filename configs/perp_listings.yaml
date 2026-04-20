@@ -24,7 +24,12 @@ ticker_normalization:
   strip_prefixes: []
 
 output:
-  curated_data_lake_dir: "data/curated/data_lake"
+  # NOTE: Intentionally no `curated_data_lake_dir` override. When absent,
+  # load_perp_listings_config() falls through to repo_paths.data_lake_root(),
+  # which honors the RENDER_DATA_LAKE_PATH env var (-> /data/curated/data_lake
+  # on Render). Setting a relative string here bypasses the resolver and
+  # writes to ephemeral container storage on Render, invisible to the nightly
+  # Drive sync. See ARCHITECTURE.md "Perp listings snapshots" section.
   perps_hyperliquid_csv: "perps_hyperliquid.csv"
   perps_variational_csv: "perps_variational.csv"
   perp_ticker_mapping_csv: "perp_ticker_mapping.csv"

@@ -38,6 +38,7 @@ This is the production-grade execution module. All backtesting, data-loading, an
   - Wrapper script: `scripts/run_perp_listings_ingestion.py`
   - Code entrypoint: `src/data_lake/perp_listings.py` → `run_daily_perp_ingestion(repo_root=...)`
   - Operator xref tool (reads snapshots): `scripts/xref_perp_listings.py`
+- **Path resolution**: `configs/perp_listings.yaml` intentionally does **not** set `output.curated_data_lake_dir`. With the key absent, `load_perp_listings_config()` falls through to `repo_paths.data_lake_root()` — the same resolver every other lake writer uses — so outputs land on the Render Disk at `/data/curated/data_lake/` (and locally at `<repo>/data/curated/data_lake/`). Do not re-introduce a relative path override here; it silently routes writes to ephemeral container storage on Render and breaks the Drive backup.
 - **Why it lives on `/data` (not git)**: these are **generated artifacts** that accumulate by date, similar to other lake outputs; they’re gitignored.
 - **Backup**: the nightly Google Drive export syncs `/data/curated/data_lake/` (including these CSVs), so a wiped Render disk can be restored/rebuilt from Drive history (but first boot seeding from repo will not include prior perp snapshot history).
 
@@ -150,6 +151,45 @@ The system has transitioned from a static historical backtest to a live, automat
 ### 🧯 Historical note
 
 - Service account auth was removed (commit **`chore: remove unused service account auth code after oauth migration`**) — do not reintroduce it.
+
+## 🧾 Strategy: apathy_bleed (primary)
+**Purpose:** Long BTC / Short alt pair trades across 4 cohorts (C1–C4), entered in a single formation window on 2026-04-09, with staggered exit targets at 40 / 85 / 130 / 175 days from entry (C1: 2026-05-19, C2: 2026-07-03, C3: 2026-08-17, C4: 2026-10-01). Exits are triggered by time (target date), stop (+60% adverse move on the short leg), or manual intervention. Each cohort has a matching LONG_BTC hedge row sized to the cohort's total short notional.
+
+### 📄 Apathy Bleed trade book
+
+- **What it is**: `apathy_bleed_book.csv` — the canonical trade ledger. Columns: `trade_id, cohort, ticker, side, entry_date_utc, entry_price_usd, notional_usd, quantity, stop_price_usd, exit_date_target_utc, status, exit_date_utc, exit_price_usd, pnl_usd, pnl_pct, notes`.
+- **Canonical location**: `/data/curated/data_lake/apathy_bleed_book.csv` (Render persistent disk); `<repo>/data/curated/data_lake/apathy_bleed_book.csv` (local).
+- **Git policy**: **committed intentionally** (not gitignored — see `.gitignore` comment). The repo copy serves as the first-boot seed for fresh Render deploys, so it should be kept in sync with Render's runtime state.
+- **Backup**: captured by the nightly Drive directory sync of `/data/curated/data_lake/`.
+
+### 📝 Apathy Bleed runtime state (co-located with book)
+
+- `apathy_alert_log.csv` — append-only audit log of every Telegram alert emitted by `scripts/apathy_alert_runner.py`. Gitignored.
+- `apathy_stop_proximity_state.json` — last-warned thresholds per (trade_id) for stop-approach alerts.
+- `apathy_exit_reminder_state.json` — last-fired state for T-7 / T-3 / T-1 exit reminders.
+- `apathy_scanner_reminder_state.json` — last-fired state for formation-window (40 / 43 / 45-day) scan reminders.
+- `apathy_daily_snapshot_state.json` — last-fired state for daily portfolio snapshot (08:00 UTC).
+- `apathy_daily_bundle_state.json` — last-fired state for combined daily bundle (exit reminders + scanner).
+
+### 📍 Path resolution (hard rule)
+
+- `configs/apathy_alerts.yaml` sets absolute paths under `/data/curated/data_lake/` for the book, alert log, and all state JSON files. These **must** live inside `/data/curated/data_lake/` so the nightly Drive directory sync backs them up.
+- A previous version used `/data/*` (one level shallower than the curated lake). This routed writes outside the sync directory, so every trade closure, alert firing, and state update was silently unbacked-up for four days despite the pipeline claiming success. Ops scripts appeared to succeed because they were reading and writing the same (correct-but-orphaned) location.
+- **Do not** move these paths back to `/data/*` or anywhere outside `/data/curated/data_lake/` without also updating `gdrive_export.yaml` to explicitly include them. Better: follow the Rule 1 convention and have `config_loader._p()` resolve via `repo_paths.data_lake_root()` instead of hardcoded absolute paths (follow-up refactor).
+
+### 🔧 Operational scripts (run on Render shell)
+
+- `scripts/apathy_log_entry.py` — record a new short-leg entry in the book
+- `scripts/apathy_log_btc_hedge.py` — record a cohort's BTC long-hedge entry
+- `scripts/apathy_close_trade.py` — close an OPEN row with `--exit-price` + `--reason` (`manual` / `stop` / `expiry`), optionally `--exit-date` and `--notes`; computes PnL and updates status to `CLOSED_*`
+- `scripts/apathy_book_status.py` — read-only summary of the current book state
+- Never edit the book CSV by hand — these scripts ensure correct formatting, atomic writes, and PnL computation.
+
+### 📣 Telegram alerts (Render)
+
+- **Alert runner**: `scripts/apathy_alert_runner.py` — stop-proximity warnings (adverse move thresholds 0.45 / 0.55 / 0.60), exit-date reminders (T-7 / T-3 / T-1), formation scanner reminders, daily portfolio snapshot at 08:00 UTC. Prefix: `[apathy]`.
+- **Config**: `configs/apathy_alerts.yaml` (thresholds, cadence, paths).
+- No dedicated bot yet (unlike danlongshort); manual actions are via Render shell scripts above.
 
 ## 🧾 Strategy: danlongshort (independent)
 **Purpose:** Beta-neutral long/short crypto portfolio (beta vs BTC). Target is zero net beta exposure to BTC.  

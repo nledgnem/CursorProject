@@ -23,12 +23,21 @@ variational:
   stats_path: "/metadata/stats"
   timeout_seconds: 20
 
-# Paths under data/curated/data_lake/ (relative to repo root)
+# Absolute paths under the curated data lake. On Render this is /data/curated/data_lake/
+# (the persistent disk, monitored by the nightly Drive directory sync). Locally this
+# is <repo>/data/curated/data_lake/ if present.
+#
+# NOTE: These paths MUST live inside /data/curated/data_lake/ so the Drive sync backs
+# them up. A previous version used /data/* (one level up), which routed writes outside
+# the sync directory and left the Apathy trade book, alert log, and state JSON files
+# unbacked up despite daily pipeline cycles. See ARCHITECTURE.md "Apathy Bleed trade
+# book" section. Follow-up: ideally these would resolve via repo_paths.data_lake_root()
+# like other lake writers; see config_loader._p().
 paths:
-  book_csv: "/data/apathy_bleed_book.csv"
-  alert_log_csv: "/data/apathy_alert_log.csv"
-  stop_proximity_state_json: "/data/apathy_stop_proximity_state.json"
-  exit_reminder_state_json: "/data/apathy_exit_reminder_state.json"
-  scanner_reminder_state_json: "/data/apathy_scanner_reminder_state.json"
-  daily_snapshot_state_json: "/data/apathy_daily_snapshot_state.json"
-  daily_bundle_state_json: "/data/apathy_daily_bundle_state.json"
+  book_csv: "/data/curated/data_lake/apathy_bleed_book.csv"
+  alert_log_csv: "/data/curated/data_lake/apathy_alert_log.csv"
+  stop_proximity_state_json: "/data/curated/data_lake/apathy_stop_proximity_state.json"
+  exit_reminder_state_json: "/data/curated/data_lake/apathy_exit_reminder_state.json"
+  scanner_reminder_state_json: "/data/curated/data_lake/apathy_scanner_reminder_state.json"
+  daily_snapshot_state_json: "/data/curated/data_lake/apathy_daily_snapshot_state.json"
+  daily_bundle_state_json: "/data/curated/data_lake/apathy_daily_bundle_state.json"
