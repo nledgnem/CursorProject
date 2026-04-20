@@ -52,15 +52,17 @@ PY
 
 # Seed the Apathy book onto the persistent disk on first boot.
 # Never overwrite /data once it exists (book is source of truth).
+# Canonical path is /data/curated/data_lake/apathy_bleed_book.csv — matches configs/apathy_alerts.yaml
+# and lands inside the Drive-sync directory. See ARCHITECTURE.md "Apathy Bleed trade book".
 if [[ -d "/data" ]]; then
-  if [[ ! -f "/data/apathy_bleed_book.csv" ]]; then
+  if [[ ! -f "/data/curated/data_lake/apathy_bleed_book.csv" ]]; then
     if [[ -f "data/curated/data_lake/apathy_bleed_book.csv" ]]; then
-      cp "data/curated/data_lake/apathy_bleed_book.csv" "/data/apathy_bleed_book.csv"
-      echo "[ALERT RUNNER] seeded /data/apathy_bleed_book.csv from repo snapshot."
+      cp "data/curated/data_lake/apathy_bleed_book.csv" "/data/curated/data_lake/apathy_bleed_book.csv"
+      echo "[ALERT RUNNER] seeded /data/curated/data_lake/apathy_bleed_book.csv from repo snapshot."
     else
       echo "trade_id,cohort,ticker,side,entry_date_utc,entry_price_usd,notional_usd,quantity,stop_price_usd,exit_date_target_utc,status,exit_date_utc,exit_price_usd,pnl_usd,pnl_pct,notes" \
-        > "/data/apathy_bleed_book.csv"
-      echo "[ALERT RUNNER] created empty /data/apathy_bleed_book.csv header."
+        > "/data/curated/data_lake/apathy_bleed_book.csv"
+      echo "[ALERT RUNNER] created empty /data/curated/data_lake/apathy_bleed_book.csv header."
     fi
   else
     # If both exist, do an append-only merge keyed by trade_id:
@@ -74,7 +76,7 @@ import csv
 from pathlib import Path
 
 repo_path = Path("data/curated/data_lake/apathy_bleed_book.csv")
-data_path = Path("/data/apathy_bleed_book.csv")
+data_path = Path("/data/curated/data_lake/apathy_bleed_book.csv")
 
 if not repo_path.exists() or not data_path.exists():
     raise SystemExit(0)
@@ -113,7 +115,7 @@ with tmp.open("w", newline="", encoding="utf-8") as f:
         w.writerow(r)
 
 tmp.replace(data_path)
-print(f"[ALERT RUNNER] merged {len(to_append)} new trade rows into /data/apathy_bleed_book.csv (append-only).")
+print(f"[ALERT RUNNER] merged {len(to_append)} new trade rows into /data/curated/data_lake/apathy_bleed_book.csv (append-only).")
 PY
     fi
   fi
