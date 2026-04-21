@@ -196,13 +196,17 @@ The system has transitioned from a static historical backtest to a live, automat
 **Relationship to other strategies:** Fully independent from `apathy_bleed` (separate config, state, CSVs, and runner).
 
 ### Inputs / State (Render persistent disk)
-- **Positions (manual ledger):** `/data/danlongshort_positions.csv`
+- **Positions (manual ledger):** `/data/curated/data_lake/danlongshort_positions.csv`
   - Template in repo root: `danlongshort_positions.csv`
   - Columns: `ticker, side, notional_usd, entry_price, entry_date`
-- **Optional cache (30d daily closes):** `/data/danlongshort_price_cache.parquet` (freshness gate < 12h)
+- **Optional cache (30d daily closes):** `/data/curated/data_lake/danlongshort_price_cache.parquet` (freshness gate < 12h)
 - **Alert runner state/logs:**
-  - `/data/danlongshort_snapshot_state.json`
-  - `/data/danlongshort_alert_log.csv`
+  - `/data/curated/data_lake/danlongshort_snapshot_state.json`
+  - `/data/curated/data_lake/danlongshort_alert_log.csv`
+
+### 📍 Path resolution (hard rule)
+
+- All runtime state lives under `/data/curated/data_lake/` so it's captured by the nightly Drive directory sync. Do not move paths back to `/data/*`, which was the previous (broken) location — fixed 2026-04-21, same class of bug as the Apathy fix on 2026-04-20.
 
 ### Price data
 - **Source:** Live fetch each run using CoinGecko via `src/providers/coingecko.py` → `fetch_price_history()`.
@@ -229,11 +233,11 @@ The system has transitioned from a static historical backtest to a live, automat
 - **Security:** responds only when `message.chat.id == TELEGRAM_CHAT_ID`
 - **Commands (read-only unless noted):**
   - `/beta <TICKER> <SIDE> <NOTIONAL>`: single-position beta + BTC neutralization suggestion
-  - `/add <TICKER> <SIDE> <NOTIONAL> [ENTRY_PRICE]`: appends a row to `/data/danlongshort_positions.csv`
-  - `/remove <TICKER>`: removes rows for ticker from `/data/danlongshort_positions.csv`
+  - `/add <TICKER> <SIDE> <NOTIONAL> [ENTRY_PRICE]`: appends a row to `/data/curated/data_lake/danlongshort_positions.csv`
+  - `/remove <TICKER>`: removes rows for ticker from `/data/curated/data_lake/danlongshort_positions.csv`
   - `/snapshot`: on-demand portfolio snapshot (same as scheduled runner)
   - `/rebalance`: BTC adjustment needed to reach beta neutrality (adjust BTC only)
-- **State:** `/data/danlongshort_bot_state.json` stores Telegram update offset to avoid duplicate handling.
+- **State:** `/data/curated/data_lake/danlongshort_bot_state.json` stores Telegram update offset to avoid duplicate handling.
 
 ### Streamlit UI (Render)
 - **Page:** `dashboards/pages/2_danlongshort.py` (Streamlit multipage; added without modifying `dashboards/app_regime_monitor.py`)

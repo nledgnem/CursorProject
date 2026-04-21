@@ -122,9 +122,11 @@ PY
 fi
 
 # Seed danlongshort positions CSV on first boot (headers only if missing; never overwrite).
+# Canonical path is /data/curated/data_lake/danlongshort_positions.csv — matches
+# configs/danlongshort_alerts.yaml and lands inside the Drive-sync directory.
 if [[ -d "/data" ]]; then
-  if [[ ! -f "/data/danlongshort_positions.csv" ]]; then
-    echo "ticker,side,notional_usd,entry_price,entry_date" > /data/danlongshort_positions.csv
+  if [[ ! -f "/data/curated/data_lake/danlongshort_positions.csv" ]]; then
+    echo "ticker,side,notional_usd,entry_price,entry_date" > /data/curated/data_lake/danlongshort_positions.csv
     echo "[DANLONGSHORT] seeded empty positions CSV."
   fi
 fi

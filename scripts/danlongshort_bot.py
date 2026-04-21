@@ -247,7 +247,7 @@ def main() -> None:
     if not bot_token or not chat_id:
         raise SystemExit("Missing TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID")
 
-    state_json = Path(os.getenv("DANLONGSHORT_BOT_STATE_JSON", "/data/danlongshort_bot_state.json"))
+    state_json = Path(os.getenv("DANLONGSHORT_BOT_STATE_JSON", "/data/curated/data_lake/danlongshort_bot_state.json"))
     env = BotEnv(bot_token=bot_token, chat_id=chat_id, state_json=state_json)
 
     state = _load_json(env.state_json, {"offset": None})

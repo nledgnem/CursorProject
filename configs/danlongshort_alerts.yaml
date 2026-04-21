@@ -5,11 +5,17 @@
 snapshot_interval_hours: 12
 
 paths:
-  # Persistent disk paths on Render (mounted at /data)
-  positions_csv: "/data/danlongshort_positions.csv"
-  price_cache_parquet: "/data/danlongshort_price_cache.parquet"
-  alert_log_csv: "/data/danlongshort_alert_log.csv"
-  snapshot_state_json: "/data/danlongshort_snapshot_state.json"
+  # Absolute paths under the curated data lake. On Render this is /data/curated/data_lake/
+  # (the persistent disk, monitored by the nightly Drive directory sync). Locally this
+  # is <repo>/data/curated/data_lake/ if present.
+  #
+  # NOTE: These paths MUST live inside /data/curated/data_lake/ so the Drive sync backs
+  # them up. A previous version used /data/* (one level up), leaving danlongshort runtime
+  # state unbacked up. Same bug class as the Apathy fix on 2026-04-20.
+  positions_csv: "/data/curated/data_lake/danlongshort_positions.csv"
+  price_cache_parquet: "/data/curated/data_lake/danlongshort_price_cache.parquet"
+  alert_log_csv: "/data/curated/data_lake/danlongshort_alert_log.csv"
+  snapshot_state_json: "/data/curated/data_lake/danlongshort_snapshot_state.json"
 
   # Repo file used only for symbol -> coingecko_id mapping
   allowlist_csv: "data/perp_allowlist.csv"
