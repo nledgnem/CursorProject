@@ -23,3 +23,4 @@ Do not reintroduce into `scripts/` without first verifying the active pipeline
 | `run_sensitivity.py` | 2026-04-23 | Research driver that shells out to `run_backtest.py`; no external callers, only a description line in `PROJECT_OVERVIEW.md`. |
 | `strategy_simulator.py` | 2026-04-23 | Research simulator, no references anywhere outside itself. |
 | `simulation_sticky_hysteresis.py` | 2026-04-23 | Research simulator, zero references anywhere in the tree. |
+| `validate_canonical_ids.py` | 2026-04-23 | 51 KB file. Contains a pre-existing `SyntaxError` at line 1066 ("expected an indented block after 'else'") present since the initial commit. Never successfully imported or executed; therefore no live code depends on it. If revived, the syntax error at line 1066 must be fixed first. |
