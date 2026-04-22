@@ -869,12 +869,12 @@ Examples:
     
     # Step 2.5: Fetch Coinglass Funding Rates
     if not args.skip_funding and args.coinglass_api_key:
-        funding_cmd = [sys.executable, str(script_dir / "fetch_coinglass_funding.py")]
+        funding_cmd = [sys.executable, str(script_dir / "fetch_coinglass_data.py"), "--fetch-funding"]
         funding_output = data_lake_dir / "fact_funding.parquet"
         funding_cmd.extend(["--api-key", args.coinglass_api_key])
-        funding_cmd.extend(["--output", str(funding_output)])
+        funding_cmd.extend(["--funding-output", str(funding_output)])
         if args.incremental:
-            funding_cmd.append("--incremental")
+            funding_cmd.extend(["--incremental", "--merge-existing"])
         
         if run_command(funding_cmd, "Step 2.5: Fetch Coinglass Funding Rates"):
             step_statuses["funding_rates"] = "SUCCESS"
