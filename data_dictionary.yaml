@@ -40,17 +40,179 @@ layers:
         definition: "Cross-sectional funding-rate spread (q75 - q25) computed from native 8-hour funding rates across the altcoin basket; values are stored as raw decimals (no % multipliers/dividers)."
 
 prices_daily:
+  # DEPRECATED: this top-level block is retained for backward compatibility only.
+  # Authoritative definitions for daily price/mcap/volume now live under the
+  # per-table entries fact_price / fact_marketcap / fact_volume below.
   close:
     dtype: float64
     unit: USD
-    definition: "Quote currency is USD. Close price represents USD per unit of base asset."
+    definition: "See fact_price for authoritative definition."
   volume:
     dtype: float64
     unit: USD
-    definition: "Represents 24-hour rolling quote volume expressed in USD."
+    definition: "See fact_volume for authoritative definition (rolling 24h, not calendar-day bar)."
   date:
     frequency: Daily
-    definition: "Daily bars closing at 00:00 UTC. Any naive datetime index must be localized to UTC. Missing calendar days are to be treated as pipeline ingestion gaps, not expected exchange pauses."
+    definition: "See fact_price / fact_marketcap / fact_volume."
+
+# ------------------------------------------------------------------------------
+# Data source tier limitations (applies across bronze fact tables)
+# ------------------------------------------------------------------------------
+data_sources:
+  coingecko:
+    current_tier: Basic
+    api_history_depth_days: 730  # 2 years from the /coins/{id}/market_chart/range endpoint
+    rate_limit_per_min: 30  # with exponential backoff on 429
+    notes: >
+      On current Basic tier, backfills reach back at most ~2 years. Pre-2024 rows
+      present in fact_price / fact_marketcap / fact_volume were fetched during a
+      brief Analyst-tier window and have known (but unquantified) quality issues.
+      Treat pre-2024 data as suspect and verify independently before relying on it.
+      New backfills cannot reproduce pre-2024 data on the current tier.
+  coinglass:
+    current_tier: Hobbyist
+    rate_limit_per_min: 30  # with 2.2s spacing between calls
+    oi_history_cap_days: 334  # /futures/open-interest/aggregated-history on Hobbyist
+    unit_cutover_utc: 2026-01-13  # funding_rate units shifted from decimal to percent
+    notes: >
+      Funding: bronze fact_funding mixes pre- and post-cutover units; silver_fact_funding
+      resolves this to uniform decimal form. OI: history depth is capped regardless of
+      requested --start-date; backfills beyond ~334 days return the cap's worth of data.
+
+# ------------------------------------------------------------------------------
+# Bronze fact tables (CoinGecko daily panels)
+# ------------------------------------------------------------------------------
+fact_price:
+  description: >
+    Daily USD close price per asset, sourced from CoinGecko /coins/{id}/market_chart/range.
+    Pre-2024 rows exist from a prior Analyst-tier fetch and are suspect; post-2024-01-01
+    rows are from the current Basic tier and trustworthy within the last 730-day window.
+  path: data/curated/data_lake/fact_price.parquet
+  source: coingecko
+  frequency: daily  # UTC calendar day
+  coverage:
+    earliest_date_in_lake: 2013-04  # suspect quality
+    trustworthy_from: 2024-01-01
+    api_reachable_window_days: 730
+  columns:
+    - name: asset_id
+      type: string
+      definition: "Canonical CoinGecko slug (e.g. 'bitcoin', 'ethereum', 'aria-ai'). Matches dim_asset.coingecko_id."
+    - name: date
+      type: date
+      unit: UTC_calendar_day
+      frequency: daily
+    - name: close
+      type: float
+      unit: USD_per_coin
+      frequency: daily
+      source: coingecko
+      definition: "Closing USD price at 00:00 UTC of the named date."
+    - name: source
+      type: string
+      definition: "Provider tag; 'coingecko' for all rows."
+
+fact_marketcap:
+  description: >
+    Daily USD market cap per asset, sourced from CoinGecko /coins/{id}/market_chart/range.
+    Same coverage + quality caveats as fact_price.
+  path: data/curated/data_lake/fact_marketcap.parquet
+  source: coingecko
+  frequency: daily
+  coverage:
+    earliest_date_in_lake: 2013-04  # suspect quality
+    trustworthy_from: 2024-01-01
+    api_reachable_window_days: 730
+  columns:
+    - name: asset_id
+      type: string
+      definition: "Canonical CoinGecko slug."
+    - name: date
+      type: date
+      unit: UTC_calendar_day
+      frequency: daily
+    - name: marketcap
+      type: float
+      unit: USD
+      frequency: daily
+      source: coingecko
+      definition: "Market cap at 00:00 UTC of the named date."
+    - name: source
+      type: string
+      definition: "Provider tag; 'coingecko' for all rows."
+
+fact_volume:
+  description: >
+    Daily trading volume per asset, sourced from CoinGecko /coins/{id}/market_chart/range.
+    IMPORTANT: stored value is rolling 24h quote volume AT SNAPSHOT TIME, not a calendar-day bar.
+    This matters for any resampling or diff-based feature: successive rows overlap by 23h.
+    Cross-sectional comparison on a single date is fine; time-series arithmetic requires care.
+    Same coverage + quality caveats as fact_price.
+  path: data/curated/data_lake/fact_volume.parquet
+  source: coingecko
+  frequency: daily_snapshot_of_rolling_24h  # NOT calendar-day bar
+  coverage:
+    earliest_date_in_lake: 2013-12  # suspect quality
+    trustworthy_from: 2024-01-01
+    api_reachable_window_days: 730
+  columns:
+    - name: asset_id
+      type: string
+      definition: "Canonical CoinGecko slug."
+    - name: date
+      type: date
+      unit: UTC_calendar_day
+      frequency: daily
+      definition: "The date the rolling-24h volume was observed."
+    - name: volume
+      type: float
+      unit: USD
+      frequency: rolling_24h  # NOT calendar-day bar
+      source: coingecko
+      definition: "Rolling 24-hour USD quote volume at snapshot time on the named date."
+    - name: source
+      type: string
+      definition: "Provider tag; 'coingecko' for all rows."
+
+fact_funding:
+  description: >
+    Daily funding rate per (asset, instrument, exchange) from CoinGlass.
+    IMPORTANT: mixed units across the 2026-01-13 cutover. Before cutover, funding_rate
+    is a decimal fraction (e.g. 0.0001 = 0.01%/8h). After cutover, it is in percent
+    (0.01 = 0.01%/8h). Analysis code should use silver_fact_funding, which normalizes
+    this to uniform decimal form.
+  path: data/curated/data_lake/fact_funding.parquet
+  source: coinglass
+  frequency: daily  # one row per day per (asset, instrument, exchange)
+  coverage:
+    earliest_date_in_lake: 2023-04
+    unit_cutover_utc: 2026-01-13
+  columns:
+    - name: asset_id
+      type: string
+      definition: "Canonical base asset symbol (e.g. BTC, ETH). Matches fact_open_interest.asset_id."
+    - name: instrument_id
+      type: string
+      nullable: true
+      definition: "Joins to dim_instrument; nullable when mapping is incomplete."
+    - name: date
+      type: date
+      unit: UTC_calendar_day
+      frequency: daily
+    - name: funding_rate
+      type: float
+      unit: mixed  # see description and transformation
+      frequency: daily  # last 8h observation of the UTC day
+      source: coinglass
+      definition: >
+        Mixed-unit raw funding rate. Pre-2026-01-13 = decimal fraction per 8 hours.
+        Post-2026-01-13 = percent per 8 hours. Use silver_fact_funding for analysis.
+    - name: exchange
+      type: string
+      definition: "Exchange name (e.g. 'Binance')."
+    - name: source
+      type: string
+      definition: "Provider tag; 'coinglass' for all rows."
 
 Live_State_Database:
   engine: SQLite
@@ -186,11 +348,20 @@ Apathy_Bleed:
 fact_open_interest:
   description: >
     Daily aggregated open interest per base asset, cross-exchange aggregated by
-    CoinGlass. Covers the Binance-perp universe (~510 altcoins + BTC) from
-    2024-01-01 onward after the 2026-04-22 universe-expansion backfill.
+    CoinGlass. Covers the Binance-perp universe (~590 altcoins + BTC) after the
+    2026-04-22 universe-expansion backfill. History depth is capped by CoinGlass
+    Hobbyist tier at ~334 days per symbol: BTC goes back to 2025-02-14, most
+    alts to ~2025-05, newer listings only from their listing date forward.
+    Multi-year OI backtests are not feasible on this tier.
   path: data/curated/data_lake/fact_open_interest.parquet
   source: coinglass
   frequency: daily
+  coverage:
+    universe: Binance-perp (via dim_instrument filtered to venue=binance, instrument_type=perpetual)
+    assets_approx: 590
+    start_btc: 2025-02-14
+    start_alts_typical: 2025-05-24
+    history_cap_days: 334  # CoinGlass Hobbyist tier constraint on aggregated-history endpoint
   columns:
     - name: asset_id
       type: string
@@ -224,6 +395,10 @@ fact_markets_snapshot:
   path: data/curated/data_lake/fact_markets_snapshot.parquet
   source: coingecko
   frequency: daily
+  coverage:
+    earliest_date_in_lake: 2026-01
+    coins_per_snapshot_approx: 2500
+    write_protocol: append_with_dedup_on_asset_id_and_date
   supply_columns:
     - name: fully_diluted_valuation_usd
       type: float

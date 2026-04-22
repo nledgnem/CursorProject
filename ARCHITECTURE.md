@@ -44,12 +44,14 @@ This is the production-grade execution module. All backtesting, data-loading, an
 
 ### 🧾 Core fact tables (curated lake)
 
-- **`fact_funding`**: perp funding history by exchange/instrument (CoinGlass)
-- **`fact_price`**: daily close prices by asset (CoinGecko)
-- **`fact_marketcap`**: daily market caps by asset (CoinGecko)
-- **`fact_volume`**: daily spot volumes by asset (CoinGecko)
-- **`fact_open_interest`**: open interest history (CoinGlass, cross-exchange aggregated); **Binance-perp universe (~510 altcoins + BTC), 2024-01 onward** (expanded from BTC-only on 2026-04-22)
-- **`fact_markets_snapshot`**: daily market snapshot (circulating + total supply, FDV, max_supply, etc.); **daily accumulating, ~2500 coins per snapshot**
+See `data_dictionary.yaml` for authoritative column definitions, units, and coverage. High-level summary:
+
+- **`fact_funding`**: perp funding history by (asset, instrument, exchange) from CoinGlass; 2023-04 onward. Mixed units across 2026-01-13 cutover — read `silver_fact_funding` for analysis.
+- **`fact_price`**: daily USD close prices by asset from CoinGecko. Pre-2024 rows exist (from a prior Analyst-tier fetch) but are suspect; trustworthy from 2024-01-01 onward. CoinGecko Basic tier API serves at most 730 days backward.
+- **`fact_marketcap`**: daily USD market caps by asset from CoinGecko. Same pre-2024 caveat and 730-day API window as `fact_price`.
+- **`fact_volume`**: daily trading volume by asset from CoinGecko. **Stored value is rolling 24h quote volume AT SNAPSHOT TIME, not a calendar-day bar** — successive rows overlap by 23h. Same pre-2024 caveat as `fact_price`.
+- **`fact_open_interest`**: open interest history (CoinGlass, cross-exchange aggregated); **Binance-perp universe (~590 altcoins + BTC)**. BTC from 2025-02-14; most alts from ~2025-05 onward due to CoinGlass Hobbyist tier's ~334-day history cap on the `aggregated-history` endpoint. Per-symbol start date varies with listing. Expanded from BTC-only on 2026-04-22.
+- **`fact_markets_snapshot`**: daily market snapshot from CoinGecko (circulating + total supply, FDV, max_supply, market_cap_rank, etc.); daily accumulating, ~2500 coins per snapshot. Started ~2026-01. `max_supply` is genuinely null for ~43% of top-300 coins (no hard cap); gate logic needing "fully diluted" should fall back to `total_supply`.
 
 **Rule 1 – Curated Lake Only**
 * The AI is **strictly forbidden** from reading any CSV or Parquet files **outside** of `data/curated/data_lake/`.
