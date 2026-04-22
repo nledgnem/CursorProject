@@ -2,7 +2,7 @@
 
 **Purpose:** Self-contained reference for any AI session that needs to work with this data lake. Paste the whole file into context at the start of a new chat.
 
-**Last updated:** 2026-04-20 (session covered path-resolution fixes; see "Recent changes" at bottom).
+**Last updated:** 2026-04-22 (altcoin OI coverage expanded; FDV coverage audited — see sections 5, 9, 13).
 
 ---
 
@@ -80,7 +80,7 @@ Concrete implication: **new backfill jobs cannot reproduce pre-2024 data on the 
 
 ### CoinGlass (Hobbyist tier)
 - **Rate limit: 30 req/min with 2.2s spacing** between calls (Hobbyist cap).
-- Used for: perp funding rates (daily, by exchange+instrument), open interest (currently BTC-only in `fact_open_interest`).
+- Used for: perp funding rates (daily, by exchange+instrument), open interest (Binance-perp universe in `fact_open_interest` as of 2026-04-22; previously BTC-only).
 - **Unit cutover at 2026-01-13:** pre-cutover funding values are decimal fractions (e.g. `0.0001` = 0.01%/8h), post-cutover are in percent (`0.01` = 0.01%/8h). Bronze (`fact_funding`) contains raw mixed-unit values; silver (`silver_fact_funding`) handles the conversion. **Always read from silver for analysis.**
 - Endpoints returning 401 on Hobbyist tier: some aggregate exchange-volume and historical-OI endpoints. Silent expectation, not a bug.
 
@@ -106,7 +106,7 @@ Concrete implication: **new backfill jobs cannot reproduce pre-2024 data on the 
 | `fact_marketcap.parquet` | 13.8 MB | CoinGecko | `asset_id, date, marketcap, source` | daily | 2013-04 → present (same caveat) |
 | `fact_volume.parquet` | 14.5 MB | CoinGecko | `asset_id, date, volume, source` | daily (rolling 24h, NOT calendar-day bar) | 2013-12 → present (same caveat) |
 | `fact_funding.parquet` | 1.3 MB | CoinGlass | `asset_id, instrument_id, date, funding_rate, exchange, source` | daily, last 8h obs per day | 2023-04 → present. **Pre-2026-01-13 unit = decimal, post = percent. Read silver instead.** |
-| `fact_open_interest.parquet` | 8.6 KB | CoinGlass | `asset_id, date, open_interest_usd, source` | daily | **BTC-only currently.** Altcoin OI is the next gap to fill. |
+| `fact_open_interest.parquet` | ~3-5 MB (est. post-backfill) | CoinGlass | `asset_id, date, open_interest_usd, source` | daily | Binance-perp universe (~510 altcoins + BTC), 2024-01-01 → present. Expanded from BTC-only on 2026-04-22. |
 | `fact_markets_snapshot.parquet` | 1.66 MB | CoinGecko | `asset_id, name, symbol, coingecko_id, date, current_price_usd, market_cap_usd, market_cap_rank, fully_diluted_valuation_usd, total_volume_usd, circulating_supply, total_supply, max_supply, ath_usd, ath_change_percentage, ath_date, atl_usd, atl_change_percentage, atl_date, source` | one snapshot per day, ~2500 coins per snapshot | Started accumulating ~2026-01. Append-only with dedup. |
 | `fact_ohlc.parquet` | 358 KB | CoinGecko | _Not directly verified in this session; contains OHLC candles for a smaller universe_ | — | — |
 | `fact_derivative_open_interest.parquet` | 341 KB | CoinGecko (different endpoint) | `date, exchange, base_asset, target, open_interest_usd, open_interest_btc, funding_rate, source` | different grain | **QUARANTINE** — different provider semantics, do not use for Gate 3 OI analysis |
@@ -228,10 +228,11 @@ These are the landmines. Skim before trusting any column blindly.
 1. **Pre-2024 fact_price/fact_marketcap/fact_volume**: possibly corrupt (fetched under broken Analyst-tier pipeline). Independent verification required before use.
 2. **`fact_volume`** stores **rolling 24h volume at snapshot time**, not calendar-day bar volume. This matters for resampling and for ratio computations.
 3. **`fact_funding` unit cutover at 2026-01-13** — raw bronze mixes units. Always use `silver_fact_funding`.
-4. **`fact_open_interest` is BTC-only.** Altcoin OI is the current gap; any analysis that needs altcoin OI must fetch afresh from CoinGlass (and check rate limits).
-5. **`fact_markets_snapshot.circ_ratio` (circulating / total supply)** can exceed 1.0 for some coins due to upstream CoinGecko data errors. Median is ~1.0; flag outliers.
-6. **`fact_derivative_open_interest`** has different grain and semantics than `fact_open_interest`. Do NOT join them without understanding both.
-7. **`fact_exchange_volume_history`** may return 401 errors on Hobbyist-tier CoinGlass. If the file is very small or its date range is truncated, that's why.
+4. **`fact_open_interest` universe** matches `fact_funding` (Binance-perp universe) as of 2026-04-22. Expected gaps: CoinGlass doesn't track OI for some low-liquidity alts, so a minority of symbols in the funding universe may lack OI rows. For strategies executed off Binance perp, this universe is narrower than CoinGlass's full OI coverage — re-derive from source if needed.
+5. **`fact_markets_snapshot` supply coverage.** FDV is effectively fully populated (~100% in top-300 by market_cap_rank as of 2026-04-22). `max_supply` is only ~57% populated in top-300 — expected, not a data-quality defect (many coins have no hard cap). Gate logic that needs "fully diluted" should fall back to `total_supply` when `max_supply` is null; `circulating_supply` and `total_supply` are both ~100% in top-300.
+6. **`fact_markets_snapshot.circ_ratio` (circulating / total supply)** can exceed 1.0 for some coins due to upstream CoinGecko data errors. Median is ~1.0; flag outliers.
+7. **`fact_derivative_open_interest`** has different grain and semantics than `fact_open_interest`. Do NOT join them without understanding both.
+8. **`fact_exchange_volume_history`** may return 401 errors on Hobbyist-tier CoinGlass. If the file is very small or its date range is truncated, that's why.
 
 ---
 
@@ -280,7 +281,7 @@ Taken verbatim from `.cursorrules` + `ARCHITECTURE.md`:
 - Hardcoding `"data/curated/data_lake/..."` as a string
 - Writing a new runtime file anywhere other than `/data/curated/data_lake/`
 - Computing signals using `t` data at decision time `t` (look-ahead bias)
-- Joining `fact_open_interest` (BTC-only, CoinGlass) with `fact_derivative_open_interest` (CoinGecko, different grain) — these are not interchangeable
+- Joining `fact_open_interest` (CoinGlass, Binance-perp universe) with `fact_derivative_open_interest` (CoinGecko, different grain and provider) — these are not interchangeable
 - Assuming `fact_volume` is a calendar-day bar
 - Trusting pre-2024 data without independently verifying against a second source
 
@@ -290,14 +291,14 @@ Taken verbatim from `.cursorrules` + `ARCHITECTURE.md`:
 
 ## 13. Known gaps / current work
 
-(as of 2026-04-20)
+(as of 2026-04-22)
 
-- **Altcoin open interest** not in lake. CoinGlass Hobbyist has it; need to expand fetch beyond BTC. Next on Apathy Bleed scanner roadmap (Gate 3).
 - **Perp-vs-spot volume split** not ingested anywhere. Planned Tier-3 work for the Apathy Bleed Gate 2.
 - **`*.json` not in Drive sync patterns.** State JSONs not backed up. 2-line YAML fix pending.
 - **danlongshort paths** still at `/data/*` (not `/data/curated/data_lake/`). Same bug class as Apathy had pre-2026-04-20. Fix pending.
-- **`data_dictionary.yaml`** does not cover the lake fact tables yet. Patch v2 drafted, awaiting review.
+- **`data_dictionary.yaml`** now covers `fact_open_interest` and supply columns of `fact_markets_snapshot` (added 2026-04-22). Other bronze fact tables (`fact_price`, `fact_marketcap`, `fact_volume`, `fact_funding`) still not documented — patch pending.
 - **`config_loader._p()`** accepts hardcoded absolute paths and resolves relative paths against `REPO_ROOT`, not `data_lake_root()`. Should be refactored to always use `data_lake_root()` for consistency.
+- **`--liquidity-gate` on OI**: the funding branch of `fetch_coinglass_data.py` has an optional Top-150 liquidity gate; the OI branch does not honor it. Decision pending on whether OI should apply the same gate (tradability reasoning is the same; leaving OI un-gated keeps it as a raw reference).
 
 ---
 

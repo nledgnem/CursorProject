@@ -179,3 +179,85 @@ Apathy_Bleed:
         definition: "Last daily snapshot UTC day."
       - path: data/curated/data_lake/apathy_daily_bundle_state.json
         definition: "Last UTC day the 08:00 bundle (exit + scanner + snapshot) ran."
+
+# ------------------------------------------------------------------------------
+# CoinGlass open interest (bronze fact table)
+# ------------------------------------------------------------------------------
+fact_open_interest:
+  description: >
+    Daily aggregated open interest per base asset, cross-exchange aggregated by
+    CoinGlass. Covers the Binance-perp universe (~510 altcoins + BTC) from
+    2024-01-01 onward after the 2026-04-22 universe-expansion backfill.
+  path: data/curated/data_lake/fact_open_interest.parquet
+  source: coinglass
+  frequency: daily
+  columns:
+    - name: asset_id
+      type: string
+      definition: "Canonical base asset symbol (e.g. BTC, ETH). Matches fact_funding.asset_id and dim_asset.asset_id."
+    - name: date
+      type: date
+      unit: UTC_calendar_day
+      frequency: daily
+    - name: open_interest_usd
+      type: float
+      unit: USD
+      frequency: daily
+      source: coinglass
+      definition: >
+        Cross-exchange aggregated open interest at end-of-day (UTC), derived from
+        CoinGlass /futures/open-interest/aggregated-history 8h OHLC candles by
+        taking the last close of each UTC day.
+    - name: source
+      type: string
+      definition: "Provider tag; always 'coinglass' for this table."
+
+# ------------------------------------------------------------------------------
+# CoinGecko daily markets snapshot (bronze fact table)
+# Supply columns used as inputs to Apathy Bleed Gate 1 (circulating/total ratio).
+# ------------------------------------------------------------------------------
+fact_markets_snapshot:
+  description: >
+    Daily per-coin market metadata from CoinGecko /coins/markets (~2500 coins per
+    snapshot). Append-only with dedup on (asset_id, date). Started accumulating
+    ~2026-01.
+  path: data/curated/data_lake/fact_markets_snapshot.parquet
+  source: coingecko
+  frequency: daily
+  supply_columns:
+    - name: fully_diluted_valuation_usd
+      type: float
+      unit: USD
+      frequency: daily
+      source: coingecko
+      nullable: true
+      definition: >
+        CoinGecko-reported FDV = current_price_usd * max_supply (with fallback to
+        total_supply when max_supply is absent). As of 2026-04-22: ~100% coverage
+        in top-300 by market_cap_rank; ~100% overall (1 null / 2500).
+    - name: circulating_supply
+      type: float
+      unit: coins
+      frequency: daily
+      source: coingecko
+      nullable: true
+      definition: "Tokens in public circulation per CoinGecko. ~100% coverage in top-300 as of 2026-04-22."
+    - name: total_supply
+      type: float
+      unit: coins
+      frequency: daily
+      source: coingecko
+      nullable: true
+      definition: "Total tokens issued (excluding burned) per CoinGecko. ~100% coverage overall as of 2026-04-22."
+    - name: max_supply
+      type: float
+      unit: coins
+      frequency: daily
+      source: coingecko
+      nullable: true
+      definition: >
+        Hard cap on token supply per CoinGecko. ~57% coverage in top-300 as of
+        2026-04-22: many coins have no hard-coded maximum (inflationary or
+        governance-controlled supply), so nulls are expected rather than a
+        data-quality defect. Gate logic that needs "fully diluted" should
+        fall back to total_supply when max_supply is null.

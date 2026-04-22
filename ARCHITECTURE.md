@@ -48,8 +48,8 @@ This is the production-grade execution module. All backtesting, data-loading, an
 - **`fact_price`**: daily close prices by asset (CoinGecko)
 - **`fact_marketcap`**: daily market caps by asset (CoinGecko)
 - **`fact_volume`**: daily spot volumes by asset (CoinGecko)
-- **`fact_open_interest`**: open interest history (CoinGlass); **BTC-only currently**
-- **`fact_markets_snapshot`**: daily market snapshot (circulating + total supply, etc.); **daily accumulating**
+- **`fact_open_interest`**: open interest history (CoinGlass, cross-exchange aggregated); **Binance-perp universe (~510 altcoins + BTC), 2024-01 onward** (expanded from BTC-only on 2026-04-22)
+- **`fact_markets_snapshot`**: daily market snapshot (circulating + total supply, FDV, max_supply, etc.); **daily accumulating, ~2500 coins per snapshot**
 
 **Rule 1 – Curated Lake Only**
 * The AI is **strictly forbidden** from reading any CSV or Parquet files **outside** of `data/curated/data_lake/`.
@@ -115,7 +115,7 @@ The system has transitioned from a static historical backtest to a live, automat
   - Non-fatal by design (pipeline continues if this step fails)
   - Note: CoinGecko exchange volume endpoints returning **401** on Analyst tier is expected; snapshot is the critical output
 - **Step 0.5 (non-fatal)**: perp listings snapshot (Hyperliquid + Variational)
-- **Step 1 (fatal)**: funding via CoinGlass
+- **Step 1 (fatal)**: funding + open interest via CoinGlass (single invocation of `scripts/fetch_coinglass_data.py` with `--incremental --merge-existing`; populates both `fact_funding` and `fact_open_interest` over the Binance-perp universe)
 - **Step 2 (fatal)**: price/mcap via CoinGecko
 - **Step 3 (fatal)**: macro index build
 - **Step 3.5 (fatal)**: silver layer build
