@@ -13,3 +13,13 @@ Do not reintroduce into `scripts/` without first verifying the active pipeline
 |---|---|---|
 | `fetch_coinglass_funding.py` | 2026-04-22 | Superseded by combined `scripts/fetch_coinglass_data.py`, which the live pipeline (`run_live_pipeline.py` Step 1) invokes. The standalone funding fetcher is not called from any production entry point. |
 | `fetch_coinglass_oi.py` | 2026-04-22 | Superseded by combined `scripts/fetch_coinglass_data.py`. The altcoin-OI universe expansion landed in the combined script (commit `6f093dc`), not in this standalone. |
+| `backfill_early_2026.py` | 2026-04-23 | One-shot backfill, no live callers. |
+| `backfill_historical_data.py` | 2026-04-23 | One-shot historical backfill helper, referenced only from how-to docs; not called from any code path. |
+| `fetch_low_priority_data.py` | 2026-04-23 | CoinGecko Analyst-tier era fetcher. We're on Basic tier (see `docs/DATA_LAKE_CONTEXT.md` §4); no live callers. |
+| `fetch_medium_priority_data.py` | 2026-04-23 | CoinGecko Analyst-tier era fetcher. Same reason as `fetch_low_priority_data.py`. |
+| `consolidate_to_database.py` | 2026-04-23 | DuckDB consolidation helper, no live callers (only a description line in `PROJECT_OVERVIEW.md`). |
+| `expand_allowlist.py` | 2026-04-23 | Perp allowlist helper, no live callers (only a description line in `PROJECT_OVERVIEW.md`). |
+| `extract_l1_sample.py` | 2026-04-23 | One-shot sampling script, no references anywhere outside itself. |
+| `run_sensitivity.py` | 2026-04-23 | Research driver that shells out to `run_backtest.py`; no external callers, only a description line in `PROJECT_OVERVIEW.md`. |
+| `strategy_simulator.py` | 2026-04-23 | Research simulator, no references anywhere outside itself. |
+| `simulation_sticky_hysteresis.py` | 2026-04-23 | Research simulator, zero references anywhere in the tree. |
