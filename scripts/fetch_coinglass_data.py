@@ -40,6 +40,124 @@ def normalize_symbol(symbol: str) -> str:
     return symbol
 
 
+def _resolve_coinglass_symbol_universe(
+    repo_root: Path,
+    source: str = "auto",
+    funding_output_path: Optional[Path] = None,
+) -> List[str]:
+    """Resolve the base-symbol universe for CoinGlass fetches (funding and OI).
+
+    Returns a sorted list of base symbols (e.g. ["BTC", "ETH", ...]) without the
+    "USDT" quote suffix. `source="auto"` tries, in order: dim_instrument ->
+    existing fact_funding -> perp_listings_binance -> universe_eligibility.
+
+    Strategy note (why funding AND OI both use this): we execute shorts on
+    Binance perp, so symbols without a Binance perp listing are not tradable for
+    this strategy and not worth CoinGlass API budget. Matching OI's universe to
+    funding's is a *strategy choice*, not a CoinGlass API requirement --
+    CoinGlass serves OI/funding for a much wider set. A future strategy on a
+    different venue could legitimately want a different OI universe.
+    """
+    def _load_symbols_from_dim_instrument() -> list[str]:
+        p = (data_lake_root() / "dim_instrument.parquet")
+        if not p.exists():
+            return []
+        try:
+            d = pd.read_parquet(p, columns=["venue", "instrument_type", "base_asset_symbol"])
+            d = d[(d["venue"].astype(str).str.lower() == "binance") & (d["instrument_type"] == "perpetual")]
+            out = sorted(set(d["base_asset_symbol"].astype(str).tolist()))
+            return [s for s in out if s]
+        except Exception:
+            return []
+
+    def _load_symbols_from_fact_funding() -> list[str]:
+        if funding_output_path is None or not funding_output_path.exists():
+            return []
+        try:
+            d = pd.read_parquet(funding_output_path, columns=["asset_id"])
+            out = sorted(set(d["asset_id"].astype(str).tolist()))
+            return [s for s in out if s]
+        except Exception:
+            return []
+
+    def _load_symbols_from_universe() -> list[str]:
+        universe_path = repo_root / "data" / "curated" / "universe_eligibility.parquet"
+        basket_path = repo_root / "data" / "curated" / "universe_snapshots.parquet"
+        eligible_symbols: set[str] = set()
+        if universe_path.exists():
+            try:
+                universe_df = pd.read_parquet(universe_path)
+                if "symbol" in universe_df.columns:
+                    eligible_symbols.update(universe_df["symbol"].astype(str).unique())
+            except Exception:
+                pass
+        if basket_path.exists():
+            try:
+                basket_df = pd.read_parquet(basket_path)
+                if "symbol" in basket_df.columns:
+                    eligible_symbols.update(basket_df["symbol"].astype(str).unique())
+            except Exception:
+                pass
+        return sorted({s for s in eligible_symbols if s and s != "nan"})
+
+    def _load_symbols_from_perp_listings() -> list[str]:
+        perp_listings_path = None
+        for default_path in [
+            repo_root / "data" / "raw" / "perp_listings_binance.parquet",
+            repo_root / "data" / "curated" / "perp_listings_binance.parquet",
+            repo_root / "outputs" / "perp_listings_binance.parquet",
+        ]:
+            if default_path.exists():
+                perp_listings_path = default_path
+                break
+        if not perp_listings_path:
+            return []
+        try:
+            perp_df = pd.read_parquet(perp_listings_path)
+            out = [normalize_symbol(s) for s in perp_df["symbol"].astype(str).unique().tolist() if s]
+            return sorted(set(out))
+        except Exception:
+            return []
+
+    if source == "dim_instrument":
+        symbols = _load_symbols_from_dim_instrument()
+        if symbols:
+            print(f"  Loaded {len(symbols)} symbols from dim_instrument (Binance perpetuals)")
+    elif source == "fact_funding":
+        symbols = _load_symbols_from_fact_funding()
+        if symbols:
+            print(f"  Loaded {len(symbols)} symbols from existing fact_funding.parquet")
+    elif source == "universe":
+        symbols = _load_symbols_from_universe()
+        if symbols:
+            print(f"  Loaded {len(symbols)} symbols from universe eligibility/basket snapshots")
+    elif source == "perp_listings":
+        symbols = _load_symbols_from_perp_listings()
+        if symbols:
+            print(f"  Loaded {len(symbols)} symbols from Binance perp listings")
+    else:
+        # AUTO: dim_instrument -> fact_funding -> perp_listings -> universe
+        symbols = _load_symbols_from_dim_instrument()
+        if symbols:
+            print(f"  Loaded {len(symbols)} symbols from dim_instrument (Binance perpetuals)")
+        else:
+            symbols = _load_symbols_from_fact_funding()
+            if symbols:
+                print(f"  Loaded {len(symbols)} symbols from existing fact_funding.parquet")
+            else:
+                symbols = _load_symbols_from_perp_listings()
+                if symbols:
+                    print(f"  Loaded {len(symbols)} symbols from Binance perp listings")
+                else:
+                    symbols = _load_symbols_from_universe()
+                    if symbols:
+                        print(f"  Loaded {len(symbols)} symbols from universe eligibility/basket snapshots")
+                    else:
+                        print("  [ERROR] No symbols provided and no data sources found")
+                        symbols = []
+    return symbols
+
+
 # ============================================================
 # Funding Rate Functions
 # ============================================================
@@ -623,7 +741,7 @@ def main():
         type=str,
         nargs="+",
         default=None,
-        help="List of symbols to fetch (default: auto-detect for funding, BTC only for OI)",
+        help="List of symbols to fetch (default: auto-detect Binance-perp universe for both funding and OI)",
     )
     parser.add_argument(
         "--exchange",
@@ -664,12 +782,12 @@ def main():
         type=str,
         default="auto",
         choices=["auto", "dim_instrument", "fact_funding", "universe", "perp_listings"],
-        help="Where to auto-detect funding symbols from when --symbols is not provided (default: auto)",
+        help="Where to auto-detect symbols from when --symbols is not provided (default: auto). Applies to both funding and OI branches.",
     )
     parser.add_argument(
         "--liquidity-gate",
         action="store_true",
-        help="(Optional) Apply Top-N liquid perpetual universe filter when auto-detecting funding symbols",
+        help="(Optional) Apply Top-N liquid perpetual filter when auto-detecting funding symbols. NOT applied to OI (flagged for follow-up).",
     )
     
     args = parser.parse_args()
@@ -722,7 +840,11 @@ def main():
     print(f"  Incremental: {args.incremental}")
     print(f"  Merge existing: {args.merge_existing}")
     print()
-    
+
+    # Resolve funding_output_path unconditionally so the OI branch can use it as
+    # a "known-valid perps" signal when auto-resolving its own universe.
+    funding_output_path = (repo_root / args.funding_output).resolve() if not args.funding_output.is_absolute() else args.funding_output
+
     # ============================================================
     # Fetch Funding Rates
     # ============================================================
@@ -730,112 +852,18 @@ def main():
         print("=" * 70)
         print("FETCHING FUNDING RATES")
         print("=" * 70)
-        
-        funding_output_path = (repo_root / args.funding_output).resolve() if not args.funding_output.is_absolute() else args.funding_output
+
         funding_output_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Get symbols
         symbols = args.symbols
         if symbols is None:
-            # Prefer sources that are known-valid funding instruments on Binance, to avoid
-            # wasting hours on invalid/untradeable universe symbols (common on Render).
+            symbols = _resolve_coinglass_symbol_universe(
+                repo_root=repo_root,
+                source=args.symbols_source,
+                funding_output_path=funding_output_path,
+            )
 
-            def _load_symbols_from_dim_instrument() -> list[str]:
-                p = (data_lake_root() / "dim_instrument.parquet")
-                if not p.exists():
-                    return []
-                try:
-                    d = pd.read_parquet(p, columns=["venue", "instrument_type", "base_asset_symbol"])
-                    d = d[(d["venue"].astype(str).str.lower() == "binance") & (d["instrument_type"] == "perpetual")]
-                    out = sorted(set(d["base_asset_symbol"].astype(str).tolist()))
-                    return [s for s in out if s]
-                except Exception:
-                    return []
-
-            def _load_symbols_from_fact_funding() -> list[str]:
-                if not funding_output_path.exists():
-                    return []
-                try:
-                    d = pd.read_parquet(funding_output_path, columns=["asset_id"])
-                    out = sorted(set(d["asset_id"].astype(str).tolist()))
-                    return [s for s in out if s]
-                except Exception:
-                    return []
-
-            def _load_symbols_from_universe() -> list[str]:
-                universe_path = repo_root / "data" / "curated" / "universe_eligibility.parquet"
-                basket_path = repo_root / "data" / "curated" / "universe_snapshots.parquet"
-                eligible_symbols: set[str] = set()
-                if universe_path.exists():
-                    try:
-                        universe_df = pd.read_parquet(universe_path)
-                        if "symbol" in universe_df.columns:
-                            eligible_symbols.update(universe_df["symbol"].astype(str).unique())
-                    except Exception:
-                        pass
-                if basket_path.exists():
-                    try:
-                        basket_df = pd.read_parquet(basket_path)
-                        if "symbol" in basket_df.columns:
-                            eligible_symbols.update(basket_df["symbol"].astype(str).unique())
-                    except Exception:
-                        pass
-                out = sorted({s for s in eligible_symbols if s and s != "nan"})
-                return out
-
-            def _load_symbols_from_perp_listings() -> list[str]:
-                perp_listings_path = None
-                for default_path in [
-                    repo_root / "data" / "raw" / "perp_listings_binance.parquet",
-                    repo_root / "data" / "curated" / "perp_listings_binance.parquet",
-                    repo_root / "outputs" / "perp_listings_binance.parquet",
-                ]:
-                    if default_path.exists():
-                        perp_listings_path = default_path
-                        break
-                if not perp_listings_path:
-                    return []
-                try:
-                    perp_df = pd.read_parquet(perp_listings_path)
-                    out = [normalize_symbol(s) for s in perp_df["symbol"].astype(str).unique().tolist() if s]
-                    return sorted(set(out))
-                except Exception:
-                    return []
-
-            source = args.symbols_source
-            if source == "dim_instrument":
-                symbols = _load_symbols_from_dim_instrument()
-                print(f"  Loaded {len(symbols)} symbols from dim_instrument (Binance perpetuals)")
-            elif source == "fact_funding":
-                symbols = _load_symbols_from_fact_funding()
-                print(f"  Loaded {len(symbols)} symbols from existing fact_funding.parquet")
-            elif source == "universe":
-                symbols = _load_symbols_from_universe()
-                print(f"  Loaded {len(symbols)} symbols from universe eligibility/basket snapshots")
-            elif source == "perp_listings":
-                symbols = _load_symbols_from_perp_listings()
-                print(f"  Loaded {len(symbols)} symbols from Binance perp listings")
-            else:
-                # AUTO: dim_instrument -> fact_funding -> perp_listings -> universe
-                symbols = _load_symbols_from_dim_instrument()
-                if symbols:
-                    print(f"  Loaded {len(symbols)} symbols from dim_instrument (Binance perpetuals)")
-                else:
-                    symbols = _load_symbols_from_fact_funding()
-                    if symbols:
-                        print(f"  Loaded {len(symbols)} symbols from existing fact_funding.parquet")
-                    else:
-                        symbols = _load_symbols_from_perp_listings()
-                        if symbols:
-                            print(f"  Loaded {len(symbols)} symbols from Binance perp listings")
-                        else:
-                            symbols = _load_symbols_from_universe()
-                            if symbols:
-                                print(f"  Loaded {len(symbols)} symbols from universe eligibility/basket snapshots")
-                            else:
-                                print("  [ERROR] No symbols provided and no data sources found")
-                                symbols = []
-            
             if args.liquidity_gate:
                 # LIQUIDITY GATE: Filter for valid perpetuals FIRST (or universe), then Top-N by market cap (avoid spot-only denominator trap)
                 _top_n_fallback = 200
@@ -992,10 +1020,22 @@ def main():
         
         oi_output_path = (repo_root / args.oi_output).resolve() if not args.oi_output.is_absolute() else args.oi_output
         oi_output_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        # Get symbols (default: BTC only for OI)
-        oi_symbols = args.symbols if args.symbols else ["BTC"]
-        print(f"  Fetching OI for {len(oi_symbols)} symbols: {oi_symbols}")
+
+        # Get symbols. Default: auto-resolve the same Binance-perp universe that
+        # funding uses (~510 altcoins + BTC). Previously defaulted to ["BTC"] only;
+        # altcoin OI is now covered. --liquidity-gate is intentionally NOT honored
+        # for OI on this pass -- flagged as a follow-up decision.
+        oi_symbols = args.symbols
+        if oi_symbols is None:
+            oi_symbols = _resolve_coinglass_symbol_universe(
+                repo_root=repo_root,
+                source=args.symbols_source,
+                funding_output_path=funding_output_path,
+            )
+        if len(oi_symbols) <= 5:
+            print(f"  Fetching OI for {len(oi_symbols)} symbols: {oi_symbols}")
+        else:
+            print(f"  Fetching OI for {len(oi_symbols)} symbols (first 5: {oi_symbols[:5]})")
         
         # Load existing data for per-symbol incremental checking / merge
         existing_oi = None
