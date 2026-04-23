@@ -150,22 +150,16 @@ def main() -> int:
         ok = run_step(
             cwd=PROJECT_ROOT,
             # Use incremental + merge so we only backfill missing dates
-            # and keep extending the existing fact_funding / fact_open_interest /
-            # fact_liquidations. Pass the three fetch flags explicitly so the
-            # pipeline's scope is visible in the invocation (rather than relying
-            # on the "no flag -> fetch all" fallback inside the script).
+            # and keep extending the existing fact_funding / fact_open_interest.
             cmd=[
                 sys.executable,
                 str(SCRIPT_FUNDING),
-                "--fetch-funding",
-                "--fetch-oi",
-                "--fetch-liquidations",
                 "--incremental",
                 "--merge-existing",
                 "--end-date",
                 today_utc,
             ],
-            step_name="Step 1: Ingest Raw Funding + OI + Liquidations (scripts/fetch_coinglass_data.py)",
+            step_name="Step 1: Ingest Raw Funding (scripts/fetch_coinglass_data.py)",
         )
         if not ok:
             logger.error("Halting: funding ingestion failed. Strategy will not run on stale funding.")
