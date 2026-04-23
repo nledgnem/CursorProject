@@ -24,3 +24,30 @@ Do not reintroduce into `scripts/` without first verifying the active pipeline
 | `strategy_simulator.py` | 2026-04-23 | Research simulator, no references anywhere outside itself. |
 | `simulation_sticky_hysteresis.py` | 2026-04-23 | Research simulator, zero references anywhere in the tree. |
 | `validate_canonical_ids.py` | 2026-04-23 | 51 KB file. Contains a pre-existing `SyntaxError` at line 1066 ("expected an indented block after 'else'") present since the initial commit. Never successfully imported or executed; therefore no live code depends on it. If revived, the syntax error at line 1066 must be fixed first. |
+
+## Tier 3 review outcome (2026-04-23)
+
+Four candidates flagged at the end of Tier 2 (commit `5f15367`) were reviewed
+under the stricter "6-month mtime AND zero live refs" criterion defined in
+`docs/HANDOFF_scripts_cleanup_tier3.md`. All four were retained in `scripts/`.
+Live-ref categories counted per handoff §2: production pipeline / alert
+runners / bots / heartbeat / `start_render.sh` / `run_live_pipeline.py` /
+`src/` / `configs/` / `dashboards/`. Stale `.md` docs, archived scripts, and
+never-run tests (the repo has no CI) were NOT counted.
+
+Files reviewed:
+
+- **`run_pipeline.py`** — explicit KEEP per Tier 3 handoff §"Explicit NOT-dos"
+  (active research pipeline, 53 run directories through 2026-01-06, may be
+  revisited); also has live config refs in `configs/golden.yaml` and
+  `configs/golden_2year.yaml`.
+- **`fetch_analyst_tier_data.py`** — KEEP; called by `scripts/run_data_updates.py`
+  (research orchestrator, itself unaudited) and fails mtime gate (mtime
+  2026-02-04, 2.5 months).
+- **`run_golden.py`** — KEEP on mtime gate alone (mtime 2026-02-04, 2.5 months).
+  Zero live code refs; only doc refs in stale `.md` files and invocations
+  against configs (`golden_top30.yaml`, `golden_quarterly.yaml`) that do not
+  exist in `configs/`. Revisit in a future cleanup pass if mtime crosses 6
+  months.
+- **`run_monitor_eval.py`** — KEEP; live `configs/monitor_eval.yaml` companion
+  (archiving would orphan the config) and fails mtime gate.
