@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fetch Coinglass funding rates and Open Interest (OI) data and save to data lake format."""
+"""Fetch Coinglass funding rates, Open Interest (OI), and Liquidations data and save to data lake format."""
 
 import sys
 import argparse
@@ -701,12 +701,317 @@ def fetch_oi_for_symbols(
 
 
 # ============================================================
+# Liquidations Functions
+# ============================================================
+
+# CoinGlass v4 liquidations-aggregated-history keys seen in practice:
+#   Snake case: `long_liquidation_usd` / `short_liquidation_usd` (seen on other v4 aggregated endpoints)
+#   Camel case: `longLiquidationUsd`   / `shortLiquidationUsd`   (seen on some v4 response bodies)
+# We accept either and log the first-seen keys so the handoff can record them.
+_LIQ_LONG_KEY_CANDIDATES = ("long_liquidation_usd", "longLiquidationUsd", "aggregated_long_liquidation_usd")
+_LIQ_SHORT_KEY_CANDIDATES = ("short_liquidation_usd", "shortLiquidationUsd", "aggregated_short_liquidation_usd")
+_liq_field_names_logged = False
+
+
+def _pick_first_key(item: dict, candidates) -> Optional[str]:
+    for k in candidates:
+        if k in item:
+            return k
+    return None
+
+
+def fetch_liquidation_history(
+    api_key: str,
+    symbol: str,
+    exchange_list: str = "Binance",
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    interval: str = "1d",
+    max_retries: int = 3,
+    retry_delay: float = 5.0,
+    max_time_seconds: float = 600.0,  # 10 minutes max per symbol
+) -> Optional[pd.DataFrame]:
+    """Fetch historical aggregated liquidations from Coinglass API with retry logic.
+
+    Maximum 3 attempts total. After 3 attempts, moves on to next symbol.
+    For unrecoverable errors (not found, invalid), fails immediately.
+
+    Units: long_liquidation_usd and short_liquidation_usd are USD flow quantities
+    per time window. We call with interval="1d" and expect one row per UTC day;
+    if the endpoint returns sub-daily rows, the daily aggregation below SUMS them
+    (liquidations are flows, not levels).
+    """
+    global _liq_field_names_logged
+
+    url = f"{COINGLASS_API_BASE}/futures/liquidation/aggregated-history"
+
+    headers = {
+        "CG-API-KEY": api_key,
+        "accept": "application/json",
+    }
+
+    params = {
+        "symbol": symbol.upper(),
+        "exchange_list": exchange_list,
+        "interval": interval,
+    }
+
+    if start_date:
+        params["start_time"] = int(datetime.combine(start_date, datetime.min.time()).timestamp() * 1000)
+    if end_date:
+        params["end_time"] = int(datetime.combine(end_date, datetime.max.time()).timestamp() * 1000)
+
+    max_total_attempts = 3  # Hard limit: max 3 attempts total
+    attempt = 0
+
+    while attempt < max_total_attempts:
+        try:
+            response = requests.get(url, headers=headers, params=params, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+
+            # Handle rate limits - retry with exponential backoff (up to max attempts)
+            if response.status_code == 429:
+                attempt += 1
+                if attempt >= max_total_attempts:
+                    print(f"  [SKIP] {symbol}: Rate limit after {max_total_attempts} attempts")
+                    return None
+                wait_time = max(60.0, min(300.0, retry_delay * (2 ** min(attempt - 1, 6))))
+                print(f"  [RATE LIMIT 429] {symbol}, attempt {attempt}/{max_total_attempts}, waiting {wait_time:.1f}s...")
+                sleep(wait_time)
+                continue
+
+            if data.get("code") != "0":
+                error_msg = data.get("msg", "Unknown error")
+
+                # Rate limit errors - retry (up to max attempts)
+                if "too many requests" in error_msg.lower() or "rate limit" in error_msg.lower():
+                    attempt += 1
+                    if attempt >= max_total_attempts:
+                        print(f"  [SKIP] {symbol}: Rate limit after {max_total_attempts} attempts")
+                        return None
+                    wait_time = max(60.0, min(300.0, retry_delay * (2 ** min(attempt - 1, 6))))
+                    print(f"  [RATE LIMIT] {symbol}: {error_msg}, attempt {attempt}/{max_total_attempts}, waiting {wait_time:.1f}s...")
+                    sleep(wait_time)
+                    continue
+
+                # Unrecoverable errors - fail immediately
+                lower = error_msg.lower()
+                if "not found" in lower or "invalid" in lower or "does not exist" in lower or "supported exchange" in lower:
+                    print(f"  [SKIP] {symbol}: {error_msg}")
+                    return None
+
+                # Other errors - retry (up to max attempts)
+                attempt += 1
+                if attempt >= max_total_attempts:
+                    print(f"  [SKIP] {symbol}: {error_msg} after {max_total_attempts} attempts")
+                    return None
+                wait_time = retry_delay * (2 ** min(attempt - 1, 4))
+                print(f"  [RETRY] {symbol}: {error_msg}, attempt {attempt}/{max_total_attempts}, waiting {wait_time:.1f}s...")
+                sleep(wait_time)
+                continue
+
+            # Success - parse and return data
+            items = data.get("data", []) or []
+            if not items:
+                return None
+
+            # One-time log of the actual response shape so Tier 1 can confirm field names
+            if not _liq_field_names_logged:
+                sample = items[0]
+                long_key = _pick_first_key(sample, _LIQ_LONG_KEY_CANDIDATES)
+                short_key = _pick_first_key(sample, _LIQ_SHORT_KEY_CANDIDATES)
+                print(f"  [LIQ FIELDS] first response keys: {sorted(sample.keys())}")
+                print(f"  [LIQ FIELDS] using long_key={long_key!r}, short_key={short_key!r}")
+                _liq_field_names_logged = True
+
+            # SUM-aggregate per UTC day (liquidations are flow quantities, not levels).
+            # interval=1d should return pre-aggregated daily rows, but if sub-daily rows
+            # come back we still produce one row per day by summing.
+            per_day_long: Dict[date, float] = {}
+            per_day_short: Dict[date, float] = {}
+            for item in items:
+                time_ms = item.get("time")
+                if time_ms is None:
+                    continue
+                long_key = _pick_first_key(item, _LIQ_LONG_KEY_CANDIDATES)
+                short_key = _pick_first_key(item, _LIQ_SHORT_KEY_CANDIDATES)
+                long_val = item.get(long_key) if long_key else None
+                short_val = item.get(short_key) if short_key else None
+                if long_val is None and short_val is None:
+                    continue
+                dt_obj = datetime.fromtimestamp(time_ms / 1000, tz=timezone.utc)
+                d = dt_obj.date()
+                if long_val is not None:
+                    per_day_long[d] = per_day_long.get(d, 0.0) + float(long_val)
+                if short_val is not None:
+                    per_day_short[d] = per_day_short.get(d, 0.0) + float(short_val)
+
+            rows = []
+            for d in sorted(set(per_day_long.keys()) | set(per_day_short.keys())):
+                rows.append({
+                    "date": d,
+                    "asset_id": symbol.upper(),
+                    "long_liquidation_usd": float(per_day_long.get(d, 0.0)),
+                    "short_liquidation_usd": float(per_day_short.get(d, 0.0)),
+                    "source": "coinglass",
+                })
+
+            if rows:
+                return pd.DataFrame(rows)
+            return None
+
+        except requests.exceptions.Timeout:
+            attempt += 1
+            if attempt >= max_total_attempts:
+                print(f"  [SKIP] {symbol}: Timeout after {max_total_attempts} attempts")
+                return None
+            wait_time = min(300.0, retry_delay * (2 ** min(attempt - 1, 6)))
+            print(f"  [TIMEOUT] {symbol}, attempt {attempt}/{max_total_attempts}, retrying in {wait_time:.1f}s...")
+            sleep(wait_time)
+            continue
+        except Exception as e:
+            attempt += 1
+            if attempt >= max_total_attempts:
+                print(f"  [SKIP] {symbol}: {e} after {max_total_attempts} attempts")
+                return None
+            wait_time = min(300.0, retry_delay * (2 ** min(attempt - 1, 6)))
+            print(f"  [RETRY] {symbol}: {e}, attempt {attempt}/{max_total_attempts}, waiting {wait_time:.1f}s...")
+            sleep(wait_time)
+            continue
+
+    print(f"  [SKIP] {symbol}: Exceeded {max_total_attempts} attempts")
+    return None
+
+
+def fetch_liquidations_for_symbols(
+    api_key: str,
+    symbols: List[str],
+    exchange_list: str = "Binance",
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    rate_limit_per_min: int = 30,
+    existing_data: Optional[pd.DataFrame] = None,
+) -> pd.DataFrame:
+    """Fetch historical liquidations for multiple symbols with rate limiting.
+
+    Per-symbol incremental logic:
+    - If symbol doesn't exist in existing_data: fetch all data
+    - If symbol exists but missing dates: fetch only missing dates
+    - If symbol exists and has all dates up to end_date: skip symbol
+    """
+    all_rows = []
+    delay_seconds = max(2.2, 60.0 / rate_limit_per_min + 0.2)
+
+    print(f"  Fetching liquidations data from CoinGlass...")
+    print(f"  Exchange list: {exchange_list}")
+    print(f"  Total symbols: {len(symbols)}")
+    print(f"  Rate limit: {rate_limit_per_min} requests/min ({delay_seconds:.1f}s between requests)")
+    if existing_data is not None and len(existing_data) > 0:
+        print(f"  Existing data: {len(existing_data):,} records for {existing_data['asset_id'].nunique()} symbols")
+    print()
+
+    # Build symbol date lookup from existing data
+    symbol_dates = {}
+    if existing_data is not None and len(existing_data) > 0:
+        for asset_id in existing_data["asset_id"].unique():
+            asset_data = existing_data[existing_data["asset_id"] == asset_id]
+            dates = set(pd.to_datetime(asset_data["date"]).dt.date)
+            symbol_dates[asset_id] = dates
+
+    successful = 0
+    failed = 0
+    skipped = 0
+    start_time = time.time()
+
+    if end_date is None:
+        end_date = date.today()
+
+    for i, symbol in enumerate(symbols, 1):
+        try:
+            symbol_start = start_date
+
+            if symbol.upper() in symbol_dates:
+                existing_dates = symbol_dates[symbol.upper()]
+                if existing_dates:
+                    last_existing_date = max(existing_dates)
+                    if last_existing_date >= end_date:
+                        skipped += 1
+                        pct = (i / len(symbols)) * 100
+                        print(f"  [{i}/{len(symbols)}] {symbol}... [SKIP] Already up to date (last date: {last_existing_date}) | {pct:.1f}%")
+                        if i < len(symbols):
+                            sleep(delay_seconds)
+                        continue
+                    else:
+                        symbol_start = last_existing_date + timedelta(days=1)
+                        print(f"  [{i}/{len(symbols)}] Fetching {symbol} (incremental from {symbol_start})...", end=" ", flush=True)
+                else:
+                    print(f"  [{i}/{len(symbols)}] Fetching {symbol} (no dates found, fetching all)...", end=" ", flush=True)
+            else:
+                print(f"  [{i}/{len(symbols)}] Fetching {symbol} (new symbol, fetching all)...", end=" ", flush=True)
+
+            df = fetch_liquidation_history(
+                api_key=api_key,
+                symbol=symbol,
+                exchange_list=exchange_list,
+                start_date=symbol_start,
+                end_date=end_date,
+                interval="1d",
+                max_retries=3,
+                retry_delay=5.0,
+                max_time_seconds=600.0,
+            )
+
+            if df is not None and len(df) > 0:
+                all_rows.append(df)
+                successful += 1
+                elapsed = time.time() - start_time
+                avg_time_per_symbol = elapsed / i
+                remaining_symbols = len(symbols) - i
+                eta_seconds = avg_time_per_symbol * remaining_symbols
+                total_rows = sum(len(d) for d in all_rows) if all_rows else 0
+                pct = (i / len(symbols)) * 100
+                print(f"✓ ({len(df)} records) | {pct:.1f}% | ETA: {eta_seconds/60:.1f}m | Total: {total_rows:,} records")
+            else:
+                failed += 1
+                elapsed = time.time() - start_time
+                avg_time_per_symbol = elapsed / i
+                remaining_symbols = len(symbols) - i
+                eta_seconds = avg_time_per_symbol * remaining_symbols
+                pct = (i / len(symbols)) * 100
+                print(f"✗ (no data) | {pct:.1f}% | ETA: {eta_seconds/60:.1f}m")
+
+            if i < len(symbols):
+                sleep(delay_seconds)
+        except Exception as e:
+            print(f"✗ ERROR: {e}")
+            failed += 1
+            if i < len(symbols):
+                sleep(delay_seconds)
+            continue
+
+    total_time = time.time() - start_time
+
+    if all_rows:
+        combined_df = pd.concat(all_rows, ignore_index=True)
+        print()
+        print(f"  Completed: {successful} successful, {failed} failed, {skipped} skipped, {len(combined_df):,} total records")
+        print(f"  Total time: {total_time/60:.1f} minutes ({total_time:.1f} seconds)")
+        return combined_df
+
+    print()
+    print(f"  Completed: {successful} successful, {failed} failed, {skipped} skipped, 0 total records")
+    print(f"  Total time: {total_time/60:.1f} minutes ({total_time:.1f} seconds)")
+    return pd.DataFrame()
+
+
+# ============================================================
 # Main Function
 # ============================================================
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Fetch Coinglass funding rates and/or Open Interest data and save to data lake format",
+        description="Fetch Coinglass funding rates, Open Interest, and/or Liquidations data and save to data lake format",
     )
     parser.add_argument(
         "--api-key",
@@ -725,6 +1030,11 @@ def main():
         help="Fetch Open Interest data",
     )
     parser.add_argument(
+        "--fetch-liquidations",
+        action="store_true",
+        help="Fetch aggregated liquidations (long/short USD per day)",
+    )
+    parser.add_argument(
         "--funding-output",
         type=Path,
         default=(data_lake_root() / "fact_funding.parquet"),
@@ -735,6 +1045,18 @@ def main():
         type=Path,
         default=(data_lake_root() / "fact_open_interest.parquet"),
         help="Output path for OI parquet file",
+    )
+    parser.add_argument(
+        "--liquidations-output",
+        type=Path,
+        default=(data_lake_root() / "fact_liquidations.parquet"),
+        help="Output path for liquidations parquet file",
+    )
+    parser.add_argument(
+        "--liquidations-exchange-list",
+        type=str,
+        default="Binance",
+        help="Comma-separated exchange list for liquidations endpoint (default: Binance; matches the liquidation endpoint's default and our Binance-perp strategy universe).",
     )
     parser.add_argument(
         "--symbols",
@@ -800,10 +1122,11 @@ def main():
             "Missing Coinglass API key. Provide --api-key or set COINGLASS_API_KEY environment variable."
         )
     
-    # If neither flag is set, fetch both
-    if not args.fetch_funding and not args.fetch_oi:
+    # If no fetch flag is set, fetch all three
+    if not args.fetch_funding and not args.fetch_oi and not args.fetch_liquidations:
         args.fetch_funding = True
         args.fetch_oi = True
+        args.fetch_liquidations = True
     
     repo_root = Path(__file__).parent.parent
     
@@ -836,6 +1159,7 @@ def main():
     print(f"  API key: {args.api_key[:8]}...")
     print(f"  Fetch funding: {args.fetch_funding}")
     print(f"  Fetch OI: {args.fetch_oi}")
+    print(f"  Fetch liquidations: {args.fetch_liquidations}")
     print(f"  Date range: {start_date or 'all available'} to {end_date or 'all available'}")
     print(f"  Incremental: {args.incremental}")
     print(f"  Merge existing: {args.merge_existing}")
@@ -1090,7 +1414,87 @@ def main():
             print(f"  Assets: {oi_df['asset_id'].nunique()}")
         else:
             print(f"\n[WARN] Created empty fact_open_interest structure")
-    
+
+    # ============================================================
+    # Fetch Liquidations
+    # ============================================================
+    if args.fetch_liquidations:
+        print("=" * 70)
+        print("FETCHING LIQUIDATIONS")
+        print("=" * 70)
+
+        liq_output_path = (repo_root / args.liquidations_output).resolve() if not args.liquidations_output.is_absolute() else args.liquidations_output
+        liq_output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Resolve universe the same way funding/OI do (Binance-perp universe).
+        # The liquidations endpoint's exchange_list default is "Binance" -- we pass
+        # it explicitly because the param is documented as required. Strategy
+        # universe is Binance perps, so this stays consistent.
+        liq_symbols = args.symbols
+        if liq_symbols is None:
+            liq_symbols = _resolve_coinglass_symbol_universe(
+                repo_root=repo_root,
+                source=args.symbols_source,
+                funding_output_path=funding_output_path,
+            )
+        if len(liq_symbols) <= 5:
+            print(f"  Fetching liquidations for {len(liq_symbols)} symbols: {liq_symbols}")
+        else:
+            print(f"  Fetching liquidations for {len(liq_symbols)} symbols (first 5: {liq_symbols[:5]})")
+
+        # Load existing data for per-symbol incremental checking / merge
+        existing_liq = None
+        if (args.incremental or args.merge_existing) and liq_output_path.exists():
+            try:
+                existing_liq = pd.read_parquet(liq_output_path)
+                if len(existing_liq) > 0:
+                    if "asset_id" not in existing_liq.columns and "symbol" in existing_liq.columns:
+                        existing_liq["asset_id"] = existing_liq["symbol"]
+                    mode = "INCREMENTAL" if args.incremental else "MERGE"
+                    print(f"  [{mode}] Loaded {len(existing_liq):,} existing records for {existing_liq['asset_id'].nunique()} symbols")
+            except Exception as e:
+                print(f"  [WARN] Could not load existing liquidations data: {e}")
+
+        liq_df = fetch_liquidations_for_symbols(
+            api_key=args.api_key,
+            symbols=liq_symbols,
+            exchange_list=args.liquidations_exchange_list,
+            start_date=start_date,
+            end_date=end_date,
+            rate_limit_per_min=args.rate_limit,
+            existing_data=existing_liq,
+        )
+
+        if liq_df.empty:
+            liq_df = pd.DataFrame(columns=[
+                "asset_id", "date", "long_liquidation_usd", "short_liquidation_usd", "source"
+            ])
+        else:
+            liq_df = liq_df.drop_duplicates(subset=["asset_id", "date"])
+            liq_df = liq_df.sort_values(["date", "asset_id"])
+            liq_df = liq_df[["asset_id", "date", "long_liquidation_usd", "short_liquidation_usd", "source"]]
+
+        # Append/merge with existing if requested
+        if (args.incremental or args.merge_existing) and liq_output_path.exists():
+            try:
+                existing_liq = pd.read_parquet(liq_output_path)
+                combined = pd.concat([existing_liq, liq_df], ignore_index=True)
+                before = len(combined)
+                combined = combined.drop_duplicates(subset=["asset_id", "date"], keep="first")
+                liq_df = combined.sort_values(["date", "asset_id"])
+                mode = "INCREMENTAL" if args.incremental else "MERGE"
+                print(f"  [{mode}] Merged liquidations: {len(existing_liq):,} existing + {before - len(existing_liq):,} fetched -> {len(liq_df):,} after dedupe")
+            except Exception as e:
+                print(f"  [WARN] Could not load existing liquidations data: {e}")
+
+        liq_df.to_parquet(liq_output_path, index=False)
+        if len(liq_df) > 0:
+            print(f"\n[SUCCESS] Saved {len(liq_df):,} liquidation records to {liq_output_path}")
+            print(f"  Date range: {liq_df['date'].min()} to {liq_df['date'].max()}")
+            print(f"  Assets: {liq_df['asset_id'].nunique()}")
+        else:
+            print(f"\n[WARN] Created empty fact_liquidations structure")
+
     print("\n" + "=" * 70)
     print("COMPLETE")
     print("=" * 70)
