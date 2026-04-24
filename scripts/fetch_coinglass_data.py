@@ -880,9 +880,36 @@ def fetch_liquidation_history(
                     "source": "coinglass",
                 })
 
-            if rows:
-                return pd.DataFrame(rows)
-            return None
+            if not rows:
+                return None
+
+            df = pd.DataFrame(rows)
+
+            # Zero-pad trim: CoinGlass pads pre-listing / pre-coverage dates
+            # with (0, 0) rows when the requested start_time is earlier than
+            # the symbol's first real observation. We trim LEADING zeros only
+            # -- internal zero-liquidation days (real quiet days on a listed
+            # perp) are legitimate and must be preserved. "Trim until first
+            # nonzero, then keep everything after."
+            nonzero_mask = (df["long_liquidation_usd"] > 0) | (df["short_liquidation_usd"] > 0)
+            if not nonzero_mask.any():
+                # All rows are zero -- symbol has no real liquidation history
+                # in the requested range. Treat as "no data" so the caller's
+                # [SKIP] (no data) path handles it uniformly; do not emit a
+                # synthetic-zero DataFrame into the lake.
+                print(f"  [ZERO-PAD] {symbol}: all {len(df)} rows zero -- treating as no-data")
+                return None
+
+            first_nonzero_idx = int(nonzero_mask.values.argmax())
+            trimmed_count = first_nonzero_idx  # default RangeIndex, position == label
+            if trimmed_count > 0:
+                first_real_date = df.iloc[first_nonzero_idx]["date"]
+                print(f"  [ZERO-PAD] {symbol}: {trimmed_count} leading zero-pad rows trimmed (first real observation: {first_real_date})")
+                df = df.iloc[first_nonzero_idx:].reset_index(drop=True)
+            else:
+                print(f"  [ZERO-PAD] {symbol}: 0 leading zero-pad rows trimmed")
+
+            return df
 
         except requests.exceptions.Timeout:
             attempt += 1
@@ -1104,13 +1131,13 @@ def main():
         "--start-date",
         type=str,
         default=None,
-        help="Start date for historical data (YYYY-MM-DD)",
+        help="Start date for historical data (YYYY-MM-DD). Default: end-date minus 730 days.",
     )
     parser.add_argument(
         "--end-date",
         type=str,
         default=None,
-        help="End date for historical data (YYYY-MM-DD)",
+        help="End date for historical data (YYYY-MM-DD). Default: today (UTC).",
     )
     parser.add_argument(
         "--rate-limit",
@@ -1166,21 +1193,17 @@ def main():
         start_date = date.fromisoformat(args.start_date)
     if args.end_date:
         end_date = date.fromisoformat(args.end_date)
-    
-    # Try to load from config if dates not provided
-    if start_date is None or end_date is None:
-        config_path = repo_root / "configs" / "golden.yaml"
-        if config_path.exists():
-            try:
-                import yaml
-                with open(config_path) as f:
-                    config = yaml.safe_load(f)
-                    if start_date is None and "start_date" in config:
-                        start_date = date.fromisoformat(config["start_date"])
-                    if end_date is None and "end_date" in config:
-                        end_date = date.fromisoformat(config["end_date"])
-            except:
-                pass
+
+    # Defaults: recent 2 years through today (UTC) when not provided on CLI.
+    # Deliberately does NOT read from configs/golden.yaml -- that config drives
+    # the backtest strategy window, not ingestion. Letting a strategy config
+    # cap ingestion caused the 2025-12-31 truncation bug discovered 2026-04-23.
+    # If backfill-specific defaults are needed, a separate ingestion config is
+    # the right place for them.
+    if end_date is None:
+        end_date = datetime.now(timezone.utc).date()
+    if start_date is None:
+        start_date = end_date - timedelta(days=730)
     
     print("=" * 70)
     print("FETCHING COINGLASS DATA")
