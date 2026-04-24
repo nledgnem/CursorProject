@@ -51,6 +51,7 @@ See `data_dictionary.yaml` for authoritative column definitions, units, and cove
 - **`fact_marketcap`**: daily USD market caps by asset from CoinGecko. Same pre-2024 caveat and 730-day API window as `fact_price`.
 - **`fact_volume`**: daily trading volume by asset from CoinGecko. **Stored value is rolling 24h quote volume AT SNAPSHOT TIME, not a calendar-day bar** — successive rows overlap by 23h. Same pre-2024 caveat as `fact_price`.
 - **`fact_open_interest`**: open interest history (CoinGlass, cross-exchange aggregated); **Binance-perp universe (~590 altcoins + BTC)**. BTC from 2025-02-14; most alts from ~2025-05 onward due to CoinGlass Hobbyist tier's ~334-day history cap on the `aggregated-history` endpoint. Per-symbol start date varies with listing. Expanded from BTC-only on 2026-04-22.
+- **`fact_liquidations`**: daily long + short liquidation volumes per base asset from CoinGlass, cross-venue aggregated across 10 major centralized perp exchanges (Binance, OKX, Bybit, Bitget, HTX, Gate, MEXC, Bitmex, Deribit, Kraken). **Excludes Hyperliquid and Variational** (don't report to CoinGlass). 593 assets, 2024-01-01 onward — the ~334-day Hobbyist cap that affects `fact_open_interest` does NOT apply to the liquidations endpoint. Leading zero-pad rows are trimmed per asset at ingest (bronze has a first-row-nonzero guarantee). Added 2026-04-23.
 - **`fact_markets_snapshot`**: daily market snapshot from CoinGecko (circulating + total supply, FDV, max_supply, market_cap_rank, etc.); daily accumulating, ~2500 coins per snapshot. Started ~2026-01. `max_supply` is genuinely null for ~43% of top-300 coins (no hard cap); gate logic needing "fully diluted" should fall back to `total_supply`.
 
 **Rule 1 – Curated Lake Only**
@@ -117,7 +118,7 @@ The system has transitioned from a static historical backtest to a live, automat
   - Non-fatal by design (pipeline continues if this step fails)
   - Note: CoinGecko exchange volume endpoints returning **401** on Analyst tier is expected; snapshot is the critical output
 - **Step 0.5 (non-fatal)**: perp listings snapshot (Hyperliquid + Variational)
-- **Step 1 (fatal)**: funding + open interest via CoinGlass (single invocation of `scripts/fetch_coinglass_data.py` with `--incremental --merge-existing`; populates both `fact_funding` and `fact_open_interest` over the Binance-perp universe)
+- **Step 1 (fatal)**: funding + open interest + liquidations via CoinGlass (single invocation of `scripts/fetch_coinglass_data.py` with `--incremental --merge-existing`; populates `fact_funding`, `fact_open_interest`, AND `fact_liquidations` over the Binance-perp universe — when no `--fetch-*` flag is passed, the script's fallback flips all three on)
 - **Step 2 (fatal)**: price/mcap via CoinGecko
 - **Step 3 (fatal)**: macro index build
 - **Step 3.5 (fatal)**: silver layer build

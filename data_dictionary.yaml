@@ -76,8 +76,23 @@ data_sources:
     unit_cutover_utc: 2026-01-13  # funding_rate units shifted from decimal to percent
     notes: >
       Funding: bronze fact_funding mixes pre- and post-cutover units; silver_fact_funding
-      resolves this to uniform decimal form. OI: history depth is capped regardless of
-      requested --start-date; backfills beyond ~334 days return the cap's worth of data.
+      resolves this to uniform decimal form.
+
+      OI: /futures/open-interest/aggregated-history is capped at ~334 days per symbol on
+      Hobbyist regardless of requested --start-date; backfills beyond that return the
+      cap's worth of data. Most altcoins therefore start ~2025-05; BTC starts 2025-02-14.
+
+      Liquidations: /futures/liquidation/aggregated-history does NOT share the ~334-day
+      OI cap on Hobbyist. Empirically serves back to 2024-01-01 cleanly (verified
+      2026-04-23 backfill: 593 assets, 2024-01-01 onward). The per-source cap field
+      above (oi_history_cap_days) is OI-specific -- do not generalize to other endpoints.
+
+      Ingestion cleaning: the liquidations endpoint pads pre-listing / pre-coverage
+      dates with (0, 0) synthetic rows. scripts/fetch_coinglass_data.py trims leading
+      zero-pad rows per asset at fetch time so bronze fact_liquidations has a
+      first-row-nonzero guarantee. Interior zero days (real quiet days) are preserved.
+      OI fetcher does NOT currently apply the same trim -- pre-listing zero-pad behavior
+      on the OI endpoint has not been audited; flagged as a follow-up.
 
 # ------------------------------------------------------------------------------
 # Bronze fact tables (CoinGecko daily panels)
@@ -379,6 +394,78 @@ fact_open_interest:
         Cross-exchange aggregated open interest at end-of-day (UTC), derived from
         CoinGlass /futures/open-interest/aggregated-history 8h OHLC candles by
         taking the last close of each UTC day.
+    - name: source
+      type: string
+      definition: "Provider tag; always 'coinglass' for this table."
+
+# ------------------------------------------------------------------------------
+# CoinGlass liquidations (bronze fact table). Added 2026-04-23.
+# ------------------------------------------------------------------------------
+fact_liquidations:
+  description: >
+    Daily long and short liquidation volumes per base asset, cross-venue aggregated
+    by CoinGlass across 10 major centralized perp exchanges (Binance, OKX, Bybit,
+    Bitget, HTX, Gate, MEXC, Bitmex, Deribit, Kraken). Covers 593 assets over
+    2024-01-01 to 2026-04-24 as of the 2026-04-23 backfill. Added 2026-04-23.
+  path: data/curated/data_lake/fact_liquidations.parquet
+  source: coinglass
+  frequency: daily
+  venue_coverage: >
+    10 major centralized perp exchanges (Binance, OKX, Bybit, Bitget, HTX, Gate,
+    MEXC, Bitmex, Deribit, Kraken).
+  caveat: >
+    Does NOT include Hyperliquid or Variational -- these venues don't report
+    liquidations to CoinGlass in this feed. Apathy Bleed executes across
+    Hyperliquid, Binance, and Variational, so this table reflects
+    centralized-venue pressure only. Interpret as a proxy for global
+    leverage-flush intensity, not a complete record of venue-specific pain.
+  data_integrity_note: >
+    CoinGlass zero-pads rows for pre-listing / pre-coverage dates in raw responses
+    (synthetic (0, 0) rows). The ingestion fetcher trims leading zero-pad rows per
+    asset before writing to bronze, so the first row per asset is guaranteed to
+    have nonzero liquidation activity. Internal zero days (legitimate quiet days
+    on an active perp) are preserved. See scripts/fetch_coinglass_data.py
+    fetch_liquidation_history for trim implementation.
+  coverage:
+    universe: Binance-perp (same auto-resolution as fact_funding / fact_open_interest)
+    assets: 593
+    rows: 360505
+    start_date: 2024-01-01
+    end_date: 2026-04-24
+    history_cap_observed: >
+      No cap encountered -- Hobbyist tier serves full 2024-01-01 history for
+      liquidations, in contrast to the ~334-day cap on the OI endpoint. Per-asset
+      windows still vary by perp listing date across the 10-venue set (e.g., ARIA:
+      2025-08-21 onward, DEXE: 2024-07-29 onward, PIEVERSE: 2025-11-14 onward).
+      Verify if the CoinGlass tier changes.
+  columns:
+    - name: asset_id
+      type: string
+      definition: >
+        Canonical base asset symbol, uppercase (e.g. BTC, ETH). Matches
+        fact_open_interest.asset_id and fact_funding.asset_id.
+    - name: date
+      type: date
+      unit: UTC_calendar_day
+      frequency: daily
+    - name: long_liquidation_usd
+      type: float
+      unit: USD
+      frequency: daily
+      source: coinglass
+      definition: >
+        Total USD value of long-position liquidations on the named UTC day,
+        cross-venue aggregated across the 10 centralized perp exchanges listed
+        in venue_coverage. Excludes Hyperliquid and Variational.
+    - name: short_liquidation_usd
+      type: float
+      unit: USD
+      frequency: daily
+      source: coinglass
+      definition: >
+        Total USD value of short-position liquidations on the named UTC day,
+        cross-venue aggregated across the 10 centralized perp exchanges listed
+        in venue_coverage. Excludes Hyperliquid and Variational.
     - name: source
       type: string
       definition: "Provider tag; always 'coinglass' for this table."

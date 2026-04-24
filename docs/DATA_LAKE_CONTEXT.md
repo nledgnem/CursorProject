@@ -2,7 +2,7 @@
 
 **Purpose:** Self-contained reference for any AI session that needs to work with this data lake. Paste the whole file into context at the start of a new chat.
 
-**Last updated:** 2026-04-22 (altcoin OI coverage expanded; FDV coverage audited — see sections 5, 9, 13).
+**Last updated:** 2026-04-23 (cross-venue `fact_liquidations` added; zero-pad-trim behavior and golden.yaml-fallback bug-fix documented — see sections 4, 5, 13).
 
 ---
 
@@ -80,8 +80,10 @@ Concrete implication: **new backfill jobs cannot reproduce pre-2024 data on the 
 
 ### CoinGlass (Hobbyist tier)
 - **Rate limit: 30 req/min with 2.2s spacing** between calls (Hobbyist cap).
-- Used for: perp funding rates (daily, by exchange+instrument), open interest (Binance-perp universe in `fact_open_interest` as of 2026-04-22; previously BTC-only).
-- **OI history cap**: the `aggregated-history` endpoint on Hobbyist tier returns roughly 334 days of OI per symbol (confirmed 2026-04-22 via `--start-date 2024-01-01` backfill that returned data from ~2025-05 onward for most alts). Multi-year OI backtests are not possible on this tier.
+- Used for: perp funding rates (daily, by exchange+instrument), open interest (Binance-perp universe in `fact_open_interest` as of 2026-04-22; previously BTC-only), aggregated liquidations (Binance-perp universe in `fact_liquidations` as of 2026-04-23).
+- **OI history cap**: the `open-interest/aggregated-history` endpoint on Hobbyist tier returns roughly 334 days of OI per symbol (confirmed 2026-04-22 via `--start-date 2024-01-01` backfill that returned data from ~2025-05 onward for most alts). Multi-year OI backtests are not possible on this tier.
+- **Liquidations: cross-venue aggregated** across 10 centralized exchanges (Binance, OKX, Bybit, Bitget, HTX, Gate, MEXC, Bitmex, Deribit, Kraken) via `/futures/liquidation/aggregated-history`. Default `exchange_list` is baked into the fetcher; override with `--liquidations-exchange-list` to narrow or widen. **Hyperliquid and Variational are NOT included** — they don't report liquidations to the CoinGlass feed. **History depth:** Hobbyist tier serves 2024-01-01 forward cleanly (verified 2026-04-23 backfill: 593 assets); the ~334-day cap that affects OI does NOT apply to this endpoint.
+- **Liquidations zero-pad trim:** the liquidations endpoint pads pre-listing / pre-coverage dates with synthetic `(0, 0)` rows. `scripts/fetch_coinglass_data.py::fetch_liquidation_history` trims leading zero-pad rows per asset at fetch time, so bronze `fact_liquidations` has a first-row-nonzero guarantee. Interior zero days (real quiet days on an active perp) are preserved. The OI fetcher does NOT currently apply the same trim — see section 13.
 - **Unit cutover at 2026-01-13:** pre-cutover funding values are decimal fractions (e.g. `0.0001` = 0.01%/8h), post-cutover are in percent (`0.01` = 0.01%/8h). Bronze (`fact_funding`) contains raw mixed-unit values; silver (`silver_fact_funding`) handles the conversion. **Always read from silver for analysis.**
 - Endpoints returning 401 on Hobbyist tier: some aggregate exchange-volume and historical-OI endpoints. Silent expectation, not a bug.
 
@@ -108,6 +110,7 @@ Concrete implication: **new backfill jobs cannot reproduce pre-2024 data on the 
 | `fact_volume.parquet` | 14.5 MB | CoinGecko | `asset_id, date, volume, source` | daily (rolling 24h, NOT calendar-day bar) | 2013-12 → present (same caveat) |
 | `fact_funding.parquet` | 1.3 MB | CoinGlass | `asset_id, instrument_id, date, funding_rate, exchange, source` | daily, last 8h obs per day | 2023-04 → present. **Pre-2026-01-13 unit = decimal, post = percent. Read silver instead.** |
 | `fact_open_interest.parquet` | ~3-5 MB (post-backfill) | CoinGlass | `asset_id, date, open_interest_usd, source` | daily (aggregated from 8h close) | Binance-perp universe (~590 altcoins + BTC). BTC from 2025-02-14; most alts from ~2025-05 onward due to CoinGlass Hobbyist tier history cap (~334 days); per-symbol start date varies with listing. Expanded from BTC-only on 2026-04-22. |
+| `fact_liquidations.parquet` | ~5-10 MB (est.; verify from Render after sync) | CoinGlass | `asset_id, date, long_liquidation_usd, short_liquidation_usd, source` | daily (UTC, cross-venue sum) | 593 assets, 2024-01-01 → 2026-04-24, 360,505 rows as of 2026-04-23 backfill. Cross-venue aggregated across 10 centralized perp exchanges (Binance, OKX, Bybit, Bitget, HTX, Gate, MEXC, Bitmex, Deribit, Kraken); **excludes Hyperliquid + Variational**. No ~334-day Hobbyist cap on this endpoint (unlike OI). Leading zero-pad rows trimmed per asset at ingest. |
 | `fact_markets_snapshot.parquet` | 1.66 MB | CoinGecko | `asset_id, name, symbol, coingecko_id, date, current_price_usd, market_cap_usd, market_cap_rank, fully_diluted_valuation_usd, total_volume_usd, circulating_supply, total_supply, max_supply, ath_usd, ath_change_percentage, ath_date, atl_usd, atl_change_percentage, atl_date, source` | one snapshot per day, ~2500 coins per snapshot | Started accumulating ~2026-01. Append-only with dedup. |
 | `fact_ohlc.parquet` | 358 KB | CoinGecko | _Not directly verified in this session; contains OHLC candles for a smaller universe_ | — | — |
 | `fact_derivative_open_interest.parquet` | 341 KB | CoinGecko (different endpoint) | `date, exchange, base_asset, target, open_interest_usd, open_interest_btc, funding_rate, source` | different grain | **QUARANTINE** — different provider semantics, do not use for Gate 3 OI analysis |
@@ -292,13 +295,17 @@ Taken verbatim from `.cursorrules` + `ARCHITECTURE.md`:
 
 ## 13. Known gaps / current work
 
-(as of 2026-04-22)
+(as of 2026-04-23)
 
 - **Perp-vs-spot volume split** not ingested anywhere. Planned Tier-3 work for the Apathy Bleed Gate 2.
 - **`*.json` not in Drive sync patterns.** State JSONs not backed up. 2-line YAML fix pending.
 - **danlongshort paths** still at `/data/*` (not `/data/curated/data_lake/`). Same bug class as Apathy had pre-2026-04-20. Fix pending.
 - **`config_loader._p()`** accepts hardcoded absolute paths and resolves relative paths against `REPO_ROOT`, not `data_lake_root()`. Should be refactored to always use `data_lake_root()` for consistency.
 - **`--liquidity-gate` on OI**: the funding branch of `fetch_coinglass_data.py` has an optional Top-150 liquidity gate; the OI branch does not honor it. Decision pending on whether OI should apply the same gate (tradability reasoning is the same; leaving OI un-gated keeps it as a raw reference).
+- **Hyperliquid + Variational liquidations not covered** (CoinGlass feed limitation). Cross-venue `fact_liquidations` reflects centralized-exchange pressure only. If Hyperliquid execution grows materially for Apathy Bleed, consider direct Hyperliquid liquidation-feed ingestion as a parallel bronze table.
+- **`fact_open_interest` may have the same leading-zero-pad behavior** for pre-listing dates that was fixed for `fact_liquidations` on 2026-04-23. The OI fetcher in `scripts/fetch_coinglass_data.py::fetch_oi_history` does not currently trim leading zeros. Audit via `df[df.asset_id=='<late-listing-alt>'].head()` — if the first rows are zero for pre-listing dates, apply the same per-asset leading-zero-trim fix to `fetch_oi_history` and re-backfill.
+- **Latent bug FIXED 2026-04-23** in `scripts/fetch_coinglass_data.py`: the fetcher previously read `configs/golden.yaml`'s `start_date` / `end_date` as fallbacks when CLI dates weren't passed, causing silent truncation of manual backfills to `2025-12-31` (the strategy backtest end-date). Replaced with `date.today()` UTC (end) and `today - 730 days` (start) defaults. The production daily pipeline was unaffected because `run_live_pipeline.py` always passes explicit `--end-date today_utc`; only ad-hoc manual backfills were silently truncated.
+- **Build `silver_fact_liquidations`** — derived table with opinions applied (e.g. rolling 7d sums, long/short ratio, cross-sectional percentile at each date). Bronze is already clean via per-asset zero-pad trim, so silver here is about derived analytics rather than cleaning.
 
 ---
 
