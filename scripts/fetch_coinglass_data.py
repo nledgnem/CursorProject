@@ -704,13 +704,29 @@ def fetch_oi_for_symbols(
 # Liquidations Functions
 # ============================================================
 
-# CoinGlass v4 liquidations-aggregated-history keys seen in practice:
-#   Snake case: `long_liquidation_usd` / `short_liquidation_usd` (seen on other v4 aggregated endpoints)
-#   Camel case: `longLiquidationUsd`   / `shortLiquidationUsd`   (seen on some v4 response bodies)
-# We accept either and log the first-seen keys so the handoff can record them.
-_LIQ_LONG_KEY_CANDIDATES = ("long_liquidation_usd", "longLiquidationUsd", "aggregated_long_liquidation_usd")
-_LIQ_SHORT_KEY_CANDIDATES = ("short_liquidation_usd", "shortLiquidationUsd", "aggregated_short_liquidation_usd")
+# CoinGlass v4 liquidations-aggregated-history response keys seen in practice:
+#   The live API returns `aggregated_long_liquidation_usd` / `aggregated_short_liquidation_usd`
+#   (confirmed against `/futures/liquidation/aggregated-history` on 2026-04-23).
+#   The snake/camel variants are kept as fallbacks in case CoinGlass changes shape.
+_LIQ_LONG_KEY_CANDIDATES = ("aggregated_long_liquidation_usd", "long_liquidation_usd", "longLiquidationUsd")
+_LIQ_SHORT_KEY_CANDIDATES = ("aggregated_short_liquidation_usd", "short_liquidation_usd", "shortLiquidationUsd")
 _liq_field_names_logged = False
+
+# Cross-venue default for the `exchange_list` param on the CoinGlass
+# liquidations endpoint. These are the 10 major centralized perp venues
+# CoinGlass tracks liquidations for. Chosen as default so fact_liquidations
+# reflects market-wide liquidation pressure, not a single-venue slice.
+#
+# What this does NOT include: Hyperliquid and Variational. CoinGlass does
+# not report liquidations for those venues in this feed, so strategies that
+# execute on them (e.g. Apathy Bleed, which also trades Hyperliquid and
+# Variational alongside Binance) will be reading centralized-venue
+# liquidation pressure as a proxy -- not a complete execution-venue-matched
+# signal. Document this in any downstream analysis.
+#
+# Override with --liquidations-exchange-list on the CLI if a different
+# universe is needed (e.g. "Binance" alone for a Binance-specific slice).
+_DEFAULT_LIQ_EXCHANGE_LIST = "Binance,OKX,Bybit,Bitget,HTX,Gate,MEXC,Bitmex,Deribit,Kraken"
 
 
 def _pick_first_key(item: dict, candidates) -> Optional[str]:
@@ -723,7 +739,7 @@ def _pick_first_key(item: dict, candidates) -> Optional[str]:
 def fetch_liquidation_history(
     api_key: str,
     symbol: str,
-    exchange_list: str = "Binance",
+    exchange_list: str = _DEFAULT_LIQ_EXCHANGE_LIST,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     interval: str = "1d",
@@ -736,10 +752,17 @@ def fetch_liquidation_history(
     Maximum 3 attempts total. After 3 attempts, moves on to next symbol.
     For unrecoverable errors (not found, invalid), fails immediately.
 
+    Default `exchange_list` aggregates across 10 major centralized perp venues
+    (see _DEFAULT_LIQ_EXCHANGE_LIST). Hyperliquid and Variational are NOT in
+    the CoinGlass liquidations feed; callers whose strategies execute there
+    should read this table as a cross-centralized-venue proxy rather than an
+    execution-matched signal. Pass a custom exchange_list to narrow or widen.
+
     Units: long_liquidation_usd and short_liquidation_usd are USD flow quantities
-    per time window. We call with interval="1d" and expect one row per UTC day;
-    if the endpoint returns sub-daily rows, the daily aggregation below SUMS them
-    (liquidations are flows, not levels).
+    per time window (summed across the exchanges in exchange_list). We call with
+    interval="1d" and expect one row per UTC day; if the endpoint returns
+    sub-daily rows, the daily aggregation below SUMS them (liquidations are
+    flows, not levels).
     """
     global _liq_field_names_logged
 
@@ -887,7 +910,7 @@ def fetch_liquidation_history(
 def fetch_liquidations_for_symbols(
     api_key: str,
     symbols: List[str],
-    exchange_list: str = "Binance",
+    exchange_list: str = _DEFAULT_LIQ_EXCHANGE_LIST,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     rate_limit_per_min: int = 30,
@@ -1055,8 +1078,14 @@ def main():
     parser.add_argument(
         "--liquidations-exchange-list",
         type=str,
-        default="Binance",
-        help="Comma-separated exchange list for liquidations endpoint (default: Binance; matches the liquidation endpoint's default and our Binance-perp strategy universe).",
+        default=_DEFAULT_LIQ_EXCHANGE_LIST,
+        help=(
+            "Comma-separated exchange list for the CoinGlass liquidations endpoint. "
+            "Default is 10-venue cross-aggregation across major centralized perps "
+            "(Binance, OKX, Bybit, Bitget, HTX, Gate, MEXC, Bitmex, Deribit, Kraken). "
+            "Hyperliquid and Variational are NOT in the CoinGlass liquidations feed. "
+            "Override with a narrower list (e.g. 'Binance') for a single-venue slice."
+        ),
     )
     parser.add_argument(
         "--symbols",
@@ -1426,10 +1455,20 @@ def main():
         liq_output_path = (repo_root / args.liquidations_output).resolve() if not args.liquidations_output.is_absolute() else args.liquidations_output
         liq_output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Resolve universe the same way funding/OI do (Binance-perp universe).
-        # The liquidations endpoint's exchange_list default is "Binance" -- we pass
-        # it explicitly because the param is documented as required. Strategy
-        # universe is Binance perps, so this stays consistent.
+        # NOTE: default --liquidations-exchange-list is cross-venue (10 major
+        # centralized perps; see _DEFAULT_LIQ_EXCHANGE_LIST). Earlier drafts of
+        # this branch defaulted to Binance-only on the (incorrect) premise that
+        # strategies are Binance-only. Apathy Bleed actually executes across
+        # Hyperliquid + Binance + Variational, and Hyperliquid/Variational do
+        # not report liquidations to CoinGlass at all -- so single-venue is the
+        # wrong framing either way. Cross-venue aggregation of the centralized
+        # venues CoinGlass DOES cover is the closest thing to market-wide
+        # liquidation pressure available from this feed.
+        #
+        # Symbol universe still comes from the Binance-perp set (dim_instrument
+        # -> fact_funding fallbacks) because that's the coin universe we trade
+        # and research; it does not restrict which exchanges CoinGlass
+        # aggregates liquidations across for each symbol.
         liq_symbols = args.symbols
         if liq_symbols is None:
             liq_symbols = _resolve_coinglass_symbol_universe(
