@@ -2,7 +2,7 @@
 
 **Purpose:** Self-contained reference for any AI session that needs to work with this data lake. Paste the whole file into context at the start of a new chat.
 
-**Last updated:** 2026-04-23 (cross-venue `fact_liquidations` added; zero-pad-trim behavior and golden.yaml-fallback bug-fix documented — see sections 4, 5, 13).
+**Last updated:** 2026-04-27 (Drive sync OAuth bug fixed; `*.json` added to sync patterns; `fact_derivative_open_interest` confirmed orphaned and documented — see sections 8, 9, 13).
 
 ---
 
@@ -109,11 +109,11 @@ Concrete implication: **new backfill jobs cannot reproduce pre-2024 data on the 
 | `fact_marketcap.parquet` | 13.8 MB | CoinGecko | `asset_id, date, marketcap, source` | daily | 2013-04 → present (same caveat) |
 | `fact_volume.parquet` | 14.5 MB | CoinGecko | `asset_id, date, volume, source` | daily (rolling 24h, NOT calendar-day bar) | 2013-12 → present (same caveat) |
 | `fact_funding.parquet` | 1.3 MB | CoinGlass | `asset_id, instrument_id, date, funding_rate, exchange, source` | daily, last 8h obs per day | 2023-04 → present. **Pre-2026-01-13 unit = decimal, post = percent. Read silver instead.** |
-| `fact_open_interest.parquet` | ~3-5 MB (post-backfill) | CoinGlass | `asset_id, date, open_interest_usd, source` | daily (aggregated from 8h close) | Binance-perp universe (~590 altcoins + BTC). BTC from 2025-02-14; most alts from ~2025-05 onward due to CoinGlass Hobbyist tier history cap (~334 days); per-symbol start date varies with listing. Expanded from BTC-only on 2026-04-22. |
-| `fact_liquidations.parquet` | ~5-10 MB (est.; verify from Render after sync) | CoinGlass | `asset_id, date, long_liquidation_usd, short_liquidation_usd, source` | daily (UTC, cross-venue sum) | 593 assets, 2024-01-01 → 2026-04-24, 360,505 rows as of 2026-04-23 backfill. Cross-venue aggregated across 10 centralized perp exchanges (Binance, OKX, Bybit, Bitget, HTX, Gate, MEXC, Bitmex, Deribit, Kraken); **excludes Hyperliquid + Variational**. No ~334-day Hobbyist cap on this endpoint (unlike OI). Leading zero-pad rows trimmed per asset at ingest. |
+| `fact_open_interest.parquet` | 1.43 MB | CoinGlass | `asset_id, date, open_interest_usd, source` | daily (aggregated from 8h close) | Binance-perp universe (~590 altcoins + BTC). BTC from 2025-02-14; most alts from ~2025-05 onward due to CoinGlass Hobbyist tier history cap (~334 days); per-symbol start date varies with listing. Expanded from BTC-only on 2026-04-22. |
+| `fact_liquidations.parquet` | 5.88 MB | CoinGlass | `asset_id, date, long_liquidation_usd, short_liquidation_usd, source` | daily (UTC, cross-venue sum) | 593 assets, 2024-01-01 → 2026-04-24, 360,505 rows as of 2026-04-23 backfill. Cross-venue aggregated across 10 centralized perp exchanges (Binance, OKX, Bybit, Bitget, HTX, Gate, MEXC, Bitmex, Deribit, Kraken); **excludes Hyperliquid + Variational**. No ~334-day Hobbyist cap on this endpoint (unlike OI). Leading zero-pad rows trimmed per asset at ingest. |
 | `fact_markets_snapshot.parquet` | 1.66 MB | CoinGecko | `asset_id, name, symbol, coingecko_id, date, current_price_usd, market_cap_usd, market_cap_rank, fully_diluted_valuation_usd, total_volume_usd, circulating_supply, total_supply, max_supply, ath_usd, ath_change_percentage, ath_date, atl_usd, atl_change_percentage, atl_date, source` | one snapshot per day, ~2500 coins per snapshot | Started accumulating ~2026-01. Append-only with dedup. |
 | `fact_ohlc.parquet` | 358 KB | CoinGecko | _Not directly verified in this session; contains OHLC candles for a smaller universe_ | — | — |
-| `fact_derivative_open_interest.parquet` | 341 KB | CoinGecko (different endpoint) | `date, exchange, base_asset, target, open_interest_usd, open_interest_btc, funding_rate, source` | different grain | **QUARANTINE** — different provider semantics, do not use for Gate 3 OI analysis |
+| `fact_derivative_open_interest.parquet` | 341 KB | CoinGecko (different endpoint) | `date, exchange, base_asset, target, open_interest_usd, open_interest_btc, funding_rate, source` | different grain | **QUARANTINE / ORPHANED** — last updated 2026-01-28. Source script (`scripts/fetch_derivative_data.py`) is not wired into production (`system_heartbeat.py` → `live_data_fetcher.py` → `run_live_pipeline.py` does NOT invoke it). Different provider semantics from `fact_open_interest`; do not use for OI analysis. **Use `fact_open_interest.parquet` instead** — the live CoinGlass-sourced OI table, refreshed daily, 590 Binance-perp assets. This file is a stale artifact from an earlier workflow; queue for deletion or revival in a future cleanup. |
 
 ### Silver tables (cleaned, unit-normalized)
 
@@ -157,7 +157,7 @@ Concrete implication: **new backfill jobs cannot reproduce pre-2024 data on the 
 |---|---|---|
 | `apathy_bleed_book.csv` | ~2.6 KB | **Source of truth for Apathy trade ledger.** Committed to git. Columns: `trade_id, cohort, ticker, side, entry_date_utc, entry_price_usd, notional_usd, quantity, stop_price_usd, exit_date_target_utc, status, exit_date_utc, exit_price_usd, pnl_usd, pnl_pct, notes`. Statuses: `OPEN`, `CLOSED_MANUAL`, `CLOSED_STOP`, `CLOSED_EXPIRY`. |
 | `apathy_alert_log.csv` | ~38 KB | Append-only log of every Telegram alert fired. Gitignored. |
-| `apathy_*_state.json` (5 files) | small | Runner state (last-fired times per alert type, etc.). Gitignored. ⚠️ **Not backed up to Drive** — sync_patterns covers only `*.csv` and `*.parquet`. |
+| `apathy_*_state.json` (5 files) | small | Runner state (last-fired times per alert type, etc.). Gitignored. Backed up to Drive as of 2026-04-27 (`*.json` added to sync_patterns). |
 
 **Apathy book semantics:**
 - 4 cohorts (C1–C4) formed 2026-04-09. Target exits 40 / 85 / 130 / 175 days later (2026-05-19, -07-03, -08-17, -10-01).
@@ -217,11 +217,11 @@ Concrete implication: **new backfill jobs cannot reproduce pre-2024 data on the 
 `configs/gdrive_export.yaml` defines what's backed up. Key config:
 
 - `sync_directory: /data/curated/data_lake/` — directory-sync watches this dir only
-- `sync_patterns: ["*.parquet", "*.csv"]` — **JSON files are NOT backed up.** (Open TODO: add `*.json` to the pattern list.)
-- Auth: OAuth refresh token (`GDRIVE_OAUTH_*` env vars). Service account auth was removed; do not reintroduce.
+- `sync_patterns: ["*.parquet", "*.csv", "*.json"]` — covers bronze/silver tables, books/logs/exports, and runner state files. (Updated 2026-04-27.)
+- Auth: OAuth refresh token (`GDRIVE_OAUTH_*` env vars). The OAuth consent app is in **production** mode (not testing) so refresh tokens do not expire on the 7-day testing-mode timer. Service account auth was removed; do not reintroduce.
 - Target folder: resolved by name "Render Exports" at runtime (the `target_folder_id` in the YAML is stale/cosmetic).
 
-**Implication:** If a file lives outside `/data/curated/data_lake/` OR has a non-`.csv`/`.parquet` extension, it's not backed up. This was the cause of the Apathy path bug and affects state JSONs today.
+**Implication:** If a file lives outside `/data/curated/data_lake/`, it's not backed up. (As of 2026-04-27, the previous "non-`.csv`/`.parquet` extension" gap is closed for `*.json`; other extensions still excluded.)
 
 ---
 
@@ -295,10 +295,11 @@ Taken verbatim from `.cursorrules` + `ARCHITECTURE.md`:
 
 ## 13. Known gaps / current work
 
-(as of 2026-04-23)
+(as of 2026-04-27)
 
+- **Drive sync OAuth bug FIXED 2026-04-27.** The Google OAuth consent screen for the Drive uploader had been left in "Testing" mode, which expires refresh tokens after 7 days. App is now in production mode, refresh token rotated. Drive sync was silently broken from 2026-04-23 to 2026-04-27 (Mads spotted it). **Followup queued:** add Telegram alerting on `nightly_export.run()` failures so we don't depend on Mads to spot multi-day staleness next time.
+- **`fact_derivative_open_interest` confirmed orphaned 2026-04-27.** Source script `scripts/fetch_derivative_data.py` is not invoked by any production pipeline step; file last refreshed 2026-01-28. Mads-flagged. Documented in `data_dictionary.yaml`. Followup: decide deletion vs. revival in a future cleanup.
 - **Perp-vs-spot volume split** not ingested anywhere. Planned Tier-3 work for the Apathy Bleed Gate 2.
-- **`*.json` not in Drive sync patterns.** State JSONs not backed up. 2-line YAML fix pending.
 - **danlongshort paths** still at `/data/*` (not `/data/curated/data_lake/`). Same bug class as Apathy had pre-2026-04-20. Fix pending.
 - **`config_loader._p()`** accepts hardcoded absolute paths and resolves relative paths against `REPO_ROOT`, not `data_lake_root()`. Should be refactored to always use `data_lake_root()` for consistency.
 - **`--liquidity-gate` on OI**: the funding branch of `fetch_coinglass_data.py` has an optional Top-150 liquidity gate; the OI branch does not honor it. Decision pending on whether OI should apply the same gate (tradability reasoning is the same; leaving OI un-gated keeps it as a raw reference).
@@ -373,7 +374,7 @@ If a file ID stops resolving, verify by searching Drive: `parentId = '1J4qy2zH-b
 Inside the repo:
 - `ARCHITECTURE.md` — canonical architectural reference
 - `.cursorrules` — enforcement rules for automated agents
-- `data_dictionary.yaml` — column-level documentation. As of 2026-04-22 covers: MSM layers, Apathy book, all bronze `fact_*` tables (`fact_price`, `fact_marketcap`, `fact_volume`, `fact_funding`, `fact_open_interest`, `fact_markets_snapshot`), and the `data_sources:` block (CoinGecko / CoinGlass tier caveats).
+- `data_dictionary.yaml` — column-level documentation. As of 2026-04-27 covers: MSM layers, Apathy book, all bronze `fact_*` tables (`fact_price`, `fact_marketcap`, `fact_volume`, `fact_funding`, `fact_open_interest`, `fact_liquidations`, `fact_markets_snapshot`, `fact_derivative_open_interest` (quarantined)), and the `data_sources:` block (CoinGecko / CoinGlass tier caveats).
 - `configs/*.yaml` — per-subsystem configuration (gdrive, apathy, perp_listings, etc.)
 - `src/data_lake/` — ingestion modules
 - `src/providers/` — API client wrappers (CoinGecko, CoinGlass, Binance)

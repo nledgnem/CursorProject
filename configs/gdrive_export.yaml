@@ -5,8 +5,13 @@ export_gdrive:
   base_dir: "/data"
 
   # Sync everything inside the curated data lake (auto-picks up new tables).
+  # Patterns: parquet (bronze/silver tables), csv (books/logs/exports), json
+  # (runner state files for apathy_*_state.json, danlongshort_*_state.json).
+  # State JSONs are needed in Drive for off-Render replay/debugging; without
+  # them, restoring runner state on a new container loses all dedup history
+  # and would re-fire every alert at first boot.
   sync_directory: "/data/curated/data_lake"
-  sync_patterns: ["*.parquet", "*.csv"]
+  sync_patterns: ["*.parquet", "*.csv", "*.json"]
 
   sources:
     silver_fact_price_parquet: "/data/curated/data_lake/silver_fact_price.parquet"

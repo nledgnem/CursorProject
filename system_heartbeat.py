@@ -208,8 +208,34 @@ def main() -> None:
                 from src.exports.nightly_export import run as run_nightly_export
 
                 run_nightly_export()
-            except Exception:
+            except Exception as exc:
+                # Drive export failures are non-fatal to the pipeline (we don't want a
+                # broken Drive sync to crash the heartbeat / strategy), but they MUST
+                # surface to operators. Without alerting, staleness can go unnoticed
+                # for days (which happened 2026-04-23 -> 2026-04-27 with an OAuth
+                # refresh-token expiry that no one saw until Mads spotted it).
+                #
+                # Send a Telegram alert with the exception class + message so the
+                # operator can act immediately. Best-effort: send_telegram_text is
+                # itself non-fatal, so a Telegram outage won't propagate.
                 logging.exception("Nightly export failed (non-fatal).")
+                try:
+                    from src.notifications.telegram_client import send_telegram_text
+
+                    err_class = type(exc).__name__
+                    err_msg = str(exc)[:500]  # truncate to keep telegram message reasonable
+                    today_utc = _utc_now().date().isoformat()
+                    send_telegram_text(
+                        f"\u26a0\ufe0f Nightly Drive export FAILED [{today_utc} UTC]\n"
+                        f"{err_class}: {err_msg}\n\n"
+                        f"Pipeline data is current on Render but Drive is stale. "
+                        f"Check Render logs and `nightly_export.run()` output. "
+                        f"Common causes: OAuth refresh token expired/revoked, "
+                        f"Drive API quota, network."
+                    )
+                except Exception:
+                    # Telegram itself failed; we've already logged the original export error.
+                    logging.exception("Failed to send Telegram alert about Drive export failure.")
 
         def heartbeat_tick() -> None:
             nonlocal dashboard_proc, last_trigger_key

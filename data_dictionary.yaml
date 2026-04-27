@@ -523,3 +523,29 @@ fact_markets_snapshot:
         governance-controlled supply), so nulls are expected rather than a
         data-quality defect. Gate logic that needs "fully diluted" should
         fall back to total_supply when max_supply is null.
+
+# ------------------------------------------------------------------------------
+# CoinGecko derivative open interest (QUARANTINED / ORPHANED)
+# Investigated 2026-04-27: not wired into the production pipeline.
+# ------------------------------------------------------------------------------
+fact_derivative_open_interest:
+  status: QUARANTINED_ORPHANED
+  description: >
+    Stale artifact from an earlier ingestion workflow. Last refreshed 2026-01-28.
+    Source script (scripts/fetch_derivative_data.py) is NOT wired into the
+    current production pipeline (system_heartbeat.py -> live_data_fetcher.py ->
+    run_live_pipeline.py does not invoke it). Different provider semantics from
+    fact_open_interest (CoinGlass): different grain, different exchange
+    aggregation rules, different OI definition.
+  do_not_use:
+    - reason: stale (last update 2026-01-28; ~3 months out of date)
+    - reason: not refreshed by any production pipeline step
+    - reason: different semantics from fact_open_interest -- not joinable on (asset_id, date)
+  use_instead: fact_open_interest  # CoinGlass cross-exchange OI, refreshed daily
+  path: data/curated/data_lake/fact_derivative_open_interest.parquet
+  source: coingecko_derivatives_endpoint  # /derivatives (different from /coins/{id}/market_chart/range)
+  followup: >
+    Decide whether to (a) delete this file from the lake, or (b) revive the
+    fetcher and wire it into Step 0 of run_live_pipeline.py. Tracked separately;
+    Mads-flagged 2026-04-27.
+
