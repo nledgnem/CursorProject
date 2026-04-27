@@ -53,6 +53,7 @@ See `data_dictionary.yaml` for authoritative column definitions, units, and cove
 - **`fact_open_interest`**: open interest history (CoinGlass, cross-exchange aggregated); **Binance-perp universe (~590 altcoins + BTC)**. BTC from 2025-02-14; most alts from ~2025-05 onward due to CoinGlass Hobbyist tier's ~334-day history cap on the `aggregated-history` endpoint. Per-symbol start date varies with listing. Expanded from BTC-only on 2026-04-22.
 - **`fact_liquidations`**: daily long + short liquidation volumes per base asset from CoinGlass, cross-venue aggregated across 10 major centralized perp exchanges (Binance, OKX, Bybit, Bitget, HTX, Gate, MEXC, Bitmex, Deribit, Kraken). **Excludes Hyperliquid and Variational** (don't report to CoinGlass). 593 assets, 2024-01-01 onward — the ~334-day Hobbyist cap that affects `fact_open_interest` does NOT apply to the liquidations endpoint. Leading zero-pad rows are trimmed per asset at ingest (bronze has a first-row-nonzero guarantee). Added 2026-04-23.
 - **`fact_markets_snapshot`**: daily market snapshot from CoinGecko (circulating + total supply, FDV, max_supply, market_cap_rank, etc.); daily accumulating, ~2500 coins per snapshot. Started ~2026-01. `max_supply` is genuinely null for ~43% of top-300 coins (no hard cap); gate logic needing "fully diluted" should fall back to `total_supply`.
+- **`fact_derivative_open_interest`** + **`fact_derivative_exchange_details`** (both **QUARANTINED / ORPHANED**, last refreshed 2026-01-28): legacy CoinGecko derivative tables. Source script `scripts/fetch_derivative_data.py` is **not** invoked by any production pipeline step — these files are stale artifacts. Different grain and provider semantics from `fact_open_interest`; **do not join with `fact_open_interest`**. See `data_dictionary.yaml` for explicit `do_not_use` reasons. Per-exchange OI breakdowns and per-venue (Hyperliquid, Variational) OI are not currently produced by any production source.
 
 **Rule 1 – Curated Lake Only**
 * The AI is **strictly forbidden** from reading any CSV or Parquet files **outside** of `data/curated/data_lake/`.
@@ -139,6 +140,7 @@ The system has transitioned from a static historical backtest to a live, automat
   - `GDRIVE_OAUTH_CLIENT_SECRET`
   - `GDRIVE_OAUTH_REFRESH_TOKEN`
 - **Scope**: `https://www.googleapis.com/auth/drive.file` (can only access files the app creates)
+- **OAuth app publishing status**: must be **"In production"** (NOT "Testing"). Testing-mode apps auto-revoke refresh tokens every 7 days, causing silent Drive sync failures. Set in Google Cloud Console → APIs & Services → OAuth consent screen → Audience → Publish app. For `drive.file`-scope-only apps, publishing is auto-approved with no Google review. **Status confirmed in production mode 2026-04-27 after a 4-day silent staleness incident traced to this exact misconfiguration.**
 
 ### 🎯 Target folder + persistence
 
@@ -148,12 +150,20 @@ The system has transitioned from a static historical backtest to a live, automat
 
 ### 🔄 Sync behavior
 
-- **Directory sync**: uploads all `.parquet` and `.csv` under `/data/curated/data_lake/` when `sync_directory` is configured
+- **Directory sync**: uploads files matching `sync_patterns` under `/data/curated/data_lake/`. Patterns are `*.parquet`, `*.csv`, and `*.json` (the last added 2026-04-27 to capture runner state files like `apathy_*_state.json`).
 - **Explicit sources**: also uploads the explicit files listed in `export_gdrive.sources` (for files outside the data lake)
+
+### 🚨 Failure alerting (added 2026-04-27)
+
+- `system_heartbeat.py` wraps `nightly_export.run()` in a try/except that fires a Telegram alert on any exception (OAuth failure, network, missing file, etc.). The alert includes the exception class + message so the operator can act immediately.
+- Drive export failures remain **non-fatal to the pipeline** — a broken export does not crash the heartbeat or strategy run. The alert is the only signal.
+- Disk-space alerts (free space < 500MB under `/data`) also send Telegram messages and skip the export gracefully.
+- **Without this alert**, Drive sync silently failed for 4 days from 2026-04-23 to 2026-04-27 before Mads spotted it. Don't remove the alert hook.
 
 ### 🧯 Historical note
 
 - Service account auth was removed (commit **`chore: remove unused service account auth code after oauth migration`**) — do not reintroduce it.
+- 2026-04-27 OAuth incident: refresh token was revoked because the OAuth consent app was left in Google's "Testing" mode (7-day token expiry). Fixed by publishing the app to production mode + rotating the token. See `docs/runbooks/drive_export.md` for recovery procedure.
 
 ## 🧾 Strategy: apathy_bleed (primary)
 **Purpose:** Long BTC / Short alt pair trades across 4 cohorts (C1–C4), entered in a single formation window on 2026-04-09, with staggered exit targets at 40 / 85 / 130 / 175 days from entry (C1: 2026-05-19, C2: 2026-07-03, C3: 2026-08-17, C4: 2026-10-01). Exits are triggered by time (target date), stop (+60% adverse move on the short leg), or manual intervention. Each cohort has a matching LONG_BTC hedge row sized to the cohort's total short notional.

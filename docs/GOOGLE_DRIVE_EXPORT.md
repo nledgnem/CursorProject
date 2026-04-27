@@ -21,7 +21,10 @@ This exporter authenticates via **OAuth refresh token** (no service account).
 1. In Google Cloud Console, create a project (or use an existing one).
 2. Enable the **Google Drive API**.
 3. Create an **OAuth Client ID** (Desktop or Web is fine for refresh token generation).
-4. Generate a refresh token for the Google account that owns (or can access) the target Drive folder.
+4. **⚠️ Set OAuth consent screen → Audience → Publishing status to "In production".** Apps left in "Testing" mode auto-revoke refresh tokens after **7 days**, causing silent Drive sync failures. For `drive.file`-scope-only apps, publishing is auto-approved with no Google review process. This was the root cause of a 4-day silent staleness incident on 2026-04-23 → 2026-04-27.
+5. Generate a refresh token for the Google account that owns (or can access) the target Drive folder.
+
+**Recovery procedure** (if Drive sync starts failing): see `docs/runbooks/drive_export.md`.
 
 ### 2) Create / choose a target Drive folder
 
@@ -68,5 +71,17 @@ Edit `configs/gdrive_export.yaml` as needed. Key fields:
 
 ### Telegram alerts
 
-If free space under `/data` drops below **500MB**, export is skipped and a Telegram message is sent (if Telegram is configured).
+Two alert classes are wired up:
+
+1. **Disk-space alert**: if free space under `/data` drops below **500MB**, export is skipped and a Telegram message is sent (if Telegram is configured).
+2. **Failure alert** (added 2026-04-27): if `nightly_export.run()` raises *any* exception (OAuth, network, file missing, etc.), `system_heartbeat.py` catches it and sends a Telegram alert with the exception class + message. Drive export failures are non-fatal to the pipeline (the heartbeat doesn't crash), so this Telegram alert is the **only operational signal** that Drive sync has stopped working. Don't disable it without first ensuring some other channel will catch staleness.
+
+The alert format is:
+
+```
+⚠️ Nightly Drive export FAILED [YYYY-MM-DD UTC]
+<ExceptionClass>: <truncated message>
+
+Pipeline data is current on Render but Drive is stale. Check Render logs and `nightly_export.run()` output. Common causes: OAuth refresh token expired/revoked, Drive API quota, network.
+```
 

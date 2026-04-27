@@ -73,6 +73,10 @@ In **Environment** (or **Environment Variables**), add:
 |----------|---------|
 | `MACRO_STATE_DB_PATH` | `/data/macro_state.db` |
 | `PYTHON_VERSION` | e.g. `3.12.1` (match a version Render supports) |
+| `RENDER_DATA_LAKE_PATH` | `/data/curated/data_lake` (so all bronze/silver outputs land on the persistent disk) |
+| `GDRIVE_OAUTH_CLIENT_ID` | Drive nightly export auth (see `docs/runbooks/drive_export.md`) |
+| `GDRIVE_OAUTH_CLIENT_SECRET` | Drive nightly export auth |
+| `GDRIVE_OAUTH_REFRESH_TOKEN` | Drive nightly export auth (rotate via the runbook procedure if revoked) |
 | *(your API keys)* | Same variable names as in local `.env` (e.g. Coinglass, etc.) |
 | `DASHBOARD_PASSWORD` | *(optional)* Shared password for the team; if unset, no login screen |
 
@@ -133,9 +137,11 @@ Render persistent disks are **not shareable across services**, so the alert runn
 
 **Environment:** set `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, and `MACRO_STATE_DB_PATH=/data/macro_state.db`.
 
-**Persistence:** Apathy artifacts live on the disk:
-- `/data/apathy_bleed_book.csv` (seeded from the repo snapshot on first boot if missing)
-- `/data/apathy_alert_log.csv` and JSON state files (paths configured in `configs/apathy_alerts.yaml`)
+**Persistence:** Apathy artifacts live on the disk inside the curated data lake (so they're captured by the nightly Drive sync):
+- `/data/curated/data_lake/apathy_bleed_book.csv` (seeded from the repo snapshot on first boot if missing)
+- `/data/curated/data_lake/apathy_alert_log.csv` and JSON state files (paths configured in `configs/apathy_alerts.yaml`)
+
+  Earlier versions used `/data/*` (one level shallower) which routed writes outside the Drive sync directory — fixed 2026-04-20. Don't move them back.
 
 ---
 
