@@ -549,3 +549,44 @@ fact_derivative_open_interest:
     fetcher and wire it into Step 0 of run_live_pipeline.py. Tracked separately;
     Mads-flagged 2026-04-27.
 
+# ------------------------------------------------------------------------------
+# CoinGecko derivative exchange details (QUARANTINED / ORPHANED)
+# Sibling table to fact_derivative_open_interest -- same orphan provenance.
+# ------------------------------------------------------------------------------
+fact_derivative_exchange_details:
+  status: QUARANTINED_ORPHANED
+  description: >
+    Daily snapshot of top centralized derivative exchanges (~20 venues) ranked
+    by OI: Binance Futures, Bybit, CoinW, Gate, LBank, etc. Last refreshed
+    2026-01-28; only one snapshot date present in the file. Same orphan source
+    script as fact_derivative_open_interest (scripts/fetch_derivative_data.py).
+    NOT joinable with fact_open_interest -- different grain (per-exchange-per-day,
+    not per-asset-per-day) and different OI denomination (BTC, not USD).
+  do_not_use:
+    - reason: stale (single snapshot 2026-01-28; ~3 months out of date)
+    - reason: not refreshed by any production pipeline step
+    - reason: per-exchange grain (not per-asset) -- not directly comparable to fact_open_interest
+    - reason: OI in BTC units, not USD -- requires BTC price conversion for any USD analysis
+    - reason: does NOT include Variational or Hyperliquid (only top centralized CEX derivatives)
+  use_instead: >
+    For per-asset OI: fact_open_interest (CoinGlass, daily, 590 assets).
+    For per-exchange OI breakdowns: no current production source exists; see
+    docs/DATA_LAKE_CONTEXT.md §13 followup queue.
+  path: data/curated/data_lake/fact_derivative_exchange_details.parquet
+  source: coingecko_derivatives_exchanges_endpoint  # /derivatives/exchanges
+  shape_observed: 20 rows total, 1 unique date (2026-01-28), 9 columns
+  columns_observed:
+    - date  # object (string YYYY-MM-DD)
+    - exchange_id  # e.g. binance_futures, bybit, coinw_futures
+    - exchange_name  # e.g. "Binance (Futures)"
+    - open_interest_btc  # float, BTC-denominated OI (not USD)
+    - trade_volume_24h_btc  # float, BTC-denominated 24h volume
+    - number_of_perpetual_pairs  # int
+    - number_of_futures_pairs  # int
+    - number_of_derivatives  # object (was None in observed rows)
+    - source  # "coingecko"
+  followup: >
+    Same as fact_derivative_open_interest: decide deletion vs revival. Note that
+    if revived, USD denomination would require joining with daily BTC price.
+
+
