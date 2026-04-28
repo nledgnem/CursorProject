@@ -554,12 +554,18 @@ fact_derivative_open_interest:
 # Sibling table to fact_derivative_open_interest -- same orphan provenance.
 # ------------------------------------------------------------------------------
 fact_derivative_exchange_details:
-  status: QUARANTINED_ORPHANED
+  status: RESIDUE_PRODUCER_DECOMMISSIONED   # corrected 2026-04-28: producer was archived, not present in live tree
   description: >
     Daily snapshot of top centralized derivative exchanges (~20 venues) ranked
     by OI: Binance Futures, Bybit, CoinW, Gate, LBank, etc. Last refreshed
-    2026-01-28; only one snapshot date present in the file. Same orphan source
-    script as fact_derivative_open_interest (scripts/fetch_derivative_data.py).
+    2026-01-28; only one snapshot date present in the file.
+    PRODUCER NOT IN THE LIVE TREE: scripts/fetch_derivative_data.py (the
+    sibling fetcher that writes fact_derivative_volume / fact_derivative_open_interest
+    / dim_derivative_exchanges) does NOT write this file. The only place in
+    the repo that mentions fact_derivative_exchange_details is the archived
+    scripts/archive/fetch_medium_priority_data.py, which Rule 8 forbids
+    reading from at runtime. Treat as a frozen historical artifact whose
+    producer has been pruned.
     NOT joinable with fact_open_interest -- different grain (per-exchange-per-day,
     not per-asset-per-day) and different OI denomination (BTC, not USD).
   do_not_use:
@@ -784,20 +790,30 @@ fact_ohlc:
   followup: "Verify no live consumers before 2026-05-12 cleanup commit."
 
 binance_btcdom:
-  status: VERIFICATION_ONLY
+  status: RESIDUE_PRODUCER_DECOMMISSIONED   # corrected 2026-04-28: no live producer
   description: >
-    Pristine Binance BTCDOM index. Written by
-    scripts/audit_btcdom_assumption_ledger.py (research / calibration script,
-    NOT a daily pipeline step). Used to sanity-check btcdom_reconstructed.csv
-    at calibration time, NOT as a live modeling input.
+    Pristine Binance BTCDOM index, frozen historical artifact. PRODUCER NOT IN
+    THE LIVE TREE -- the BTCDOM reconstruction code that wrote this file lives
+    only under archive_data/BTCDOM exercise/ (e.g. archive_data/BTCDOM exercise/
+    btcdom_recon/), which Rule 8 ('Curated Lake Only: Never read CSV/parquet
+    from archive/ or archive_data/') explicitly forbids reading from at runtime.
+    scripts/audit_btcdom_assumption_ledger.py only READS this file (line 18,
+    `binance_path = DATA_LAKE / "binance_btcdom.csv"`) for a calibration print-
+    out; it has no `to_csv` / `write_csv` / `df.write_*` calls anywhere
+    (verified 2026-04-28).
   do_not_use_as_feature: true
   use_instead_for_modeling: btcdom_reconstructed.csv  # Step 3 of run_live_pipeline.py
   path: data/curated/data_lake/binance_btcdom.csv
-  source: binance (research script)
+  source: archive_data/BTCDOM exercise/ (decommissioned reconstruction code)
   size_kb_observed: 51
   note: >
-    This is intentional residue, not pending cleanup. Keep as a calibration
-    reference; rebuild manually when btcdom_reconstructed math is changed.
+    Intentional kept-as-static-reference. Treat the CSV as a calibration
+    snapshot. If the calibration is re-run, the producer would have to be
+    moved out of archive_data/ first (Rule 8) or rewritten in the live tree.
+  prior_doc_error_2026_04_28: >
+    Earlier version of this entry attributed the producer to
+    audit_btcdom_assumption_ledger.py. That was incorrect: the audit script
+    only reads, never writes. The actual producer is decommissioned.
 
 universe_eligibility:
   status: RESIDUE_PRODUCER_DECOMMISSIONED
@@ -897,7 +913,7 @@ silver_fact_price:
     - "Anomaly detection: 'Absolute Nuke', 'Standard Slingshot', 'Fat Slingshot' (T+2/T+3) -- price anomalies that flag an asset as winsorized at the affected dates"
     - "Continuous daily reindex per asset_id (asfreq('D')) so gaps are explicit NaN"
     - "is_winsorized flag added"
-    - "is_ffilled flag (forward-fill up to FFILL_LIMIT=3 days for narrow gaps)"
+    - "is_ffilled flag added but NEVER set (always False on price -- see column note below). Only silver_fact_funding actually forward-fills."
   columns:
     - name: asset_id
       type: string
@@ -914,6 +930,7 @@ silver_fact_price:
       gotchas:
         - "Pre-2024 rows from the Analyst-tier era inherit the same suspect-quality caveat as bronze fact_price."
         - "is_winsorized=True rows have close set to NaN (anomaly-flagged)."
+        - "Calendar-day reindex creates explicit NaN rows on missing days (not forward-filled). If you need a contiguous price series, you must ffill yourself downstream."
     - name: source
       type: string
       definition: "Provider tag; 'coingecko' for valid rows, NaN where winsorized."
@@ -922,7 +939,14 @@ silver_fact_price:
       definition: "True when the date was flagged by the anomaly detector (Absolute Nuke / Standard Slingshot / Fat Slingshot)."
     - name: is_ffilled
       type: bool
-      definition: "True when close was filled from a prior date (FFILL_LIMIT=3 days)."
+      definition: |
+        ALWAYS FALSE on silver_fact_price. The column exists for schema parity
+        with silver_fact_funding (which does ffill up to FFILL_LIMIT=3 days)
+        but build_silver_fact_price has no `.ffill()` call -- verified
+        2026-04-28 against scripts/data_ingestion/build_silver_layer.py.
+        Reserved for a future price-gap-fill pass; do NOT mask on this flag
+        expecting it to identify gap-filled rows. Earlier docs incorrectly
+        described this as an active flag.
   known_consumers:
     - "Apathy Bleed monitoring (live mark-to-market joins)"
     - "MSM strategy returns (msm_returns.compute_returns reads silver prices)"
@@ -1087,9 +1111,14 @@ silver_funding_cross_sectional_daily:
       definition: |
         Per-day q75 - q25 of the asset-level harmonized 8h rates (the same
         cross-section used for env_rate_dec, BEFORE the IQM trim). Quantile
-        method: NAIVE INDEX (rates[int(n*0.25)] / rates[int(n*0.75)]) -- not
-        interpolated. Returns NaN when n_assets < 4 that day. Pure-decimal 8h
-        units (matches src/macro_regime/gate_policy.py contract:
+        method: NAIVE INDEX -- specifically:
+            q25 = rates[int(n * 0.25)]
+            q75 = rates[int(n * 0.75)]
+            spread = q75 - q25
+        (the slash separator in earlier docs read like division -- it was
+        meant as a list separator). NOT interpolated. Returns NaN when
+        n_assets < 4 that day. Pure-decimal 8h units (matches
+        src/macro_regime/gate_policy.py contract:
         FRAGMENTATION_IDIOSYNCRATIC_TOXIC_CEILING is on the same scale).
       gotchas:
         - "Same scale as env_rate_dec (decimal 8h), NOT annualized."
@@ -1100,8 +1129,12 @@ silver_funding_cross_sectional_daily:
       frequency: daily
       definition: |
         Rolling 90-day z-score of Environment_APR_daily_pct (NOT env_rate_dec).
-        Window=90, min_periods=30. First 30 rows after a fresh start are NaN.
-        Formula: (s - rolling_mean) / rolling_std.
+        Window=90, min_periods=30. First 29 rows after a fresh start are NaN
+        -- the 30th row (index 29) is the first non-null because min_periods=30
+        means a value is emitted as soon as 30 prior observations including
+        itself are available. Verified empirically against the live parquet
+        2026-04-28: rows 0..28 are NaN, index 29 (date 2023-05-18) is the
+        first non-null. Formula: (s - rolling_mean) / rolling_std.
   known_consumers:
     - "General Regime Monitor / 3-Factor Gate (src/macro_regime/gate_policy.py)"
     - "MSM strategy weekly_lookback_means (when the strategy is active)"
@@ -1579,8 +1612,15 @@ single_coin_panel:
   followup: "Document column list once the generator output is re-inspected."
 
 stablecoins:
-  path: data/curated/data_lake/stablecoins.csv
-  source: curated, seeded from repo
+  # Path-class oddity: lives at /data/stablecoins.csv on Render (NOT under
+  # /data/curated/data_lake/). Reaches Drive only because configs/gdrive_export.yaml::sources
+  # lists stablecoins_csv: "/data/stablecoins.csv" as an explicit static
+  # source. Same path-class as universe_eligibility, single_coin_panel,
+  # msm_timeseries -- the four files outside the lake that reach Drive via
+  # explicit sources: entries rather than the directory sync.
+  path: /data/stablecoins.csv  # NOT /data/curated/data_lake/stablecoins.csv -- see note above
+  repo_seed_path: data/stablecoins.csv  # seeded from repo by start_render.sh:15-17 on first boot if /data/stablecoins.csv is absent
+  source: curated, seeded from repo on Render first boot
   status: STATIC
   grain: one row per stablecoin asset_id
   size_observed_kb: 2

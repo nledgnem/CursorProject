@@ -2,7 +2,7 @@
 
 **Purpose:** Self-contained reference for any AI session that needs to work with this data lake. Paste the whole file into context at the start of a new chat.
 
-**Last updated:** 2026-04-28 (verified `silver_funding_cross_sectional_daily` schema and `msm_timeseries` shape against Drive; refreshed Apathy book current-state snapshot; added `fact_liquidations` to §14 FILE_IDS dict; flagged `universe_eligibility.parquet` as stale-despite-daily-touch — see section 13; second-pass review fixed Z_Score_90d window 90→30 + source series env_rate_dec→Environment_APR_daily_pct, split fact_open_interest "OI value" vs "universe filter" phrasing, added universe_eligibility unusual-path note).
+**Last updated:** 2026-04-28 (verified `silver_funding_cross_sectional_daily` schema and `msm_timeseries` shape against Drive; refreshed Apathy book current-state snapshot; added `fact_liquidations` to §14 FILE_IDS dict; flagged `universe_eligibility.parquet` as stale-despite-daily-touch — see section 13; second-pass review fixed Z_Score_90d window 90→30 + source series env_rate_dec→Environment_APR_daily_pct, split fact_open_interest "OI value" vs "universe filter" phrasing, added universe_eligibility unusual-path note; **third-pass review** updated danlongshort path status from "fix pending" to FIXED with verification source, added §6 "Path-class oddities" mini-section).
 **Previously:** 2026-04-27 (Drive sync OAuth bug fixed; `*.json` added to sync patterns; `fact_derivative_open_interest` confirmed orphaned and documented — see sections 8, 9, 13).
 
 ---
@@ -177,7 +177,7 @@ Concrete implication: **new backfill jobs cannot reproduce pre-2024 data on the 
 | `danlongshort_price_cache.parquet` | 30-day CoinGecko close cache (freshness gate <12h). |
 | `danlongshort_*_state.json` | Runner state, bot state. |
 
-⚠️ **As of 2026-04-20**, danlongshort files still live at `/data/*` (outside `/data/curated/data_lake/`) and are therefore **not backed up to Drive**. Same bug class as what Apathy had before today's fix. Fix pending.
+**Path note (FIXED):** danlongshort files now live at `/data/curated/data_lake/` and are backed up by the nightly Drive sync. The path-class bug that affected Apathy pre-2026-04-20 was applied here too; the fix is verified at `configs/danlongshort_alerts.yaml:15-18`. The yaml's `paths:` block now points to `/data/curated/data_lake/danlongshort_*` and the `# NOTE` comment explicitly references the prior bug in past tense.
 
 ### Universe / eligibility / panels
 
@@ -194,6 +194,13 @@ Concrete implication: **new backfill jobs cannot reproduce pre-2024 data on the 
 **Rule 1:** Never hardcode `data/curated/data_lake/...`. Always resolve via `repo_paths.data_lake_root()` or `DATA_LAKE_ROOT`.
 
 **Rule 2:** All runtime writes MUST land under `/data/curated/data_lake/` on Render. Paths outside this directory are NOT captured by the nightly Drive sync and will be silently lost on disk wipes.
+
+**Path-class oddities — files outside `/data/curated/data_lake/` that still reach Drive.** Four files live one level above the lake but are explicitly named in `configs/gdrive_export.yaml::sources` so they reach Drive via the named-source path rather than the directory sync. **Don't reintroduce this pattern for new files** — write inside the lake and let the directory sync pick them up. The four:
+
+- `/data/universe_eligibility.parquet` (also stale — see §13)
+- `/data/single_coin_panel.csv`
+- `/data/exports/msm_timeseries.csv`
+- `/data/stablecoins.csv`
 
 **Historical bugs fixed 2026-04-20** (for future agents: don't reintroduce these):
 1. `configs/perp_listings.yaml` previously set `output.curated_data_lake_dir` to a relative string, resolved against `repo_root` — routed writes to ephemeral container storage on Render. Fix: remove the override so code falls through to `data_lake_root()`.
@@ -304,7 +311,7 @@ Taken verbatim from `.cursorrules` + `ARCHITECTURE.md`:
 - **Drive sync OAuth bug FIXED 2026-04-27.** The Google OAuth consent screen for the Drive uploader had been left in "Testing" mode, which expires refresh tokens after 7 days. App is now in production mode, refresh token rotated. Drive sync was silently broken from 2026-04-23 to 2026-04-27 (Mads spotted it). **Followup queued:** add Telegram alerting on `nightly_export.run()` failures so we don't depend on Mads to spot multi-day staleness next time.
 - **`fact_derivative_open_interest` and `fact_derivative_exchange_details` confirmed orphaned 2026-04-27.** Source script `scripts/fetch_derivative_data.py` is not invoked by any production pipeline step; both files last refreshed 2026-01-28 (single snapshot in the exchange_details case). Mads-flagged. Documented in `data_dictionary.yaml`. **Open question: do we need per-exchange OI breakdowns?** The original (orphan) workflow attempted this but never made it to production. If yes, two paths: (a) revive `fetch_derivative_data.py` and wire it into Step 0, or (b) build a CoinGlass-based per-exchange OI fetcher (CoinGlass has per-exchange OI on some endpoints; we currently use the cross-exchange aggregated one). For now there's no production source for per-exchange or per-venue (Hyperliquid, Variational) OI breakdowns. Followup: decide direction in a future cleanup.
 - **Perp-vs-spot volume split** not ingested anywhere. Planned Tier-3 work for the Apathy Bleed Gate 2.
-- **danlongshort paths** still at `/data/*` (not `/data/curated/data_lake/`). Same bug class as Apathy had pre-2026-04-20. Fix pending.
+- **danlongshort paths FIXED** (verified 2026-04-28 against `configs/danlongshort_alerts.yaml:15-18`): all four runtime paths (positions_csv, price_cache_parquet, alert_log_csv, snapshot_state_json) now resolve to `/data/curated/data_lake/`. The `# NOTE` comment in that yaml explicitly calls out the prior `/data/*` bug in past tense. Drive sync therefore captures danlongshort runtime state correctly. (Was previously listed as "fix pending" in this section; that note was stale.)
 - **`config_loader._p()`** accepts hardcoded absolute paths and resolves relative paths against `REPO_ROOT`, not `data_lake_root()`. Should be refactored to always use `data_lake_root()` for consistency.
 - **`--liquidity-gate` on OI**: the funding branch of `fetch_coinglass_data.py` has an optional Top-150 liquidity gate; the OI branch does not honor it. Decision pending on whether OI should apply the same gate (tradability reasoning is the same; leaving OI un-gated keeps it as a raw reference).
 - **Hyperliquid + Variational liquidations not covered** (CoinGlass feed limitation). Cross-venue `fact_liquidations` reflects centralized-exchange pressure only. If Hyperliquid execution grows materially for Apathy Bleed, consider direct Hyperliquid liquidation-feed ingestion as a parallel bronze table.
