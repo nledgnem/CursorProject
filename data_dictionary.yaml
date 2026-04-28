@@ -589,4 +589,1005 @@ fact_derivative_exchange_details:
     Same as fact_derivative_open_interest: decide deletion vs revival. Note that
     if revived, USD denomination would require joining with daily BTC price.
 
+# ------------------------------------------------------------------------------
+# Residue / orphan / frozen tables (added 2026-04-28)
+# ------------------------------------------------------------------------------
+# Production write map (verified 2026-04-28 by reading run_live_pipeline.py
+# and grepping to_parquet / to_csv calls in each pipeline step):
+#
+#   Step 0   fetch_high_priority_data.py:    fact_trending_searches,
+#                                            fact_category_market,
+#                                            fact_markets_snapshot,
+#                                            fact_exchange_volume_history
+#   Step 0.5 run_perp_listings_ingestion.py: perps_hyperliquid,
+#                                            perps_variational,
+#                                            perp_ticker_mapping,
+#                                            perp_coverage_summary
+#   Step 1   fetch_coinglass_data.py:        fact_funding,
+#                                            fact_open_interest,
+#                                            fact_liquidations
+#   Step 2   incremental_update.py:          fact_price, fact_marketcap,
+#                                            fact_volume
+#   Step 3   data_ingestion/btcdom_backfill.py:
+#                                            btcdom_reconstructed.csv
+#   Step 3.5 data_ingestion/build_silver_layer.py:
+#                                            silver_fact_price,
+#                                            silver_fact_marketcap,
+#                                            silver_fact_funding,
+#                                            silver_funding_cross_sectional_daily
+#
+# Tables present in the lake but NOT written by any of those steps are tagged
+# below. Each entry is intentionally minimal (status + use_instead + followup);
+# the per-metric expansion lives in the main entries above.
+#
+# Status enum:
+#   QUARANTINED_ORPHANED            producer script exists but is not invoked
+#                                   by run_live_pipeline.py; data is stale.
+#   FROZEN_TIER_LIMIT               producer is wired into the pipeline but the
+#                                   API endpoint 401s on current tier, so the
+#                                   file rarely (or never) advances.
+#   RESIDUE_PRODUCER_DECOMMISSIONED legacy producer (e.g. scripts/run_pipeline.py)
+#                                   no longer runs; file frozen at last run.
+#   RESIDUE_PENDING_CLEANUP         no producer found in the live tree and no
+#                                   live consumers found via grep; deletion
+#                                   candidate after a 2-week buffer.
+#   VERIFICATION_ONLY               not stale per se, kept as a calibration
+#                                   reference (e.g. binance_btcdom).
+#   STALE_PIPELINE_WRITES_NO_NEW_DATA
+#                                   Drive modifiedTime advances daily but the
+#                                   data inside has not advanced.
+#
+# Cleanup rule (Mads/Dan agreed): mark dead here first; single deletion commit
+# in ~2 weeks (target ~2026-05-12) so any hidden consumers surface before files
+# are removed.
+
+fact_derivative_volume:
+  status: QUARANTINED_ORPHANED
+  description: >
+    Sibling of fact_derivative_open_interest and fact_derivative_exchange_details;
+    same orphan provenance. Written by scripts/fetch_derivative_data.py which is
+    NOT invoked by run_live_pipeline.py (verified 2026-04-28).
+  do_not_use:
+    - reason: not refreshed by any production pipeline step
+    - reason: same provider as the other quarantined derivative tables (CoinGecko /derivatives)
+  use_instead: >
+    For per-asset perp volume on Binance perps: derive from fact_funding +
+    fact_open_interest joins, or from a future CoinGlass volume fetcher. No
+    per-venue volume fetcher exists in the live pipeline yet.
+  path: data/curated/data_lake/fact_derivative_volume.parquet
+  source: coingecko_derivatives_endpoint
+  size_kb_observed: 349
+  followup: >
+    Verify df['date'].max() to confirm staleness before the 2026-05-12 cleanup
+    commit. Decide deletion vs revival together with the other two quarantined
+    derivative tables (Mads-flagged 2026-04-27).
+
+fact_global_market:
+  status: RESIDUE_PENDING_CLEANUP
+  description: >
+    Single global market snapshot from CoinGecko /global. Written by
+    scripts/fetch_global_market_data.py (called from scripts/run_data_updates.py),
+    NEITHER of which is invoked by run_live_pipeline.py (verified 2026-04-28).
+  do_not_use:
+    - reason: no production producer wired into run_live_pipeline.py
+    - reason: single-snapshot file; replaced in practice by fact_global_market_history concept
+  use_instead: btcdom_reconstructed.csv (for macro/dominance signals)
+  path: data/curated/data_lake/fact_global_market.parquet
+  source: coingecko
+  size_kb_observed: 3.4
+  followup: "Verify no live consumers before 2026-05-12 cleanup commit."
+
+fact_global_market_history:
+  status: RESIDUE_PENDING_CLEANUP
+  description: >
+    Time series of global crypto market totals (mcap, volume) from CoinGecko.
+    Same producer/orphan story as fact_global_market.
+  do_not_use:
+    - reason: no production producer wired into run_live_pipeline.py
+  use_instead: btcdom_reconstructed.csv (for macro/dominance signals)
+  path: data/curated/data_lake/fact_global_market_history.parquet
+  source: coingecko
+  size_kb_observed: 5.6
+  followup: "Verify no live consumers before 2026-05-12 cleanup commit."
+
+fact_market_breadth:
+  status: RESIDUE_PENDING_CLEANUP
+  description: >
+    Aggregate market-breadth statistics. Written by
+    scripts/fetch_analyst_tier_data.py which is NOT invoked by
+    run_live_pipeline.py (verified 2026-04-28). Likely an Analyst-tier-era
+    artifact never re-wired after the tier downgrade to Basic.
+  do_not_use:
+    - reason: no production producer wired into run_live_pipeline.py
+    - reason: likely depended on Analyst-tier endpoints that 401 on Basic tier
+  use_instead: "no current production source for market breadth"
+  path: data/curated/data_lake/fact_market_breadth.parquet
+  source: coingecko (analyst-tier era)
+  size_kb_observed: 4.8
+  followup: "Verify no live consumers before 2026-05-12 cleanup commit."
+
+fact_exchange_volume:
+  status: RESIDUE_PENDING_CLEANUP
+  description: >
+    Per-exchange aggregate volume snapshot. Written by
+    scripts/fetch_analyst_tier_data.py and scripts/fetch_high_priority_data.py
+    in archived form -- the bare fact_exchange_volume.parquet (no _history
+    suffix) is NOT written by any to_parquet call in current Step 0
+    (verified by grep 2026-04-28: only fact_exchange_volume_history is written).
+  do_not_use:
+    - reason: no current pipeline writer
+  use_instead: fact_exchange_volume_history.parquet (also tier-limited; see below)
+  path: data/curated/data_lake/fact_exchange_volume.parquet
+  source: coingecko
+  size_kb_observed: 8.6
+  followup: "Verify no live consumers before 2026-05-12 cleanup commit."
+
+fact_exchange_volume_history:
+  status: FROZEN_TIER_LIMIT
+  description: >
+    Historical per-exchange volume time series. Written by
+    scripts/fetch_high_priority_data.py Step 0 (line 324 -- verified 2026-04-28),
+    but the underlying CoinGecko endpoint /exchanges/{id}/volume_chart/range
+    requires Analyst tier and 401s on the current Basic tier. The Step 0 wrapper
+    is non-fatal so the pipeline continues; the file rarely advances in practice.
+  do_not_use:
+    - reason: data does not advance on current CoinGecko Basic tier (401 on the endpoint)
+  use_instead: "no analyst-tier replacement currently in pipeline"
+  path: data/curated/data_lake/fact_exchange_volume_history.parquet
+  source: coingecko (analyst tier required)
+  size_kb_observed: 6.5
+  followup: >
+    Decide: re-ingest on a higher CoinGecko tier, switch to a CoinGlass-equivalent,
+    or accept staleness and document. See DATA_LAKE_CONTEXT.md §9 item 8.
+
+fact_exchange_tickers:
+  status: RESIDUE_PENDING_CLEANUP
+  description: >
+    Per-exchange ticker snapshot. Written by scripts/fetch_high_priority_data.py
+    in earlier versions but NOT in the current to_parquet path
+    (verified by grep 2026-04-28).
+  do_not_use:
+    - reason: no current pipeline writer
+  use_instead: "use dim_exchanges + per-table queries instead"
+  path: data/curated/data_lake/fact_exchange_tickers.parquet
+  source: coingecko
+  size_kb_observed: 21.8
+  followup: "Verify no live consumers before 2026-05-12 cleanup commit."
+
+dim_new_listings:
+  status: RESIDUE_PENDING_CLEANUP
+  description: >
+    Snapshot of recently-listed CoinGecko coins with onboard dates. Was written
+    by an Analyst-tier era flow; not in any current to_parquet path
+    (verified by grep 2026-04-28).
+  do_not_use:
+    - reason: no current pipeline writer
+  use_instead: dim_asset.parquet (canonical asset registry, refreshed live)
+  path: data/curated/data_lake/dim_new_listings.parquet
+  source: coingecko (analyst-tier era)
+  size_kb_observed: 8.3
+  followup: "Verify no live consumers before 2026-05-12 cleanup commit."
+
+fact_ohlc:
+  status: RESIDUE_PENDING_CLEANUP
+  description: >
+    OHLC candles for a small universe from CoinGecko /coins/{id}/ohlc.
+    Written by scripts/fetch_analyst_tier_data.py only (NOT in
+    run_live_pipeline.py); verified by grep 2026-04-28.
+  do_not_use:
+    - reason: no current pipeline writer
+    - reason: smaller universe than fact_price/fact_marketcap; not used downstream
+  use_instead: fact_price.parquet (close) or silver_fact_price.parquet
+  path: data/curated/data_lake/fact_ohlc.parquet
+  source: coingecko
+  size_kb_observed: 358
+  followup: "Verify no live consumers before 2026-05-12 cleanup commit."
+
+binance_btcdom:
+  status: VERIFICATION_ONLY
+  description: >
+    Pristine Binance BTCDOM index. Written by
+    scripts/audit_btcdom_assumption_ledger.py (research / calibration script,
+    NOT a daily pipeline step). Used to sanity-check btcdom_reconstructed.csv
+    at calibration time, NOT as a live modeling input.
+  do_not_use_as_feature: true
+  use_instead_for_modeling: btcdom_reconstructed.csv  # Step 3 of run_live_pipeline.py
+  path: data/curated/data_lake/binance_btcdom.csv
+  source: binance (research script)
+  size_kb_observed: 51
+  note: >
+    This is intentional residue, not pending cleanup. Keep as a calibration
+    reference; rebuild manually when btcdom_reconstructed math is changed.
+
+universe_eligibility:
+  status: RESIDUE_PRODUCER_DECOMMISSIONED
+  also_tag: STALE_PIPELINE_WRITES_NO_NEW_DATA
+  description: >
+    Per-coin eligibility flags (point-in-time membership gates). Producer is
+    src/universe/snapshot.py, invoked by scripts/run_pipeline.py -- NEITHER is
+    in run_live_pipeline.py (verified 2026-04-28). Last run timestamp under
+    outputs/runs/ is 20260106 (2026-01-06) which matches the observed
+    rebalance_date.max() of 2025-12-01 in the file.
+  observed_state_2026_04_28:
+    drive_modified_time: "2026-04-28T03:53:30Z (re-uploaded daily by gdrive_export.yaml -- misleading)"
+    rebalance_date_min: "2024-02-01"
+    rebalance_date_max: "2025-12-01"   # 5 months stale
+    unique_rebalance_dates: 23         # roughly monthly cadence
+    rows: 62491
+    columns: 26
+  do_not_use_as_live_gate: true
+  use_instead: >
+    Compute eligibility on-the-fly from fact_markets_snapshot + dim_instrument
+    + stablecoins.csv + provider filters; or wait until the producer is rewired
+    into run_live_pipeline.py.
+  path: /data/universe_eligibility.parquet  # NOT under /data/curated/data_lake/, but mirrored to Drive via gdrive_export.yaml::sources
+  source: src/universe/snapshot.py (decommissioned)
+  size_mb_observed: 1.02
+  why_drive_looks_fresh: >
+    configs/gdrive_export.yaml::sources lists universe_eligibility_parquet as a
+    static source -- the nightly export re-uploads /data/universe_eligibility.parquet
+    every run regardless of whether anything has been written to it. The file
+    itself was last produced on 2026-01-06 by the legacy run_pipeline.py.
+  followup: >
+    Decide: (a) re-wire the universe snapshot producer into run_live_pipeline.py
+    (likely as a Step 0.6 or Step 3.6), or (b) deprecate universe_eligibility.parquet
+    entirely and have downstream consumers compute eligibility on demand. Mads/Dan
+    decision pending.
+  columns_observed:
+    - rebalance_date  # object (string YYYY-MM-DD)
+    - snapshot_date
+    - symbol
+    - coingecko_id
+    - venue
+    - marketcap
+    - volume_14d
+    - has_price
+    - has_volume
+    - has_marketcap
+    - is_stablecoin
+    - is_blacklisted
+    - is_wrapped
+    - meets_provider_filters
+    - perp_eligible_proxy
+    - meets_age
+    - meets_listing_filters
+    - meets_liquidity
+    - meets_mcap
+    - eligible
+    - first_seen_date
+    - exclusion_reason
+    - data_proxy_label
+    - proxy_version  # observed value: "v0"
+    - proxy_source   # observed value: "binance_exchangeInfo"
+    - source         # observed value: "coingecko"
+
+# ==============================================================================
+# §4 PER-METRIC EXPANSION (added 2026-04-28)
+# ==============================================================================
+# All entries below were added or rewritten on 2026-04-28 by reading the
+# producer source code directly. Entries are grouped:
+#
+#   1. Silver tables (Step 3.5 of run_live_pipeline.py)
+#   2. Perp listings (Step 0.5 — perps_*, perp_*)
+#   3. Strategy outputs (msm_timeseries, btcdom_reconstructed, danlongshort_*)
+#   4. Dimension / mapping tables (compact stubs — refresh later)
+#   5. Other (single_coin_panel, stablecoins, fact_ohlc)
+#
+# Format follows the schema in CLAUDE_CODE_BRIEFING.md §4.1: every column
+# entry has type, unit, frequency, definition, gotchas. Tables high-touch
+# enough to deserve full per-column docs are at the top; lower-traffic
+# dim_* / map_* tables get one-paragraph stubs.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. SILVER TABLES (Step 3.5: scripts/data_ingestion/build_silver_layer.py)
+# ------------------------------------------------------------------------------
+
+silver_fact_price:
+  path: data/curated/data_lake/silver_fact_price.parquet
+  source:
+    derived_from: fact_price.parquet (CoinGecko bronze)
+    builder: scripts/data_ingestion/build_silver_layer.py::build_silver_fact_price
+  pipeline_step: "run_live_pipeline.py Step 3.5"
+  status: ALIVE-DAILY
+  primary_key: [asset_id, date]
+  grain: daily UTC
+  what_silver_adds:
+    - "Blacklist drop (blacklist.csv)"
+    - "Anomaly detection: 'Absolute Nuke', 'Standard Slingshot', 'Fat Slingshot' (T+2/T+3) -- price anomalies that flag an asset as winsorized at the affected dates"
+    - "Continuous daily reindex per asset_id (asfreq('D')) so gaps are explicit NaN"
+    - "is_winsorized flag added"
+    - "is_ffilled flag (forward-fill up to FFILL_LIMIT=3 days for narrow gaps)"
+  columns:
+    - name: asset_id
+      type: string
+      definition: "Canonical CoinGecko slug (matches dim_asset.coingecko_id)."
+    - name: date
+      type: date
+      unit: UTC_calendar_day
+      frequency: daily
+    - name: close
+      type: float
+      unit: USD_per_coin
+      frequency: daily
+      definition: "USD close. Cleaned via anomaly detection; blacklisted assets dropped."
+      gotchas:
+        - "Pre-2024 rows from the Analyst-tier era inherit the same suspect-quality caveat as bronze fact_price."
+        - "is_winsorized=True rows have close set to NaN (anomaly-flagged)."
+    - name: source
+      type: string
+      definition: "Provider tag; 'coingecko' for valid rows, NaN where winsorized."
+    - name: is_winsorized
+      type: bool
+      definition: "True when the date was flagged by the anomaly detector (Absolute Nuke / Standard Slingshot / Fat Slingshot)."
+    - name: is_ffilled
+      type: bool
+      definition: "True when close was filled from a prior date (FFILL_LIMIT=3 days)."
+  known_consumers:
+    - "Apathy Bleed monitoring (live mark-to-market joins)"
+    - "MSM strategy returns (msm_returns.compute_returns reads silver prices)"
+    - "single_coin_panel.csv generation"
+    - "Analytical notebooks under notebooks/"
+
+silver_fact_marketcap:
+  path: data/curated/data_lake/silver_fact_marketcap.parquet
+  source:
+    derived_from: fact_marketcap.parquet (CoinGecko bronze) + silver_fact_price.parquet (for implied-supply detection)
+    builder: scripts/data_ingestion/build_silver_layer.py::build_silver_fact_marketcap
+  pipeline_step: "run_live_pipeline.py Step 3.5"
+  status: ALIVE-DAILY
+  primary_key: [asset_id, date]
+  grain: daily UTC
+  what_silver_adds:
+    - "Blacklist drop"
+    - "Continuous daily reindex per asset_id"
+    - "Supply Slingshot detection: implied_supply = market_cap / silver_close. If implied_supply spikes >50% then crashes >33% within T+1..T+3, neutralize market_cap to NaN over the plateau (origin and crash days)."
+    - "is_winsorized flag added"
+  columns:
+    - name: asset_id
+      type: string
+    - name: date
+      type: date
+      unit: UTC_calendar_day
+    - name: market_cap
+      type: float
+      unit: USD
+      frequency: daily
+      definition: "Market cap, cleaned. Bronze 'marketcap' column renamed to 'market_cap' here."
+      gotchas:
+        - "NaN on Supply-Slingshot plateau dates (typically a CoinGecko upstream supply revision)."
+        - "Pre-2024 rows inherit the suspect-quality caveat from bronze."
+    - name: source
+      type: string
+    - name: is_winsorized
+      type: bool
+      definition: "True on Supply-Slingshot-affected dates."
+  known_consumers:
+    - "MSM universe selection (select_top_n_alts)"
+    - "Apathy Bleed Gate 3 (OI/mcap) candidate scoring"
+    - "Cross-sectional rank features in research notebooks"
+
+silver_fact_funding:
+  path: data/curated/data_lake/silver_fact_funding.parquet
+  source:
+    derived_from: fact_funding.parquet (CoinGlass bronze)
+    builder: scripts/data_ingestion/build_silver_layer.py::build_silver_fact_funding
+  pipeline_step: "run_live_pipeline.py Step 3.5"
+  status: ALIVE-DAILY
+  primary_key: [asset_id, instrument_id, exchange, date]
+  grain: daily UTC, per (asset, instrument, exchange)
+  what_silver_adds:
+    - "Bronze 'funding_rate' column renamed to 'funding_rate_raw_pct'"
+    - "Temporal harmonization: dates >= 2026-01-13 UTC are divided by 100 to convert percent units back to pure decimal. Result is uniform-decimal 8h funding."
+    - "Per-(asset, instrument, exchange) sort"
+    - "Asset coverage safeguard: raises if n_assets < 25 (sized for the Top-30 universe, now ~590 alts post-2026-04-22)"
+    - "Continuous daily reindex per (asset_id, instrument_id, exchange); forward-fill up to FFILL_LIMIT=3 days for narrow gaps"
+    - "is_ffilled and is_capped flags (is_capped is always False in current code -- reserved for future capping)"
+    - "Pandera SCHEMA validation before write (SILVER_FUNDING_SCHEMA)"
+  unit_invariant: |
+    All rows are pure-decimal 8-hour funding rates regardless of bronze date.
+    Annualization to APR uses x 1095 (= 365 days x 3 epochs/day). Convert to
+    percent by additionally x 100.
+  columns:
+    - name: asset_id
+      type: string
+      definition: "Canonical base asset symbol (uppercase: BTC, ETH, ARIA, etc.)."
+    - name: instrument_id
+      type: string
+      nullable: true
+      definition: "Joins to dim_instrument; nullable when mapping is incomplete."
+    - name: exchange
+      type: string
+      definition: "Exchange name (e.g. 'Binance')."
+    - name: date
+      type: date
+      unit: UTC_calendar_day
+      frequency: daily
+    - name: funding_rate_raw_pct
+      type: float
+      unit: decimal_8h_fraction
+      frequency: daily
+      definition: |
+        UNIFORM 8-hour funding rate as a pure decimal fraction
+        (0.0001 = 0.01% per 8-hours = 0.10% per day = 36.5% APR).
+        Bronze cutover is resolved here: pre-2026-01-13 values were already
+        decimal; post-cutover values are bronze/100.
+      gotchas:
+        - "Despite the name '_raw_pct', the values are decimals (NOT percents). The suffix is an artifact of legacy naming."
+        - "ALWAYS use this column, not bronze fact_funding.funding_rate, for any analysis."
+    - name: source
+      type: string
+      definition: "'coinglass' for primary rows; NaN-then-ffilled rows inherit ffill source."
+    - name: is_ffilled
+      type: bool
+      definition: "True when funding was forward-filled to bridge a <=3-day gap. Use to mask if you need only first-hand observations."
+    - name: is_capped
+      type: bool
+      definition: "Reserved for future absolute-cap logic; always False in current code."
+  known_consumers:
+    - "build_silver_layer.py -> silver_funding_cross_sectional_daily (downstream silver/gold)"
+    - "MSM strategy F_tk feature (compute_7d_mean_funding)"
+    - "Funding-sensitive notebooks under notebooks/"
+    - "Apathy Bleed Gate 4 (funding regime) -- under development"
+
+silver_funding_cross_sectional_daily:
+  path: data/curated/data_lake/silver_funding_cross_sectional_daily.parquet
+  source:
+    derived_from: silver_fact_funding.parquet
+    builder: majors_alts_monitor/msm_funding_v0/macro_environment.py::build_daily_environment_table
+    invoked_by: scripts/data_ingestion/build_silver_layer.py (Step 3.5)
+  pipeline_step: "run_live_pipeline.py Step 3.5"
+  status: ALIVE-DAILY
+  primary_key: [date]            # single time series, NOT per-asset
+  grain: daily UTC, single time series
+  observed_2026_04_28:
+    rows: 1105
+    date_range: "2023-04-19 -> 2026-04-27"
+  universe:
+    description: |
+      Cross-section is whatever's in silver_fact_funding -- by default the
+      CoinGlass Binance-perp universe (~590 alts after the 2026-04-22 expansion;
+      ~30 prior). NO explicit BTC exclusion. NO stablecoin filter. NO low-volume
+      gate at this layer. The IQM aggregation (drops top/bottom n//4) provides
+      robustness to outliers without an explicit filter.
+    pre_aggregation:
+      step: "_collapse_funding_to_asset_daily"
+      definition: "For each (date, asset_id), MEAN of all 8h funding observations that day. Output: one harmonized rate per (date, asset_id)."
+  columns:
+    - name: date
+      type: datetime
+      unit: UTC_calendar_day
+      frequency: daily
+    - name: env_rate_dec
+      type: float
+      unit: decimal_8h_fraction
+      frequency: daily
+      definition: |
+        Per-day TRUNCATED INTERQUARTILE MEAN (IQM) across the cross-section
+        of asset-level harmonized 8h rates. Trim algorithm: sort rates, drop
+        top n//4 and bottom n//4, return mean of the middle. NaN if n=0;
+        plain mean if n//4 == 0.
+      gotchas:
+        - "Pure-decimal 8h units. Multiply by 1095*100 to compare to Environment_APR_daily_pct."
+    - name: Environment_APR_daily_pct
+      type: float
+      unit: percentage_points_APR
+      frequency: daily
+      definition: |
+        env_rate_dec * 1095 * 100. Annualization assumes 3 funding epochs
+        per day x 365 days/year. Output is in PERCENTAGE POINTS (e.g. 4.0 = 4%
+        APR), so it can be compared directly to threshold constants like
+        ENVIRONMENT_APR_ENTRY_GATE_PCT in src/macro_regime/gate_policy.py.
+      gotchas:
+        - "Despite the column name 'daily_pct', this is an ANNUALIZED APR sampled daily. Naming is historical."
+    - name: Fragmentation_Spread
+      type: float
+      unit: decimal_8h_fraction
+      frequency: daily
+      definition: |
+        Per-day q75 - q25 of the asset-level harmonized 8h rates (the same
+        cross-section used for env_rate_dec, BEFORE the IQM trim). Quantile
+        method: NAIVE INDEX (rates[int(n*0.25)] / rates[int(n*0.75)]) -- not
+        interpolated. Returns NaN when n_assets < 4 that day. Pure-decimal 8h
+        units (matches src/macro_regime/gate_policy.py contract:
+        FRAGMENTATION_IDIOSYNCRATIC_TOXIC_CEILING is on the same scale).
+      gotchas:
+        - "Same scale as env_rate_dec (decimal 8h), NOT annualized."
+        - "Naive-index quantile means small basket sizes can give jumpy spreads."
+    - name: Z_Score_90d
+      type: float
+      unit: zscore
+      frequency: daily
+      definition: |
+        Rolling 90-day z-score of Environment_APR_daily_pct (NOT env_rate_dec).
+        Window=90, min_periods=30. First 30 rows after a fresh start are NaN.
+        Formula: (s - rolling_mean) / rolling_std.
+  known_consumers:
+    - "General Regime Monitor / 3-Factor Gate (src/macro_regime/gate_policy.py)"
+    - "MSM strategy weekly_lookback_means (when the strategy is active)"
+    - "Dashboard regime stance computation"
+    - "Paused MSM strategy used to consume Environment_APR_daily_pct + Fragmentation_Spread; the daily macro feed is still alive even though the weekly strategy is paused."
+
+# ------------------------------------------------------------------------------
+# 2. PERP LISTINGS (Step 0.5: scripts/run_perp_listings_ingestion.py
+#    -> src/data_lake/perp_listings.py::run_daily_perp_ingestion)
+# ------------------------------------------------------------------------------
+
+perps_hyperliquid:
+  path: data/curated/data_lake/perps_hyperliquid.csv
+  source:
+    provider: Hyperliquid public /info endpoint
+    api_method: POST
+    api_payload: {type: "meta"}
+    config: configs/perp_listings.yaml::hyperliquid
+  ingestion_script: src/data_lake/perp_listings.py
+  pipeline_step: "run_live_pipeline.py Step 0.5"
+  status: ALIVE-DAILY
+  grain: append-only daily snapshot (one row per perp listing per snapshot date)
+  size_observed_kb: 227
+  columns:
+    - name: snapshot_date
+      type: string
+      unit: UTC_calendar_day_iso
+      definition: "ISO-8601 date the snapshot was taken."
+    - name: ticker
+      type: string
+      definition: "Hyperliquid perp ticker (uppercase, no quote suffix)."
+    - name: ticker_normalized
+      type: string
+      definition: "Lowercased + suffix/prefix stripped per perp_listings.yaml::ticker_normalization rules. Used for cross-venue join."
+    - name: raw_metadata_json
+      type: string
+      unit: json_blob
+      definition: |
+        Raw Hyperliquid /info meta response per asset: contains contract
+        specs (szDecimals, maxLeverage, etc.), NOT live OI/funding/mark.
+        For live state on Hyperliquid, query the /info endpoint at read time;
+        the daily snapshot is a STATIC contract registry.
+      gotchas:
+        - "Unlike perps_variational, raw_metadata_json on Hyperliquid does NOT carry live mark/OI/funding. Don't try to derive a price from it."
+  known_consumers:
+    - "Apathy Bleed perp_eligibility checks (does ticker exist on Hyperliquid as a tradable perp?)"
+    - "perp_coverage_summary build (cross-venue listing matrix)"
+
+perps_variational:
+  path: data/curated/data_lake/perps_variational.csv
+  source:
+    provider: Variational public /metadata/stats
+    api_method: GET
+    config: configs/perp_listings.yaml::variational
+  ingestion_script: src/data_lake/perp_listings.py
+  pipeline_step: "run_live_pipeline.py Step 0.5"
+  status: ALIVE-DAILY
+  grain: append-only daily snapshot
+  size_observed_kb: 2521
+  columns:
+    - name: snapshot_date
+      type: string
+      unit: UTC_calendar_day_iso
+    - name: ticker
+      type: string
+    - name: ticker_normalized
+      type: string
+    - name: raw_metadata_json
+      type: string
+      unit: json_blob
+      definition: |
+        Rich live snapshot per perp from Variational. Expected fields based on
+        prior parser (parser correctness pending re-verification post-refactor):
+          mark_price, volume_24h,
+          open_interest.long_open_interest, open_interest.short_open_interest,
+          funding_rate, quotes.base.bid, quotes.base.ask
+      gotchas:
+        - "JSON blob -- parse before joining. Schema may evolve with Variational API changes; do not assume keys are stable."
+        - "Apathy Bleed live monitoring uses this as the price source for Variational-listed positions."
+  known_consumers:
+    - "scripts/apathy_alert_runner.py (live mark for Apathy positions on Variational)"
+    - "perp_coverage_summary build"
+  followup: "Re-verify the raw_metadata_json parser against current Variational responses; document each top-level key here."
+
+perp_ticker_mapping:
+  path: data/curated/data_lake/perp_ticker_mapping.csv
+  source: derived_from perps_hyperliquid + perps_variational + dim_instrument (Binance perp registry)
+  ingestion_script: src/data_lake/perp_listings.py
+  pipeline_step: "run_live_pipeline.py Step 0.5"
+  status: ALIVE-DAILY
+  grain: one row per (canonical_ticker, source_venue, source_ticker)
+  size_observed_kb: 16
+  description: >
+    Cross-venue ticker resolution table. Maps the canonical Apathy/MSM ticker
+    (e.g. "ARIA") to the venue-specific symbol on each of Binance perp,
+    Hyperliquid, Variational. Built from the normalized tickers in the perps_*
+    snapshots. This is the join key for "is this coin tradable on venue X?"
+    questions.
+  known_consumers:
+    - "Apathy Bleed pre-trade scanner (does this candidate exist on at least one tradable venue?)"
+    - "perp_coverage_summary"
+    - "Live monitoring price-source selection"
+
+perp_coverage_summary:
+  path: data/curated/data_lake/perp_coverage_summary.csv
+  source: derived_from perp_ticker_mapping
+  ingestion_script: src/data_lake/perp_listings.py
+  pipeline_step: "run_live_pipeline.py Step 0.5"
+  status: ALIVE-DAILY
+  grain: one row per (snapshot_date, canonical_ticker)
+  size_observed_kb: 631
+  description: >
+    Cross-venue presence flags per ticker per day: which of {Binance perp,
+    Hyperliquid, Variational} list the asset on this snapshot date. Used as a
+    fast lookup for "where can we trade this?" without re-parsing the
+    underlying perps_* CSVs.
+  known_consumers:
+    - "Dashboards"
+    - "Apathy Bleed eligibility filters"
+
+# ------------------------------------------------------------------------------
+# 3. STRATEGY OUTPUTS
+# ------------------------------------------------------------------------------
+
+msm_timeseries:
+  path: /data/exports/msm_timeseries.csv  # NOT under /data/curated/data_lake/, but mirrored to Drive via gdrive_export.yaml::sources
+  source:
+    builder: majors_alts_monitor/msm_funding_v0/msm_run.py + msm_outputs.py
+  pipeline_step: "run_live_pipeline.py Step 4 (paused since 2024-12-30)"
+  status: PAUSED   # strategy not running; file is the last good gold output
+  primary_key: [decision_date]
+  grain: weekly (Monday decision_date, next_date 7 days later)
+  observed_2026_04_28:
+    rows: 48
+    date_range: "decision_date 2024-02-05 -> 2024-12-30 (last next_date 2024-12-31)"
+    size_kb: 21.7
+  schema_drift_note: |
+    The CSV in Drive was last produced 2024-12-30 against an older code base.
+    Current msm_outputs.py defines additional columns
+    (F_tk_apr, Environment_APR, Fragmentation_Spread, Z_Score_90d, Delta_APR,
+    LogModulus_APR, Conditioned_Momentum, w_risk) that would appear if the
+    strategy were re-run today. The columns documented below are exactly the
+    16 in the historical CSV.
+  columns:
+    - name: decision_date
+      type: date
+      unit: UTC_calendar_day
+      definition: "Monday t_k -- weekly basket-formation decision."
+    - name: next_date
+      type: date
+      unit: UTC_calendar_day
+      definition: "Following Monday t_{k+1}. Realized return window is [decision_date, next_date]."
+    - name: basket_hash
+      type: string
+      definition: |
+        ",".join(sorted(asset_ids)) -- alphabetized member list used as a
+        deterministic identity key for caching. NOT a cryptographic hash
+        despite the name. Source: majors_alts_monitor/msm_funding_v0/msm_universe.py::get_universe_hash.
+    - name: basket_members
+      type: string
+      definition: |
+        ",".join(asset_ids) preserving the order from select_top_n_alts:
+        TOP-N BY MARKETCAP DESCENDING. So basket_members[0] is the largest
+        cap in the basket (typically XRP / STETH / ADA in the early period).
+        Same set as basket_hash, different ordering.
+    - name: n_valid
+      type: int
+      definition: |
+        Number of assets in the basket with valid funding observations in the
+        7-day lookback window prior to decision_date. Source:
+        msm_feature.compute_7d_mean_funding.
+    - name: coverage
+      type: float
+      unit: percent
+      definition: |
+        n_valid / target_basket_size * 100. Target = 30 in v0
+        (verified empirically: n_valid=27 -> coverage=90.0).
+    - name: F_tk
+      type: float
+      unit: decimal_8h_fraction
+      definition: |
+        Equal-weight basket feature. For each asset: mean of its 8h funding
+        observations over [decision_date - 7d, decision_date - 1d]
+        (PiT-safe, EXCLUSIVE of decision_date). Then mean across the basket.
+        For multi-instrument-per-asset days, average by date first, then mean.
+        Coverage rule: requires >=60% of basket assets to have valid funding,
+        else None. Source: majors_alts_monitor/msm_funding_v0/msm_feature.py::compute_7d_mean_funding.
+      gotchas:
+        - "Pure-decimal 8h units (multiply by 1095*100 to express as APR percent)."
+        - "Look-back is 7 calendar days, not 7 8h epochs."
+    - name: label_v0_0
+      type: string
+      enum: [Red, Orange, Yellow, YellowGreen, Green]
+      definition: |
+        FULL_SAMPLE percentile-bin label for F_tk. Bins are computed across ALL
+        weeks in the dataset using percentile cutpoints [0,20,40,60,80,100]
+        (half-open intervals [min, max), last bin inclusive [min, max]).
+        EXPLORATORY ONLY -- has look-ahead bias because future weeks
+        contribute to the percentile thresholds. Source: msm_label.compute_labels_v0_0.
+    - name: label_v0_1
+      type: string
+      enum: [Red, Orange, Yellow, YellowGreen, Green, null]
+      definition: |
+        ROLLING_PAST_52W percentile-bin label for F_tk. Same bin schema as v0_0
+        but thresholds computed from prior 52 valid weeks only (PiT-safe).
+        EMPTY in the historical CSV because the dataset only has 48 weeks --
+        never reaches the 52-week minimum. Would populate if the strategy
+        re-ran with >= 52 weeks of history. Source: msm_label.compute_labels_v0_1.
+      gotchas:
+        - "ALL ROWS NULL in current CSV. NOT a bug -- intentional NA when prior history < 52 weeks."
+    - name: p_v0_0
+      type: float
+      unit: percentile_rank_0_to_100
+      definition: |
+        Percentile rank of F_tk within the FULL_SAMPLE distribution, on a
+        0-100 scale (NOT 0-1). Has the same look-ahead caveat as label_v0_0.
+        Source: msm_label.compute_percentile_rank.
+    - name: p_v0_1
+      type: float
+      unit: percentile_rank_0_to_100
+      definition: "Percentile rank within ROLLING_PAST_52W. Empty in historical CSV (same reason as label_v0_1)."
+    - name: r_alts
+      type: float
+      unit: weekly_simple_return_decimal
+      definition: |
+        Equal-weight mean of per-alt simple arithmetic returns over
+        [decision_date, next_date] using asof close pricing. Variance Shield:
+        if n_valid_alts < 20 (out of 30 target), week is "aborted" and
+        downstream y is forced to 0 (r_alts itself may be NaN in that case).
+        Source: msm_returns.compute_returns.
+    - name: r_maj_weighted
+      type: float
+      unit: weekly_simple_return_decimal
+      definition: |
+        Sum of weight_i * r_major_i over the configured majors (e.g.
+        BTC weight 0.7 + ETH weight 0.3 in v0). NaN if any major is missing.
+    - name: y
+      type: float
+      unit: weekly_return
+      definition: |
+        DOC vs DATA DIVERGENCE -- read carefully:
+        * In the historical msm_timeseries.csv (paused 2024-12-30), y is the
+          ARITHMETIC SPREAD: y = r_maj_weighted - r_alts. Verified empirically
+          on every row to 12 decimals.
+        * The CURRENT msm_returns.py code defines y = ln(1 + (r_maj_weighted - r_alts))
+          (msm_returns.py:189) per the assumption ledger fix. The code was
+          changed AFTER the strategy paused; if the strategy is re-run, y will
+          shift from arithmetic-spread to log-spread.
+        Negative y means the strategy LOST that week (alts beat majors); long
+        majors / short alts is the implicit position.
+      gotchas:
+        - "If you see y in the CSV, treat as ARITHMETIC spread. If you re-run the strategy, expect LOG spread."
+    - name: r_btc
+      type: float
+      unit: weekly_simple_return_decimal
+      definition: "Simple return BTC over [decision_date, next_date], asof pricing."
+    - name: r_eth
+      type: float
+      unit: weekly_simple_return_decimal
+      definition: "Simple return ETH over [decision_date, next_date], asof pricing."
+  known_consumers:
+    - "Historical research notebooks under notebooks/"
+    - "MSM equity curve generation (scripts/generate_equity_curve_comparison.py et al.)"
+    - "External AI sessions reading msm_timeseries.csv from Drive"
+  audit_trail_note: >
+    The PiT audit trail (per-week run receipts, baskets, sensor snapshots)
+    lives under reports/msm_funding_v0/ on the Render disk only -- NOT mirrored
+    to Drive. Decision pending on whether to selectively mirror.
+
+btcdom_reconstructed:
+  path: data/curated/data_lake/btcdom_reconstructed.csv
+  source:
+    builder: scripts/data_ingestion/btcdom_backfill.py
+  pipeline_step: "run_live_pipeline.py Step 3"
+  status: ALIVE-DAILY
+  primary_key: [date]
+  grain: daily UTC
+  description: >
+    Reconstructed BTC dominance index. The "primary macro signal" used by
+    downstream regime work. Sanity bound: reconstructed_index_value < 6000
+    (Rule 9 of analysis rules). Sister file binance_btcdom.csv is the pristine
+    Binance series used for verification only -- this reconstructed series is
+    the modeling feature.
+  size_observed_kb: 43
+  columns:
+    - name: date
+      type: date
+      unit: UTC_calendar_day
+    - name: reconstructed_index_value
+      type: float
+      definition: "Reconstructed BTCDOM index. Refer to scripts/data_ingestion/btcdom_backfill.py for the exact reconstruction formula."
+      gotchas:
+        - "Apply sanity bound `< 6000` before any regression / heatmap."
+  known_consumers:
+    - "Macro regime monitor"
+    - "MSM strategy when running (BTC dominance regime gate)"
+    - "Dashboards"
+  followup: "Document the exact reconstruction formula here once btcdom_backfill.py is read in detail."
+
+danlongshort_positions:
+  path: /data/curated/data_lake/danlongshort_positions.csv  # canonical path matches configs/danlongshort_alerts.yaml
+  source: manual entry via PM-side scripts and the Telegram bot (scripts/danlongshort_bot.py)
+  status: LIVE_MANUAL_LEDGER
+  grain: one row per OPEN position
+  description: >
+    Live manual position ledger for the danlongshort beta-neutral long/short
+    strategy. Append/remove via scripts/danlongshort_*.py and the Telegram bot;
+    do not edit by hand. Beta computation in src/danlongshort/portfolio.py
+    consumes this file.
+  columns:
+    - name: ticker
+      type: string
+      definition: "Uppercase Binance perp base symbol (e.g. BTC, ARIA)."
+    - name: side
+      type: string
+      enum: [LONG, SHORT]
+    - name: notional_usd
+      type: float
+      unit: USD
+      definition: "USD notional sized at entry."
+    - name: entry_price
+      type: float
+      unit: USD_per_coin
+      nullable: true
+      definition: "Optional explicit entry price; blank means the bot used the live mark at entry."
+    - name: entry_date
+      type: string
+      unit: UTC_calendar_day_iso
+      definition: "Defaults to UTC date on insert if not provided."
+  source_code: src/danlongshort/storage.py::POSITIONS_FIELDS
+  known_consumers:
+    - "scripts/danlongshort_alert_runner.py (alerts)"
+    - "scripts/danlongshort_bot.py (Telegram queries)"
+    - "dashboards/pages/2_danlongshort.py"
+  open_questions:
+    - "Path note: see DATA_LAKE_CONTEXT.md §13 -- danlongshort_* paths previously sat at /data/* (outside the lake) and were not in Drive sync; fix pending."
+
+danlongshort_alert_log:
+  path: /data/curated/data_lake/danlongshort_alert_log.csv
+  source: scripts/danlongshort_alert_runner.py via src/danlongshort/alert_ops.py
+  status: LIVE_APPEND_ONLY
+  grain: one row per fired alert
+  description: "Append-only audit of every Telegram alert emitted by the danlongshort runner. Used for dedup verification and post-mortem."
+  columns:
+    - name: timestamp_utc
+      type: string
+      definition: "ISO-8601 UTC."
+    - name: alert_type
+      type: string
+    - name: dedup_bucket
+      type: string
+      definition: "Key used to suppress duplicate alerts within a window."
+    - name: message
+      type: string
+      definition: "Single-line text copy of alert body."
+  source_code: src/danlongshort/alert_ops.py::ALERT_LOG_FIELDS
+
+danlongshort_price_cache:
+  path: /data/curated/data_lake/danlongshort_price_cache.parquet
+  source: CoinGecko (default) -- 30-day close cache. Fetched by src/danlongshort/portfolio.py::fetch_30d_closes_usd.
+  status: LIVE_CACHE
+  grain: one row per (date, ticker)
+  description: >
+    Rolling 30-day close cache used as input to the BTC-beta regression that
+    sizes the BTC hedge leg. Freshness gate: stale > 12 hours triggers refresh.
+    Open architecture question (see STRATEGIES.md): switch from CoinGecko to
+    Binance USD-M perp klines via CCXT -- saves ~700-1500 CG credits/month and
+    aligns the regression with what is actually being traded; side effect is
+    beta values shift by ~0.05 for majors, up to ~0.15 for smaller alts.
+  columns:
+    - name: date
+      type: date
+      unit: UTC_calendar_day
+    - name: ticker
+      type: string
+    - name: close_usd
+      type: float
+      unit: USD_per_coin
+
+danlongshort_state_jsons:
+  description: |
+    Runner / bot state sidecars (JSON), one per concern. Backed up to Drive
+    as of 2026-04-27 via the *.json sync_patterns addition.
+  files:
+    - path: /data/curated/data_lake/danlongshort_snapshot_state.json
+      definition: "Last daily snapshot UTC day for the danlongshort runner."
+    - path: /data/curated/data_lake/danlongshort_bot_state.json
+      definition: "Telegram bot state (last update_id processed, etc.)."
+
+# ------------------------------------------------------------------------------
+# 4. DIMENSION + MAPPING TABLES (compact stubs -- expand as needed)
+# ------------------------------------------------------------------------------
+
+dim_asset:
+  path: data/curated/data_lake/dim_asset.parquet
+  source: CoinGecko + manual curation
+  status: ALIVE   # refreshed by various ingestion paths; canonical asset registry
+  grain: one row per canonical asset
+  size_observed_kb: 106
+  description: >
+    Canonical asset registry. Maps canonical asset_id (uppercase ticker for
+    perp-side, CoinGecko slug for fact_price/fact_marketcap) to display name,
+    coingecko_id, symbol, and category tags (is_stable, etc.).
+  primary_keys_observed: [asset_id]
+  consumers:
+    - "fact_price / fact_marketcap (asset_id key)"
+    - "MSM universe selection"
+    - "ticker resolution (symbol <-> coingecko_id)"
+  followup: "Document full column list once a fresh schema read is done."
+
+dim_instrument:
+  path: data/curated/data_lake/dim_instrument.parquet
+  source: Binance exchangeInfo + curated mapping
+  status: ALIVE
+  grain: one row per perp instrument
+  size_observed_kb: 28
+  description: >
+    Perp-instrument registry: instrument_id, exchange, base, quote,
+    asset_id join. Used by silver_fact_funding to resolve the Binance perp
+    symbol on the funding feed back to the canonical asset_id.
+
+dim_exchanges:
+  path: data/curated/data_lake/dim_exchanges.parquet
+  status: ALIVE
+  size_observed_kb: 35
+  description: "Spot exchange registry. Used by reporting/dashboards."
+
+dim_derivative_exchanges:
+  path: data/curated/data_lake/dim_derivative_exchanges.parquet
+  status: ALIVE
+  size_observed_kb: 4
+  description: "Derivatives exchange registry. Smaller than dim_exchanges; used to look up derivative-venue metadata."
+
+dim_categories:
+  path: data/curated/data_lake/dim_categories.parquet
+  status: ALIVE
+  size_observed_kb: 13
+  description: "CoinGecko categories (layer-1, defi, memes, etc.). Joined via map_category_asset to attach category tags to assets."
+
+map_provider_asset:
+  path: data/curated/data_lake/map_provider_asset.parquet
+  status: ALIVE
+  size_observed_kb: 43
+  description: "Provider-specific ticker -> canonical asset_id mapping. The bridge between (e.g.) CoinGlass tickers and dim_asset."
+
+map_provider_instrument:
+  path: data/curated/data_lake/map_provider_instrument.parquet
+  status: ALIVE
+  size_observed_kb: 15
+  description: "Provider -> instrument_id mapping. Sister table to map_provider_asset for instruments."
+
+map_category_asset:
+  path: data/curated/data_lake/map_category_asset.parquet
+  status: ALIVE
+  size_observed_kb: 19
+  description: "Many-to-many join: dim_categories <-> dim_asset."
+
+# ------------------------------------------------------------------------------
+# 5. OTHER (single_coin_panel, stablecoins -- compact)
+# ------------------------------------------------------------------------------
+
+single_coin_panel:
+  path: /data/single_coin_panel.csv  # NOT under /data/curated/data_lake/, mirrored via gdrive_export.yaml::sources
+  source:
+    builder: scripts/generate_single_coin_panel.py
+    invoked_by: src/exports/panel_generation.py (once per UTC day, dedup marker .last_single_coin_panel_utc_day)
+  status: ALIVE-DAILY
+  grain: denormalized per-(coin, date) panel
+  size_observed_mb: 5.0
+  description: >
+    Denormalized per-coin panel for quick ad-hoc analysis. Joins price,
+    marketcap, volume, funding, OI, liquidations onto a single wide table.
+    Rebuilt once per UTC day. Convenience output -- not authoritative; for
+    analysis, prefer reading the underlying silver tables.
+  followup: "Document column list once the generator output is re-inspected."
+
+stablecoins:
+  path: data/curated/data_lake/stablecoins.csv
+  source: curated, seeded from repo
+  status: STATIC
+  grain: one row per stablecoin asset_id
+  size_observed_kb: 2
+  description: "Curated stablecoin exclusion list. Used by MSM universe selection and other filtering. Maintain by hand."
+
+# ------------------------------------------------------------------------------
+# 6. fact_ohlc -- already tagged RESIDUE_PENDING_CLEANUP above
+#    (see Residue / orphan section). No expanded entry needed.
+# ------------------------------------------------------------------------------
 
