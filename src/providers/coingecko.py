@@ -6,11 +6,55 @@ import time
 import requests
 from datetime import datetime, date, timedelta, timezone
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 import pandas as pd
 
 COINGECKO_BASE = "https://pro-api.coingecko.com/api/v3"
 COINGECKO_API_KEY = os.environ.get("COINGECKO_API_KEY", "")  # Set in env; never commit keys
+
+# CoinGecko Pro returns this error_code in the body of a 429 response when the
+# account's monthly credit cap is exhausted (distinct from per-minute rate limits,
+# which lack this code and clear within seconds). See:
+#   - 2026-04-26 .. 2026-04-28 incident: silent staleness for ~2 days because the
+#     generic 429 backoff treated cap exhaustion the same as a transient rate limit.
+_CG_MONTHLY_CREDIT_EXHAUSTED_CODE = 10006
+
+
+class CoinGeckoMonthlyCreditExhausted(RuntimeError):
+    """
+    Raised when CoinGecko Pro returns a 429 with error_code 10006.
+
+    Distinct from per-minute rate limiting: monthly cap exhaustion does NOT clear
+    within the lifetime of a retry loop, so callers should fail fast rather than
+    burning wall-clock retrying indefinitely. Bubbling a named class also lets
+    operators see the actual cause in Telegram alerts and Render logs instead of
+    a generic 'Universe empty' or silently-empty fact-table-update.
+    """
+
+    def __init__(self, message: str, error_payload: Optional[Dict[str, Any]] = None):
+        super().__init__(message)
+        self.error_payload = dict(error_payload or {})
+
+
+def _maybe_raise_monthly_credit_exhausted(resp: requests.Response) -> None:
+    """
+    Inspect a 429 response body for error_code 10006 and raise the named
+    exception if present. Other 429s (per-minute rate limits) return normally
+    so the caller's existing retry/backoff logic keeps working.
+    """
+    if resp.status_code != 429:
+        return
+    try:
+        body = resp.json()
+    except Exception:
+        return  # Non-JSON 429: treat as transient.
+    status = (body or {}).get("status") or {}
+    if status.get("error_code") == _CG_MONTHLY_CREDIT_EXHAUSTED_CODE:
+        msg = status.get("error_message") or "monthly credit cap reached"
+        raise CoinGeckoMonthlyCreditExhausted(
+            f"CoinGecko monthly credit cap exhausted: {msg}",
+            error_payload=status,
+        )
 
 
 def get_coingecko_api_key() -> str:
@@ -25,6 +69,11 @@ def coingecko_v3_get(path: str, params: Dict) -> requests.Response:
     Auth pattern matches `fetch_price_history`:
     - If a key is present, include `x_cg_pro_api_key` in query params.
     - If absent, omit the key param (still targets Pro base URL).
+
+    Raises:
+        CoinGeckoMonthlyCreditExhausted: when the response is a 429 with
+            error_code 10006. Other 429s pass through for the caller to handle
+            (typically with their own retry/backoff loop).
     """
     url = f"{COINGECKO_BASE}{path}"
     merged: Dict = dict(params or {})
@@ -32,7 +81,9 @@ def coingecko_v3_get(path: str, params: Dict) -> requests.Response:
     if key:
         merged["x_cg_pro_api_key"] = key
 
-    return requests.get(url, params=merged, timeout=30, proxies={"http": None, "https": None})
+    resp = requests.get(url, params=merged, timeout=30, proxies={"http": None, "https": None})
+    _maybe_raise_monthly_credit_exhausted(resp)
+    return resp
 
 
 def _repo_root() -> Path:
@@ -150,6 +201,10 @@ def fetch_price_history(
                 return {}, {}, {}
             
             elif resp.status_code == 429:
+                # Distinguish monthly cap exhaustion (10006) from per-minute rate
+                # limit. The former does NOT clear in seconds and burning the retry
+                # budget on it just delays the visible failure by ~10 minutes.
+                _maybe_raise_monthly_credit_exhausted(resp)
                 print(f"[WARN] Rate limited for {coingecko_id} (429). Backing off for {delay:.1f}s...")
                 time.sleep(delay)
                 delay *= 2.0

@@ -180,11 +180,35 @@ def main() -> None:
             logging.info("Live pipeline (%s): %s", reason, " ".join(_pipeline_cmd()))
             try:
                 subprocess.run(_pipeline_cmd(), cwd=str(REPO_ROOT), check=True)
-            except subprocess.CalledProcessError:
+            except subprocess.CalledProcessError as e:
                 logging.error(
                     "Live pipeline failed (%s). Dashboard remains online using last known state.",
                     reason,
                 )
+                # Telegram alert: a CalledProcessError here means a fatal step in
+                # run_live_pipeline.py exited non-zero (Step 1/2/3/3.5/4). Without
+                # this, silent staleness goes unnoticed -- which is exactly what
+                # happened during the 2026-04-26 .. 2026-04-28 CoinGecko credit-cap
+                # incident (Step 2 silently 'succeeded' with zero new rows for 2
+                # days before anyone noticed). We do NOT capture stdout/stderr
+                # here -- the pipeline is long-running and Render's log stream
+                # is the right place for the full traceback. The alert just
+                # surfaces that something failed and points to the logs.
+                try:
+                    from src.notifications.telegram_client import send_telegram_text
+
+                    today_utc = _utc_now().date().isoformat()
+                    send_telegram_text(
+                        f"\u26a0\ufe0f Live pipeline FAILED [{today_utc} UTC] ({reason})\n"
+                        f"exit={e.returncode}\n"
+                        f"Strategy will not advance until this is resolved. "
+                        f"Check Render logs for the failing step's traceback. "
+                        f"Common causes: CoinGecko credit cap (Step 2), "
+                        f"CoinGlass outage (Step 1), silver build failure (Step 3.5)."
+                    )
+                except Exception:
+                    # Telegram itself failed; we've already logged the pipeline error.
+                    logging.exception("Failed to send Telegram alert about pipeline failure.")
                 raise
             except Exception:
                 logging.exception(

@@ -105,7 +105,12 @@ def run(*, repo_root: Optional[Path] = None) -> PanelGenerationResult:
     cmd = _panel_cmd(root)
     logger.info("[PANEL] starting panel generation: %s", " ".join(cmd))
     try:
-        subprocess.run(cmd, cwd=str(root), check=True)
+        # capture_output=True so the operator gets a clear Telegram alert with
+        # the actual child-process exception (e.g. CoinGeckoMonthlyCreditExhausted)
+        # in the failure path. Trade-off: stdout/stderr no longer inherits to
+        # Render logs in real-time, but the panel script is short (a few minutes
+        # at most) and on success the captured output is discarded silently.
+        result = subprocess.run(cmd, cwd=str(root), check=True, capture_output=True, text=True)
         if not OUTPUT_TMP.exists():
             raise FileNotFoundError(f"Panel generation completed but tmp output missing: {OUTPUT_TMP}")
 
@@ -114,6 +119,19 @@ def run(*, repo_root: Optional[Path] = None) -> PanelGenerationResult:
         _mark_done(DEDUP_MARKER)
         logger.info("[PANEL] success: wrote %s (UTC day=%s)", OUTPUT_FINAL, _utc_today_iso())
         return PanelGenerationResult(ran=True, reason="success")
+    except subprocess.CalledProcessError as e:
+        logger.exception("[PANEL] generation failed.")
+        # Pull the last few stderr lines so the Telegram alert names the actual
+        # cause (e.g. CoinGeckoMonthlyCreditExhausted) instead of just
+        # "CalledProcessError: exit 1".
+        stderr_text = (e.stderr or "").strip()
+        tail_lines = stderr_text.splitlines()[-10:] if stderr_text else []
+        tail = "\n".join(tail_lines) if tail_lines else "(no stderr captured)"
+        send_telegram_text(
+            f"[PANEL] generation failed (non-fatal): exit={e.returncode}\n"
+            f"--- child stderr tail ---\n{tail}"
+        )
+        return PanelGenerationResult(ran=False, reason="failed")
     except Exception as e:
         logger.exception("[PANEL] generation failed.")
         send_telegram_text(f"[PANEL] generation failed (non-fatal): {type(e).__name__}: {e}")
