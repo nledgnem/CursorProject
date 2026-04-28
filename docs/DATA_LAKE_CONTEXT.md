@@ -2,7 +2,8 @@
 
 **Purpose:** Self-contained reference for any AI session that needs to work with this data lake. Paste the whole file into context at the start of a new chat.
 
-**Last updated:** 2026-04-27 (Drive sync OAuth bug fixed; `*.json` added to sync patterns; `fact_derivative_open_interest` confirmed orphaned and documented — see sections 8, 9, 13).
+**Last updated:** 2026-04-28 (verified `silver_funding_cross_sectional_daily` schema and `msm_timeseries` shape against Drive; refreshed Apathy book current-state snapshot; added `fact_liquidations` to §14 FILE_IDS dict; flagged `universe_eligibility.parquet` as stale-despite-daily-touch — see section 13; second-pass review fixed Z_Score_90d window 90→30 + source series env_rate_dec→Environment_APR_daily_pct, split fact_open_interest "OI value" vs "universe filter" phrasing, added universe_eligibility unusual-path note).
+**Previously:** 2026-04-27 (Drive sync OAuth bug fixed; `*.json` added to sync patterns; `fact_derivative_open_interest` confirmed orphaned and documented — see sections 8, 9, 13).
 
 ---
 
@@ -80,7 +81,7 @@ Concrete implication: **new backfill jobs cannot reproduce pre-2024 data on the 
 
 ### CoinGlass (Hobbyist tier)
 - **Rate limit: 30 req/min with 2.2s spacing** between calls (Hobbyist cap).
-- Used for: perp funding rates (daily, by exchange+instrument), open interest (Binance-perp universe in `fact_open_interest` as of 2026-04-22; previously BTC-only), aggregated liquidations (Binance-perp universe in `fact_liquidations` as of 2026-04-23).
+- Used for: perp funding rates (daily, by exchange+instrument; default `exchange="Binance"` in the fetcher); open interest (**OI value: cross-exchange aggregated by CoinGlass default — the fetcher passes only `symbol` + `interval`, no `exchange_list`, so the API returns its default cross-venue aggregate. Universe filter: assets with a Binance perp listing — that's how we pick which symbols to ingest, NOT what venues are aggregated into the OI value.** ~590 alts + BTC as of the 2026-04-22 expansion; previously BTC-only); aggregated liquidations (cross-venue across 10 CEXes — see liquidations note below; universe = same Binance-perp listing filter, ~593 assets in `fact_liquidations` as of 2026-04-23).
 - **OI history cap**: the `open-interest/aggregated-history` endpoint on Hobbyist tier returns roughly 334 days of OI per symbol (confirmed 2026-04-22 via `--start-date 2024-01-01` backfill that returned data from ~2025-05 onward for most alts). Multi-year OI backtests are not possible on this tier.
 - **Liquidations: cross-venue aggregated** across 10 centralized exchanges (Binance, OKX, Bybit, Bitget, HTX, Gate, MEXC, Bitmex, Deribit, Kraken) via `/futures/liquidation/aggregated-history`. Default `exchange_list` is baked into the fetcher; override with `--liquidations-exchange-list` to narrow or widen. **Hyperliquid and Variational are NOT included** — they don't report liquidations to the CoinGlass feed. **History depth:** Hobbyist tier serves 2024-01-01 forward cleanly (verified 2026-04-23 backfill: 593 assets); the ~334-day cap that affects OI does NOT apply to this endpoint.
 - **Liquidations zero-pad trim:** the liquidations endpoint pads pre-listing / pre-coverage dates with synthetic `(0, 0)` rows. `scripts/fetch_coinglass_data.py::fetch_liquidation_history` trims leading zero-pad rows per asset at fetch time, so bronze `fact_liquidations` has a first-row-nonzero guarantee. Interior zero days (real quiet days on an active perp) are preserved. The OI fetcher does NOT currently apply the same trim — see section 13.
@@ -109,7 +110,7 @@ Concrete implication: **new backfill jobs cannot reproduce pre-2024 data on the 
 | `fact_marketcap.parquet` | 13.8 MB | CoinGecko | `asset_id, date, marketcap, source` | daily | 2013-04 → present (same caveat) |
 | `fact_volume.parquet` | 14.5 MB | CoinGecko | `asset_id, date, volume, source` | daily (rolling 24h, NOT calendar-day bar) | 2013-12 → present (same caveat) |
 | `fact_funding.parquet` | 1.3 MB | CoinGlass | `asset_id, instrument_id, date, funding_rate, exchange, source` | daily, last 8h obs per day | 2023-04 → present. **Pre-2026-01-13 unit = decimal, post = percent. Read silver instead.** |
-| `fact_open_interest.parquet` | 1.43 MB | CoinGlass | `asset_id, date, open_interest_usd, source` | daily (aggregated from 8h close) | Binance-perp universe (~590 altcoins + BTC). BTC from 2025-02-14; most alts from ~2025-05 onward due to CoinGlass Hobbyist tier history cap (~334 days); per-symbol start date varies with listing. Expanded from BTC-only on 2026-04-22. |
+| `fact_open_interest.parquet` | 1.43 MB | CoinGlass | `asset_id, date, open_interest_usd, source` | daily (aggregated from 8h close) | **OI value: cross-exchange aggregated** by CoinGlass default — `scripts/fetch_coinglass_data.py::fetch_oi_history` passes only `symbol` + `interval`, no `exchange_list`. **Universe filter: Binance-perp listing** (~590 altcoins + BTC). BTC from 2025-02-14; most alts from ~2025-05 onward due to CoinGlass Hobbyist tier history cap (~334 days); per-symbol start date varies with listing. Expanded from BTC-only on 2026-04-22. |
 | `fact_liquidations.parquet` | 5.88 MB | CoinGlass | `asset_id, date, long_liquidation_usd, short_liquidation_usd, source` | daily (UTC, cross-venue sum) | 593 assets, 2024-01-01 → 2026-04-24, 360,505 rows as of 2026-04-23 backfill. Cross-venue aggregated across 10 centralized perp exchanges (Binance, OKX, Bybit, Bitget, HTX, Gate, MEXC, Bitmex, Deribit, Kraken); **excludes Hyperliquid + Variational**. No ~334-day Hobbyist cap on this endpoint (unlike OI). Leading zero-pad rows trimmed per asset at ingest. |
 | `fact_markets_snapshot.parquet` | 1.66 MB | CoinGecko | `asset_id, name, symbol, coingecko_id, date, current_price_usd, market_cap_usd, market_cap_rank, fully_diluted_valuation_usd, total_volume_usd, circulating_supply, total_supply, max_supply, ath_usd, ath_change_percentage, ath_date, atl_usd, atl_change_percentage, atl_date, source` | one snapshot per day, ~2500 coins per snapshot | Started accumulating ~2026-01. Append-only with dedup. |
 | `fact_ohlc.parquet` | 358 KB | CoinGecko | _Not directly verified in this session; contains OHLC candles for a smaller universe_ | — | — |
@@ -123,7 +124,7 @@ Concrete implication: **new backfill jobs cannot reproduce pre-2024 data on the 
 | `silver_fact_price.parquet` | 14.8 MB | Bronze `fact_price` + joined with `dim_asset` metadata. |
 | `silver_fact_marketcap.parquet` | 13.7 MB | Bronze `fact_marketcap` cleaned. |
 | `silver_fact_funding.parquet` | 1.2 MB | Bronze `fact_funding` with unit cutover resolved → uniform percent/day representation. **Use this, not bronze, for all funding analysis.** |
-| `silver_funding_cross_sectional_daily.parquet` | 49 KB | Daily cross-sectional funding stats (mean, median, percentiles, OI-weighted averages). Gold/report layer. |
+| `silver_funding_cross_sectional_daily.parquet` | 49 KB | Daily funding aggregates feeding the **General Regime Monitor (3-Factor Gate)**. Schema (verified 2026-04-28 against Drive copy, 1105 rows, 2023-04-19 → 2026-04-27): `date`, `env_rate_dec` (environment funding rate, decimal per 8h), `Environment_APR_daily_pct` (annualized APR as a percent — derived as `env_rate_dec × 3 × 365 × 100`), `Fragmentation_Spread` (cross-sectional dispersion of 8h funding around the environment rate — contagion filter), `Z_Score_90d` (90-day rolling z-score of `Environment_APR_daily_pct` — verified against `majors_alts_monitor/msm_funding_v0/macro_environment.py:97`; window=90 with `min_periods=30`, so the first ~30 rows after a fresh start are NaN. Numerically identical to a z-score on `env_rate_dec` because the two series differ by a positive constant ×1095×100 that cancels out in standardization, but the source-of-truth column is `Environment_APR_daily_pct`). One row per UTC calendar day; single time series, NOT per-asset. **History note:** an earlier silver builder produced large arrays of percentiles, medians and OI-weighted averages per asset; it was rewritten when the 3-Factor Regime Monitor was designed so it now outputs only the precise physical columns the regime monitor consumes. **Exact aggregation method (mean? median? OI-weighted? trimmed?) and universe filters are documented per-column in `data_dictionary.yaml` once the silver builder source is read.** |
 
 ### Dimension + mapping tables
 
@@ -150,7 +151,7 @@ Concrete implication: **new backfill jobs cannot reproduce pre-2024 data on the 
 | `fact_market_breadth.parquet` | 4.8 KB | Market breadth stats. |
 | `fact_category_market.parquet` | 105 KB | Per-category market aggregates. |
 | `fact_trending_searches.parquet` | 4.2 KB | CoinGecko trending list (hourly/daily snapshots). |
-| `msm_timeseries.csv` | 75 KB | Macro regime monitor gold output — latest run. Consumers must locate newest dir under `reports/msm_funding_v0/` (PiT audit trail). |
+| `msm_timeseries.csv` | 21.7 KB | Macro Regime Monitor strategy gold output. **Status: strategy paused — last weekly decision is 2024-12-30 (16+ months stale as of 2026-04-28).** 48 weekly rows, period 2024-02-05 → 2024-12-30, 16 columns: `decision_date, next_date, basket_hash, basket_members, n_valid, coverage, F_tk, label_v0_0, label_v0_1, p_v0_0, p_v0_1, r_alts, r_maj_weighted, y, r_btc, r_eth`. Each row is a weekly basket-formation decision over 30 majors/large-caps. **Verified 2026-04-28 from Drive copy:** `label_v0_1` and `p_v0_1` are empty across all 48 rows (stub columns from a `v0_1` model that never shipped); `p_v0_0` is on a 0–100 scale (percent), not 0–1; `coverage = n_valid / 30 × 100`; `y = r_maj_weighted − r_alts` (alpha relative to majors); `basket_hash` holds the alphabetized member list (not a true hash) — used as a deterministic identity for caching; `basket_members` is a separately-ordered list (looks ranked, likely by market cap). **Important context:** the MSM *strategy* is paused but the *funding-environment inputs it consumed* (`Environment_APR_daily_pct`, `Fragmentation_Spread`) are still built fresh daily on Render via the silver pipeline — see `silver_funding_cross_sectional_daily.parquet`. The full PiT audit trail under `reports/msm_funding_v0/` lives on the Render disk only and is not mirrored to Drive. **Column definitions for `F_tk`, `label_v0_*`, `p_v0_*` resolved from the MSM source code in §3.4 work — see `data_dictionary.yaml`.** |
 
 ### Trading books + runtime state (Apathy Bleed)
 
@@ -162,8 +163,10 @@ Concrete implication: **new backfill jobs cannot reproduce pre-2024 data on the 
 
 **Apathy book semantics:**
 - 4 cohorts (C1–C4) formed 2026-04-09. Target exits 40 / 85 / 130 / 175 days later (2026-05-19, -07-03, -08-17, -10-01).
-- Each cohort has 4–6 SHORT legs + 1 LONG_BTC hedge row sized to the cohort's total short notional.
-- PnL for SHORT: `pnl_pct = (entry - exit) / entry`; `pnl_usd = pnl_pct * notional`. Script writes these at 8/4 decimals with trailing zeros stripped.
+- Cohort SHORT-leg counts: C1=3, C2=4, C3=4, C4=5 (3–5 SHORTs per cohort) + 1 LONG_BTC hedge row each, hedge sized to that cohort's total short notional.
+- PnL for SHORT: `pnl_pct = (entry - exit) / entry`; `pnl_usd = pnl_pct * notional`. Script writes these at 8/4 decimals with trailing zeros stripped. **Verified 2026-04-28 against Drive copy on the three closed trades — formula matches recorded values to 6+ decimals.**
+
+**Current state (snapshot 2026-04-28 from Drive `apathy_bleed_book.csv` — dates fast; refresh on doc updates):** 16 SHORT alt legs across C1–C4 + 4 LONG_BTC hedge rows = 20 trade rows total. 3 CLOSED_MANUAL: ARIA (+$2,157.34, +71.8%, closed same-day 2026-04-09), DEXE (−$1,861.09, −62.6%, closed 2026-04-18), PIEVERSE (−$1,809.17, −60.3%, closed 2026-04-20). 17 still OPEN. **Net realized PnL on closed: −$1,512.92 (≈ −$1,513).** The two losers (DEXE, PIEVERSE) shared a profile of low-float / high-attention coins that pumped after entry — pattern Apathy Bleed wants to exclude via the 5-Gates pre-trade scanner (under development; see `docs/STRATEGIES.md`).
 
 ### Trading state (danlongshort) — independent strategy
 
@@ -180,7 +183,7 @@ Concrete implication: **new backfill jobs cannot reproduce pre-2024 data on the 
 
 | File | Size | Description |
 |---|---|---|
-| `universe_eligibility.parquet` | 1.02 MB | Per-coin eligibility flags (point-in-time membership gates). |
+| `universe_eligibility.parquet` | 1.02 MB | Per-coin eligibility flags (point-in-time membership gates). **Path note:** lives at `/data/universe_eligibility.parquet` on Render — NOT under `/data/curated/data_lake/`. Reaches Drive only because `configs/gdrive_export.yaml::sources` lists it as an explicit static source. Same path-class oddity as the danlongshort files (see §13). **Stale despite daily file touches** — see §13 for details. |
 | `single_coin_panel.csv` | 5.06 MB | Denormalized per-coin panel for quick ad-hoc analysis. Rebuilt each pipeline run. |
 | `stablecoins.csv` | 2.2 KB | Curated stablecoin exclusion list. |
 
@@ -308,6 +311,7 @@ Taken verbatim from `.cursorrules` + `ARCHITECTURE.md`:
 - **`fact_open_interest` may have the same leading-zero-pad behavior** for pre-listing dates that was fixed for `fact_liquidations` on 2026-04-23. The OI fetcher in `scripts/fetch_coinglass_data.py::fetch_oi_history` does not currently trim leading zeros. Audit via `df[df.asset_id=='<late-listing-alt>'].head()` — if the first rows are zero for pre-listing dates, apply the same per-asset leading-zero-trim fix to `fetch_oi_history` and re-backfill.
 - **Latent bug FIXED 2026-04-23** in `scripts/fetch_coinglass_data.py`: the fetcher previously read `configs/golden.yaml`'s `start_date` / `end_date` as fallbacks when CLI dates weren't passed, causing silent truncation of manual backfills to `2025-12-31` (the strategy backtest end-date). Replaced with `date.today()` UTC (end) and `today - 730 days` (start) defaults. The production daily pipeline was unaffected because `run_live_pipeline.py` always passes explicit `--end-date today_utc`; only ad-hoc manual backfills were silently truncated.
 - **Build `silver_fact_liquidations`** — derived table with opinions applied (e.g. rolling 7d sums, long/short ratio, cross-sectional percentile at each date). Bronze is already clean via per-asset zero-pad trim, so silver here is about derived analytics rather than cleaning.
+- **`universe_eligibility.parquet` is stale despite daily file touches (flagged 2026-04-28).** Drive `modifiedTime` advances every nightly export but `rebalance_date.max()` = `2025-12-01` — 5 months stale. 23 unique monthly rebalance dates from 2024-02-01 to 2025-12-01; 62,491 rows × 26 columns. Some producer is rewriting an unchanged file daily without advancing the rebalance schedule. Investigate: (a) is the monthly rebalance scheduler firing? (b) does any consumer read this file as a "live" gate, and if so are they getting stale eligibility decisions? Tagged `STALE_PIPELINE_WRITES_NO_NEW_DATA` in `data_dictionary.yaml` pending root-cause.
 
 ---
 
@@ -323,6 +327,7 @@ FILE_IDS = {
     "fact_volume":                         "1n05yi0nvzCbQFHpQ50Zvzgh1lP8QrXA5",
     "fact_funding":                        "1nV6NIJ_ZQ05rwDxCEO4L3kh68dFsmazS",
     "fact_open_interest":                  "187EL5lcFii_Mbbz8TrTW60mtt71S0Xz7",
+    "fact_liquidations":                   "1XUkiBdtxaSsUZ_-ppzftVu5Ujwr544Xj",
     "fact_markets_snapshot":               "181h32ykjUUnwAXcmtZ13dpxe8JQzpis5",
     "fact_ohlc":                           "19YPTePz7rNNfrOmlnnn-mvTDCrh73r8w",
     "fact_derivative_open_interest":       "1vQE0Asjeas7S7b9DuOCY-3DkX6ny3q4U",  # QUARANTINE
