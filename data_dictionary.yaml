@@ -69,6 +69,34 @@ data_sources:
       brief Analyst-tier window and have known (but unquantified) quality issues.
       Treat pre-2024 data as suspect and verify independently before relying on it.
       New backfills cannot reproduce pre-2024 data on the current tier.
+
+      [2026-04-29 P0] download_all_coins writer-race in
+      src/providers/coingecko.py:291-308. Fetcher iterates data/perp_allowlist.csv
+      row-by-row, calls /coins/{id}/market_chart/range with the row's coingecko_id,
+      and stores results in a dict keyed by row's symbol. The allowlist contains
+      280 duplicate-symbol rows (139 distinct symbols) where each row has the
+      canonical CoinGecko slug plus 1-18 bridged/wrapped/staked variants
+      (ETH x4, USDT x19, SOL x5, DOGE x3, SHIB x3, ZEC x3, etc.). For these
+      symbols the last-iterated variant wins and earlier results are silently
+      overwritten. Empirical impact on fact_marketcap 2026-04-25: ETH ~$41M
+      (real ~$250B, off ~5000x), SOL ~$95M (real ~$60B, off ~700x), DOGE ~120x
+      off, USDT absent, ~135 others affected. fact_price and fact_volume are
+      affected on the same set of symbols. fact_markets_snapshot is NOT affected
+      (different ingestion path -- paginated /coins/markets). Until fixed:
+      prefer fact_markets_snapshot for blue-chip mcap/rank; do not trust
+      per-symbol joins on fact_marketcap / fact_price / fact_volume for any
+      symbol with bridged variants in the allowlist. Single-variant symbols
+      (BTC, BNB, XRP, TAO, DASH, etc.) are correct. Detail and impact table
+      in reports/apathy_universe_cut_audit_2026_04_29.md section 4. Dedicated
+      fix task: coingecko-data-integrity-fix-2026-04-29 (queued).
+
+      [2026-04-29] dim_asset.coingecko_id is a structural placeholder: all
+      2,717 rows have coingecko_id == lowercase(symbol). Zero rows carry real
+      CoinGecko slugs. Daily ingestion does NOT use this column, so dormant;
+      any analysis joining via dim_asset.coingecko_id is silently wrong.
+      The fact_price.asset_id column definition below ("Canonical CoinGecko
+      slug ... Matches dim_asset.coingecko_id") is documentation drift -- to
+      be corrected as part of the dedicated fix task.
   coinglass:
     current_tier: Hobbyist
     rate_limit_per_min: 30  # with 2.2s spacing between calls

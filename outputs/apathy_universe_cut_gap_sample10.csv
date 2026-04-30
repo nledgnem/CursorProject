@@ -1,0 +1,11 @@
+symbol,coingecko_id,venue,cg_lc,dim_asset_id,in_dim_asset,in_fact_price
+AGGON,ishares-core-us-aggregate-bond-etf-ondo-tokenized-etf,BINANCE,ishares-core-us-aggregate-bond-etf-ondo-tokenized-etf,,False,False
+QQQON,invesco-qqq-etf-ondo-tokenized-etf,BINANCE,invesco-qqq-etf-ondo-tokenized-etf,,False,False
+FLIP,chainflip,BINANCE,chainflip,,False,False
+币安人生,bianrensheng,BINANCE,bianrensheng,,False,False
+WAARBUSDT,wrapped-aave-arbitrum-usdt,BINANCE,wrapped-aave-arbitrum-usdt,,False,False
+AUKI,auki-labs,BINANCE,auki-labs,,False,False
+EURE,monerium-eur-money-2,BINANCE,monerium-eur-money-2,,False,False
+,nulltrace,BINANCE,nulltrace,,False,False
+CINO,private-aviation-finance-token,BINANCE,private-aviation-finance-token,,False,False
+AKE,akedo,BINANCE,akedo,,False,False
