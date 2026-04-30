@@ -20,6 +20,13 @@ export_gdrive:
     single_coin_panel_csv: "/data/single_coin_panel.csv"
     msm_timeseries_csv: "/data/exports/msm_timeseries.csv"
     stablecoins_csv: "/data/stablecoins.csv"
+    # Canonical context docs (repo-relative; resolved against repo_root by nightly_export.run()).
+    # These are the single source of truth in the repo. Render's nightly export overwrites
+    # the Drive copies in place (preserving file ID); Drive UI edits will be lost on next sync.
+    data_dictionary_yaml: "data_dictionary.yaml"
+    data_lake_context_md: "docs/DATA_LAKE_CONTEXT.md"
+    strategies_md: "docs/STRATEGIES.md"
+    backtest_md: "docs/BACKTEST.md"
 
   # Used to produce the stable MSM snapshot after each pipeline run.
   msm_reports_root: "reports/msm_funding_v0"
@@ -36,6 +43,10 @@ export_gdrive:
       single_coin_panel_csv: "single_coin_panel.csv"
       msm_timeseries_csv: "msm_timeseries.csv"
       stablecoins_csv: "stablecoins.csv"
+      data_dictionary_yaml: "data_dictionary.yaml"
+      data_lake_context_md: "DATA_LAKE_CONTEXT.md"
+      strategies_md: "STRATEGIES.md"
+      backtest_md: "BACKTEST.md"
 
   retry:
     max_attempts: 5

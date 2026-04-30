@@ -210,18 +210,25 @@ def run(*, config_path: Path | None = None) -> None:
     reports_root = cfg.msm_reports_root
     if not reports_root.is_absolute():
         reports_root = (repo_root / reports_root).resolve()
+    # Resolve any relative source paths against repo_root (mirrors msm_reports_root above).
+    # Allows repo-relative entries like "data_dictionary.yaml" or "docs/STRATEGIES.md" in the
+    # config, alongside Render-absolute paths like "/data/curated/data_lake/...".
+    resolved_sources: dict[str, Path] = {
+        k: (p if p.is_absolute() else (repo_root / p).resolve())
+        for k, p in cfg.sources.items()
+    }
     latest_msm = _find_latest_msm_timeseries(reports_root)
-    msm_stable = cfg.sources.get("msm_timeseries_csv")
+    msm_stable = resolved_sources.get("msm_timeseries_csv")
     if msm_stable is None:
         raise ValueError("sources.msm_timeseries_csv missing from config")
     logger.info("Materializing MSM stable snapshot: %s -> %s", latest_msm, msm_stable)
     _atomic_copy(latest_msm, msm_stable)
 
     # Validate all sources exist (after MSM snapshot is materialized).
-    missing = [k for k, p in cfg.sources.items() if not Path(p).exists()]
+    missing = [k for k, p in resolved_sources.items() if not p.exists()]
     if missing:
         for k in missing:
-            logger.error("Missing export source: key=%s path=%s", k, cfg.sources[k])
+            logger.error("Missing export source: key=%s path=%s", k, resolved_sources[k])
         raise FileNotFoundError(f"Missing export sources: {missing}")
 
     # Auth + uploader
@@ -237,7 +244,7 @@ def run(*, config_path: Path | None = None) -> None:
     n_uploaded = 0
 
     # Upload explicit sources first (handles files outside data_lake).
-    for key, local_path in cfg.sources.items():
+    for key, local_path in resolved_sources.items():
         drive_name = cfg.filenames.get(key)
         if not drive_name:
             raise ValueError(f"Missing gdrive.filenames entry for key={key}")
@@ -245,7 +252,7 @@ def run(*, config_path: Path | None = None) -> None:
         upload_or_update_file(
             service=service,
             folder_id=folder_id,
-            local_path=Path(local_path),
+            local_path=local_path,
             drive_name=drive_name,
             cache=cache,
             retry=cfg.retry,
