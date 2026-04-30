@@ -18,7 +18,13 @@ from googleapiclient.http import MediaFileUpload
 logger = logging.getLogger(__name__)
 
 
-DRIVE_SCOPES = ("https://www.googleapis.com/auth/drive.file",)
+DRIVE_SCOPES = ("https://www.googleapis.com/auth/drive",)
+# Scope expanded from drive.file -> drive on 2026-04-30 to allow the OAuth client to
+# update existing Drive-authored files (e.g. STRATEGIES.md, BACKTEST.md, DATA_LAKE_CONTEXT.md,
+# data_dictionary.yaml) that were not originally created by this OAuth client. drive.file
+# only grants per-file access to files the app itself created or were explicitly opened
+# via Drive picker -- which excluded the human-authored context docs. Privilege increase
+# acknowledged by Mads + Dan; refresh token was rotated alongside this change.
 
 
 @dataclass(frozen=True)
