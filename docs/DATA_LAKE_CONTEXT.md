@@ -398,4 +398,60 @@ Inside the repo:
 
 ---
 
+## 16. Documentation conventions
+
+Wired into the nightly Drive sync as of 2026-04-30. Read this section before editing any of the four canonical context docs.
+
+### 16.1 The four canonical context docs
+
+| File (in repo) | Drive filename | Drive file ID | Role |
+|---|---|---|---|
+| `docs/DATA_LAKE_CONTEXT.md` | `DATA_LAKE_CONTEXT.md` | `1p0OwwSXTa0XSAPtU2SpLuIgEjTGEqcnx` | This file. Operational orientation: tables, paths, freshness, known gaps. |
+| `data_dictionary.yaml` | `data_dictionary.yaml` | `1yC0fTcMTB_jfpyzpfYeEpHiDp7Zt842W` | Column-level field definitions. The unit of truth for "what does this column mean / what units / what frequency". |
+| `docs/STRATEGIES.md` | `STRATEGIES.md` | `1Nry4d-hRuveRuk2yNqlhoag8lHqMP9J0` | Apathy Bleed strategy spec: thesis, universe, structure, cohorts, gates, decisions log. |
+| `docs/BACKTEST.md` | `BACKTEST.md` | `1Vfe7M2eijAEpzcGR7euq8LfJ1_ak6nJ1` | Apathy Bleed backtest record: methodology, cohorts, results, audit notes. |
+
+### 16.2 Single source of truth = the repo
+
+All four files are tracked in git. Edits go: **edit the repo copy → commit → push → merge to main → Render auto-redeploys → next nightly export overwrites the Drive copies**.
+
+- The Drive file IDs above are stable and preserved across nightly syncs (verified 2026-04-30 by manual export trigger; all 4 took the `update` branch, not `create`).
+- Drive Desktop on engineer machines (e.g. `G:\My Drive\Render Exports\`) is a **read-only mirror**. Don't edit files there — they get overwritten on the next nightly.
+- The nightly export is the **only writer** to Drive for these files. No other code path uploads them.
+
+### 16.3 Render is the only writer
+
+Implementation lives at `configs/gdrive_export.yaml::sources` (4 doc entries with `gdrive.filenames` mappings) and `src/exports/nightly_export.py::run` (relative paths resolved against repo root). The OAuth scope is `drive` (full Drive read/write) — required because the four docs were originally human-authored in Drive, not created by Render's OAuth client; the narrower `drive.file` scope cannot see human-uploaded files.
+
+The fact that Render holds a `drive`-scoped refresh token for Mads's account means Render technically has read/write capability over all of Mads's Drive, not just `Render Exports`. **No code path traverses outside the configured folder**, but the capability exists. If that scope-bounding ever becomes a concern, migrate to a shared drive (drive.file scope works on shared-drive members as if the OAuth client created them).
+
+### 16.4 Drive-side edits are silently overwritten
+
+If you (or anyone) edits the Drive UI copy of one of these four files directly, the next nightly export (~01:24 UTC) will overwrite those edits with whatever's in the repo at that moment. **No warning, no merge, no diff.**
+
+The two migrated docs (`STRATEGIES.md`, `BACKTEST.md`) carry a top-of-file banner spelling this out. The other two (`DATA_LAKE_CONTEXT.md`, `data_dictionary.yaml`) are repo-native and don't need the banner since the convention here is sufficient.
+
+### 16.5 The `[DECISION YYYY-MM-DD]` tagging convention
+
+When a meaningful design / operational decision is made and committed to one of these docs, tag the relevant paragraph or table cell with `[DECISION YYYY-MM-DD]` followed by who made it. Examples already in use:
+
+- `[DECISION 2026-04-29 — Mads + Dan]` — CoinGecko ingestion universe reduction (paused, see §13).
+- `[DECISION 2026-04-30 — Mads + Dan]` — OAuth scope expansion `drive.file → drive`.
+
+Two purposes:
+1. **Searchability** — `git log -S "[DECISION 2026-04-29]"` surfaces the commit and reasoning.
+2. **Audit trail** — when a future-you / future-Claude session asks "why is X this way?", the tag points at the specific decision and who signed off.
+
+Use `[VERIFIED]` for empirically-confirmed claims (the existing `[VERIFIED]` tags throughout `STRATEGIES.md` and `BACKTEST.md` follow this pattern).
+
+### 16.6 Followup-doc convention
+
+The audit memo `reports/apathy_universe_cut_audit_2026_04_29.md` is repo-only (not in the nightly Drive sync). Convention going forward:
+
+- **Long-lived context docs** (the 4 above) → in Drive sync.
+- **Audit memos / decision write-ups / one-off investigations** → repo-only under `reports/`.
+- If a `reports/` artifact becomes load-bearing for ongoing operations (referenced from `DATA_LAKE_CONTEXT.md` §13 followups, or read by tooling), promote to one of the canonical 4 by either folding the content in or by adding it to the sync sources list (small config change, see commit `abb477a` for the pattern).
+
+---
+
 **End of context document.** Safe to paste into any LLM chat. For follow-up sessions, start by asking the LLM to read this + the specific table(s) it will touch, then verify schemas with `df.dtypes` before writing code.
