@@ -1,0 +1,140 @@
+symbol,n_variants,canonical_slug,canonical_mcap_usd,canonical_rank,all_variants,source
+ACE,2,endurance,12231765,1086,"['endurance', 'ace-data-cloud-2']",fms_latest
+ACT,3,act-i-the-ai-prophecy,13371784,1039,"['act-i-the-ai-prophecy', 'achain', 'acet-token']",fms_latest
+ADX,2,adex,11286110,1135,"['adex', 'adrena']",fms_latest
+AIN,2,infinity-ground,11242239,1137,"['infinity-ground', 'ai-network']",fms_latest
+ALPHA,2,alpha-fi,9897905,1217,"['alpha-fi', 'alpha-finance']",fms_latest
+ANT,2,autonomi,28025659,705,"['autonomi', 'aragon']",fms_latest
+ANY,2,anyspend,7547647,1383,"['anyspend', 'anyswap']",fms_latest
+AURA,2,aura-on-sol,8993988,1280,"['aura-on-sol', 'aura-finance']",fms_latest
+AVA,2,concierge-io,18079906,911,"['concierge-io', 'ava-ai']",fms_latest
+AVAX,2,avalanche-2,4056445523,26,"['avalanche-2', 'binance-peg-avalanche']",fms_latest
+BB,2,bouncebit,11405596,1132,"['bouncebit', 'bitboard']",fms_latest
+BEAM,2,beam-2,102838031,281,"['beam-2', 'beam']",fms_latest
+BMX,2,bitmart-token,110092752,267,"['bitmart-token', 'bmx']",fms_latest
+BOB,3,bob-build-on-bitcoin,16698444,946,"['bob-build-on-bitcoin', 'build-on-bnb', 'bob-3']",fms_latest
+BROCCOLI,2,czs-dog,14334843,1004,"['czs-dog', 'broccoli-3']",fms_latest
+BTG,2,bitcoin-gold,9849096,1220,"['openverse-network', 'bitcoin-gold']",fms_latest
+BTR,2,bitlayer-bitvm,9174346,1267,"['bitrue-token', 'bitlayer-bitvm']",fms_latest
+BUSD,2,binance-usd,39977241,551,"['binance-peg-busd', 'binance-usd']",fms_latest
+CAT,3,simon-s-cat,12733120,1062,"['simon-s-cat', 'cat-terminal', 'catcoin-cash']",fms_latest
+CAW,2,a-hunters-dream,23959360,785,"['a-hunters-dream', 'crow-with-knife']",fms_latest
+CULT,2,milady-cult-coin,10576840,1180,"['milady-cult-coin', 'cult-dao']",fms_latest
+CUSD,2,cap-usd,119759310,252,"['cap-usd', 'celo-dollar']",fms_latest
+D,2,dar-open-network,7344057,1404,"['dar-open-network', 'saga-dollar']",fms_latest
+DAI,9,dai,4415450638,23,"['dai', 'polygon-pos-bridged-dai-polygon-pos', 'binance-peg-dai', 'makerdao-arbitrum-bridged-dai-arbitrum-one', 'makerdao-optimism-bridged-dai-optimism', 'avalanche-bridged-dai-avalanche', 'crypto-com-bridged-dai-cronos', 'l2-standard-bridged-dai-base', 'rainbow-bridged-dai-near-protocol']",fms_latest
+DIT,2,diamond-token-2,14825596,991,"['diamond-token-2', 'dadi-insight-token']",fms_latest
+DOG,2,dog-go-to-the-moon-rune,82183263,327,"['dog-go-to-the-moon-rune', 'the-doge-nft']",fms_latest
+DOGE,3,dogecoin,15160084261,10,"['dogecoin', 'binance-peg-dogecoin', 'department-of-government-efficiency']",fms_latest
+DORA,2,dora-2,17892841,916,"['dora-2', 'dora-factory-2']",fms_latest
+DUSD,2,standx-dusd,100206966,288,"['standx-dusd', 'dialectic-usd-vault']",fms_latest
+EBTC,2,ether-fi-staked-btc,88622017,465,"['ether-fi-staked-btc', 'ebtc']",fms_historical
+EDGE,2,definitive,25884957,745,"['definitive', 'edge']",fms_latest
+EPIC,2,epic-chain,10501862,1182,"['epic-chain', 'epic-cash']",fms_latest
+ETH,4,ethereum,279460269416,2,"['ethereum', 'bridged-wrapped-ether-starkgate', 'osmosis-alleth', 'near-intents-bridged-eth']",fms_latest
+FARTCOIN,2,fartcoin,199385031,178,"['fartcoin', 'based-fartcoin']",fms_latest
+FRAX,3,frax,274005868,149,"['frax', 'frax-share', 'rainbow-bridged-frax-near-protocol']",fms_latest
+GAL,2,project-galaxy,22443497,813,"['project-galaxy', 'galatasaray-fan-token']",fms_latest
+GAME,2,gamebuild,25841844,747,"['gamebuild', 'game-by-virtuals']",fms_latest
+GME,2,game-stop,6099845,1513,"['game-stop', 'gme']",fms_latest
+GUSD,2,gusd,149629241,218,"['gusd', 'gemini-dollar']",fms_latest
+HOLD,2,everybody,3281907,1928,"['holdstation-2', 'everybody']",fms_latest
+HONEY,2,honey-3,24473330,768,"['hivemapper', 'honey-3']",fms_latest
+HYPE,2,hyperliquid,9805125869,13,"['hyperliquid', 'wormhole-bridged-hype']",fms_latest
+INC,2,incrypt,19355118,882,"['world-assets', 'incrypt']",fms_latest
+IUSD,2,infinifi-usd,80932201,330,"['infinifi-usd', 'iusd']",fms_latest
+JOE,2,joe,19120771,888,"['joe', 'joe-coin']",fms_latest
+LUNA,2,terra-luna-2,44355382,514,"['terra-luna-2', 'luna-by-virtuals']",fms_latest
+LUNC,2,terra-luna,276927068,148,"['terra-luna', 'wrapped-terra']",fms_latest
+MET,2,meteora,83937008,321,"['meteora', 'metronome']",fms_latest
+META,2,meta-2-2,55515617,451,"['meta-2-2', 'metadium']",fms_latest
+METH,2,mantle-staked-ether,858673696,107,"['mantle-staked-ether', 'manta-meth']",fms_historical
+MIM,2,magic-internet-money-runes,8640391,1299,"['magic-internet-money', 'magic-internet-money-runes']",fms_latest
+MITO,2,mitosis,12935304,1052,"['mito', 'mitosis']",fms_latest
+MNT,2,mantle,2122074184,42,"['mantle', 'mynth']",fms_latest
+MON,2,monad,363405065,122,"['monad', 'mon-protocol']",fms_latest
+MOODENG,2,moo-deng,58641126,431,"['moo-deng', 'moo-deng-2']",fms_latest
+MSUSD,2,main-street-usd,57975019,435,"['metronome-synth-usd', 'main-street-usd']",fms_latest
+MUSD,3,metamask-usd,32747352,632,"['metamask-usd', 'meta-usd', 'musd']",fms_latest
+MYST,2,mysterium,5476767,1583,"['mysterium', 'mystandard']",fms_latest
+NEX,2,nexora,5061133,1636,"['neon-exchange', 'nexora']",fms_latest
+NXPC,2,nexpace,79736121,335,"['nexpace', 'bridged-nxpc']",fms_latest
+PAI,3,parrot-usd,4208650,1762,"['parrot-usd', 'parallelai', 'panther-ai']",fms_latest
+PALM,2,palm-ai,2708497,2085,"['palm-economy', 'palm-ai']",fms_latest
+PHB,2,red-pulse,8002411,1347,"['phoenix-global', 'red-pulse']",fms_latest
+PIKA,2,pikaboss,8664311,1295,"['pikaboss', 'pika-protocol']",fms_latest
+PLAY,3,playsout,50983909,476,"['playsout', 'play-3', 'play-solana-token']",fms_latest
+PRIME,2,hastra-prime,331654960,130,"['hastra-prime', 'echelon-prime']",fms_latest
+PROS,2,prospective,2874923,2034,"['prosper', 'prospective']",fms_latest
+PSP,2,paraswap,1766454,2435,"['pre-sp', 'paraswap']",fms_latest
+PUMP,2,pump-fun,1048672610,66,"['pump-fun', 'pumpbtc-2']",fms_latest
+PUSD,2,plume-usd,4873864,1656,"['pleasing-usd', 'plume-usd']",fms_latest
+Q,2,quack-ai,39720772,552,"['quack-ai', 'quantumcoin']",fms_latest
+QI,2,benqi,12608382,1070,"['benqi', 'qi-dao']",fms_latest
+QUICK,2,quickswap,9055931,1273,"['quick', 'quickswap']",fms_latest
+RAIN,2,rain,3613120252,31,"['rain', 'rain-coin']",fms_latest
+REAL,4,reallink,238216980,161,"['reallink', 'real-token', 'real-4', 'defactor']",fms_latest
+REI,2,unit-00-rei,21366815,832,"['unit-00-rei', 'rei-network']",fms_latest
+REUSD,2,re-protocol-reusd,165557048,205,"['re-protocol-reusd', 'resupply-usd']",fms_latest
+RISE,2,infinity-rising,3190485,1947,"['infinity-rising', 'everrise']",fms_latest
+RSETH,2,kelp-dao-restaked-eth,1787346270,59,"['kelp-dao-restaked-eth', 'kelpdao-bridged-rseth-unichain']",fms_historical
+RWA,2,allo,3105214,1976,"['allo', 'real-world-ai']",fms_latest
+SAFE,2,safe,107600352,271,"['safe', 'safecoin']",fms_latest
+SAGA,2,saga-2,6786754,1454,"['saga-2', 'wrapped-saga']",fms_latest
+SDAI,2,savings-dai,191637170,290,"['savings-dai', 'savings-xdai']",fms_historical
+SEND,3,send-token-2,7542109,1384,"['suilend', 'send-token-2', 'send-2']",fms_latest
+SHIB,3,shiba-inu,3656441821,30,"['shiba-inu', 'binance-peg-shib', 'shiba-on-base']",fms_latest
+SIGMA,2,sigmadotmoney,2326263,2202,"['sigma', 'sigmadotmoney']",fms_latest
+SIX,2,six-network,2438490,2163,"['six', 'six-network']",fms_latest
+SN52,2,dojo-3,7506126,1389,"['dojo-3', 'precog']",fms_latest
+SOL,5,solana,49639088898,7,"['solana', 'wrapped-solana', 'binance-peg-sol', 'base-bridged-sol-base', 'osmosis-allsol']",fms_latest
+SOLO,2,solo-coin,9295378,1257,"['solo-coin', 'solomon']",fms_latest
+STAPT,2,hyperion-staked-aptos,19824156,1155,"['hyperion-staked-aptos', 'amnis-staked-aptos-coin']",fms_historical
+STBTC,2,lorenzo-stbtc,28560954,951,"['lorenzo-stbtc', 'botanix-staked-bitcoin']",fms_historical
+STEAKETH,2,steakhouse-eth-morpho-vault,116787197,395,"['steakhouse-eth-morpho-vault', 'steakhouse-weth']",fms_historical
+STEAKUSDC,2,steakhouse-usdc-morpho-vault,428892750,168,"['steakhouse-usdc-morpho-vault', 'steakhouse-usdc']",fms_historical
+STRX,2,strikecoin,17910179,915,"['staked-trx', 'strikecoin']",fms_latest
+SUP,2,superfluid,3223286,1941,"['superp', 'superfluid']",fms_latest
+SUSD,3,nusd,24106802,780,"['nusd', 'solayer-usd', 'staked-usd-coin']",fms_latest
+TON,2,the-open-network,3334957376,33,"['the-open-network', 'tokamak-network']",fms_latest
+TRAC,2,origintrail,125915589,241,"['origintrail', 'trac']",fms_latest
+TREE,2,tree-capital,20137315,865,"['tree-capital', 'treehouse']",fms_latest
+TRUMP,2,official-trump,668765735,86,"['official-trump', 'maga']",fms_latest
+TRX,2,tron,30642977152,8,"['tron', 'solana-bridged-trx-solana']",fms_latest
+TUSD,2,true-usd,494778420,103,"['true-usd', 'bridged-trueusd']",fms_latest
+U,3,united-stables,1027582475,69,"['union-2', 'united-stables', 'u']",fms_latest
+USDA,3,usda-2,217235955,168,"['usda-2', 'usda-3', 'anzens-usda']",fms_latest
+USDC,28,usd-coin,77760778357,6,"['usd-coin', 'binance-bridged-usdc-bnb-smart-chain', 'cronos-bridged-usdc-cronos', 'bridged-usd-coin-starkgate', 'bridged-usd-coin-linea', 'mantle-bridged-usdc-mantle', 'zksync-bridged-usdc-zksync', 'bridged-usd-coin-scroll', 'layerzero-bridged-usdc-etherlink', 'gnosis-xdai-bridged-usdc-gnosis', 'ccip-bridged-usdc-ronin', 'usd-coin-pulsechain', 'polygon-hermez-bridged-usdc-x-layer', 'initia-bridged-usdc-initia', 'sx-rollup-bridged-usdc-sx-rollup', 'near-intents-bridged-usdc', 'layerzero-bridged-usdc-aptos', 'wanchain-bridged-usdc-cardano', 'multichain-bridged-usdc-fantom', 'sophon-bridged-usdc-sophon', 'taiko-bridged-usdc-taiko', 'saga-bridged-usdc-saga', 'celer-bridged-usdc-astar', 'bridged-usdc-immutable-zkevm', 'rainbow-bridged-usdc-aurora', 'rollux-bridged-usdc-rollux', 'cronos-zkevm-bridged-usdc-cronos-zkevm', 'bridged-usd-coin-manta-pacific']",fms_latest
+USDC.E,9,bridged-usdc-polygon-pos-bridge,887774745,104,"['bridged-usdc-polygon-pos-bridge', 'stargate-bridged-usdc', 'usd-coin-ethereum-bridged', 'usd-coin-avalanche-bridged-usdc-e', 'bridged-usd-coin-optimism', 'usdc-rainbow-bridge', 'bridged-usdc-gnosis', 'soneium-bridged-usdc-soneium', 'movement-bridged-usdc-movement']",fms_historical
+USDF,3,falcon-finance,1783990602,47,"['falcon-finance', 'astherus-usdf', 'flow-bridged-pyusd-flow']",fms_latest
+USDH,2,usdh-2,21359454,833,"['usdh-2', 'hermetica-usdh']",fms_latest
+USDM,2,usdm-2,13272741,1044,"['mountain-protocol-usdm', 'usdm-2']",fms_latest
+USDP,2,paxos-standard,40561170,545,"['paxos-standard', 'parallel-usdp']",fms_latest
+USDR,2,ring-usd,100411592,287,"['ring-usd', 'stablr-usd']",fms_latest
+USDT,19,tether,189701047675,3,"['tether', 'cronos-bridged-usdt-cronos', 'bridged-tether-opbnb', 'bridged-tether-linea', 'injective-bridged-usdt-injective', 'l2-standard-bridged-usdt-base', 'polygon-hermez-bridged-usdt-x-layer', 'bridged-tether-scroll', 'kucoin-bridged-usdt-kucoin-community-chain', 'bridged-tether-starkgate', 'tether-pulsechain', 'morph-l2-bridged-usdt-morph-l2', 'abstract-bridged-usdt-abstract', 'gnosis-xdai-bridged-usdt-gnosis', 'celer-bridged-usdt-conflux', 'stargate-bridged-usdt', 'xone-bridged-usdt-xone', 'sophon-bridged-usdt-sophon', 'hashkey-bridged-usdt-hashkey']",fms_latest
+USDT0,2,usdt0,4427857281,37,"['usdt0', 'stargate-bridged-usdt0']",fms_historical
+USDX,3,usdx,62639670,415,"['usdx', 'hex-trust-usdx', 'usdx-money-usdx']",fms_latest
+USDZ,2,anzen-usdz,7423014,1397,"['anzen-usdz', 'zedxion-usdz']",fms_latest
+USOL,2,unit-solana,17643966,1223,"['unit-solana', 'wrapped-solana-universal']",fms_historical
+USTBL,2,spiko-us-t-bills-money-market-fund,174398523,197,"['spiko-us-t-bills-money-market-fund', 'ustbl-tokenized-u-s-treasury-bill']",fms_latest
+USUAL,2,usual,25343174,750,"['usual', 'usual']",fms_latest
+USX,3,usx,378556495,120,"['usx', 'token-dforce-usd', 'usx-2']",fms_latest
+VAI,2,vai,2440708,2162,"['vaiot', 'vai']",fms_latest
+VELO,2,velo,54831515,454,"['velo', 'velodrome-finance']",fms_latest
+WBNB,2,wbnb,1369016768,80,"['wbnb', 'bridged-wbnb']",fms_historical
+WBTC,17,wrapped-bitcoin,11127869151,16,"['wrapped-bitcoin', 'arbitrum-bridged-wbtc-arbitrum-one', 'polygon-bridged-wbtc-polygon-pos', 'sui-bridged-wbtc-sui', 'cronos-bridged-wbtc-cronos', 'bridged-wrapped-bitcoin-starkgate', 'wrapped-bitcoin-pulsechain', 'linea-bridged-wbtc-linea', 'bridged-wrapped-bitcoin-worldchain', 'etherlink-bridged-wbtc-etherlink', 'merlin-chain-bridged-wrapped-btc-merlin', 'rainbow-bridged-wbtc-near-protocol', 'gnosis-xdai-bridged-wbtc-gnosis-chain', 'celer-bridged-wbtc-conflux', 'bridged-wrapped-bitcoin-bob-network', 'zksync-bridged-wbtc-zksync', 'unichain-bridged-wbtc-unichain-2']",fms_historical
+WEETH,3,wrapped-eeth,9911907656,18,"['wrapped-eeth', 'arbitrum-bridged-wrapped-eeth', 'polygon-bridged-weeth-katana']",fms_historical
+WETH,33,weth,6948131065,26,"['weth', 'binance-peg-weth', 'l2-standard-bridged-weth-base', 'arbitrum-bridged-weth-arbitrum-one', 'polygon-pos-bridged-weth-polygon-pos', 'wrapped-ether-mantle-bridge', 'wrapped-ether-linea', 'l2-standard-bridged-weth-optimism', 'bridged-weth', 'avalanche-bridged-weth-avalanche', 'stargate-bridged-weth', 'ronin-bridged-weth-ronin', 'ink-bridged-weth-ink', 'gnosis-xdai-bridged-weth-gnosis-chain', 'l2-standard-bridged-weth-blast', 'wormhole-bridged-weth-monad', 'unichain-bridged-weth-unichain', 'pulsechain-bridged-weth-pulsechain', 'bridged-wrapped-ether-sonic', 'wrapped-eth-world-chain', 'metis-bridged-weth-metis-andromeda', 'l2-standard-bridged-weth-abstract', 'celo-bridged-weth-celo', 'kcc-bridged-weth-kucoin-community-chain', 'arbitrum-bridged-weth-arbitrum-nova', 'superbridge-bridged-weth-soneium', 'layerzero-bridged-wrapped-ether-swellchain', 'bridged-wrapped-ether-x-layer', 'tac-bridged-weth-tac', 'l2-standard-bridged-weth-modee', 'celer-bridged-weth-conflux', 'bridged-wrapped-ether-morph-l2', 'wrapped-eth-taiko']",fms_historical
+WIN,2,wink,20300108,860,"['wink', 'win-3']",fms_latest
+WM,2,wrappedm-by-m0,756597052,112,"['wrappedm-by-m0', 'white-monkey']",fms_historical
+WOJAK,2,wojak-4,4097858,1777,"['wojak-4', 'wojak']",fms_latest
+WOLF,2,wolf-2,10925364,1157,"['wolf-2', 'landwolf-0x67']",fms_latest
+WSTETH,12,wrapped-steth,12713956970,13,"['wrapped-steth', 'bridged-wrapped-lido-staked-ether-scroll', 'arbitrum-bridged-wsteth-arbitrum', 'superbridge-bridged-wsteth-base', 'superbridge-bridged-wsteth-optimism', 'bridged-wrapped-steth-gnosis', 'linea-bridged-wsteth-linea', 'polygon-bridged-wsteth-polygon', 'lisk-bridged-wsteth-lisk', 'wormhole-bridged-wsteth-bsc', 'polygon-zkevm-bridged-wsteth-katana', 'txsync-bridged-wsteth-zksync']",fms_historical
+XAI,2,xai-blockchain,20887211,845,"['xai-blockchain', 'sideshift-token']",fms_latest
+XUSD,2,straitsx-xusd,62878011,413,"['straitsx-xusd', 'staked-stream-usd']",fms_latest
+YUSD,4,aegis-yusd,36043863,586,"['aegis-yusd', 'yieldfi-ytoken', 'yusd-stablecoin', 'synatra-staked-usdc']",fms_latest
+ZEC,3,zcash,5996888293,19,"['zcash', 'binance-peg-zcash-token', 'omnibridge-bridged-zcash-solana']",fms_latest
+ZKP,2,zkpass,15982496,961,"['zkpass', 'panther']",fms_latest
+BRIDGE,2,octus-bridge,,,"['octus-bridge', 'hyperbridge-2']",heuristic
+EOS,2,eos,,,"['eos', 'binance-peg-eos']",heuristic
+USC,2,orby-network-usc-stablecoin,,,"['unstable-cult-2', 'orby-network-usc-stablecoin']",heuristic
