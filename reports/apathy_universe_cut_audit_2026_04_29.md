@@ -156,6 +156,91 @@ Anything that reads `fact_marketcap` / `fact_price` / `fact_volume` and joins on
 
 The dedicated task (§7) should enumerate these consumers exhaustively and decide whether re-running them post-fix is necessary.
 
+### 4.6 Blast radius — empirical bounds (Followup-A.1 audit, 2026-04-30)
+
+Read-only investigation done in this session to inform the remediation strategy for the dedicated fix task. No code changes; numbers only.
+
+#### 4.6.1 Corruption start date
+
+Git history of `data/perp_allowlist.csv`:
+
+- **`8ade802` 2026-02-04** — initial repo commit; allowlist was empty (1 line, header only).
+- **`e27666b` 2026-02-10 12:23 +0800** — bulk add of 2,997 rows. Already had **2,717 unique symbols + 280 duplicate-symbol rows** at this commit. Same structure as today.
+- No subsequent commits to the allowlist file in the repo.
+
+**The bug has been firing on every Render nightly since at least 2026-02-10** (~80 days as of 2026-04-30). The Feb-10 SHA differs from the current SHA — content has shifted since (some `coingecko_id` values changed) — but the duplicate-symbol *structure* (2997/2717/280) is unchanged. Earlier bridged-variant injection on Render (pre-repo-commit) is possible but cannot be verified from the repo alone.
+
+#### 4.6.2 Corruption is *flapping*, not stable
+
+The bug doesn't produce a fixed wrong value. It produces *whichever* bridged variant happens to be iterated last on each run. As the allowlist content shifts (manually-edited rows, reordering, etc.), the "winner" changes, and the stored value flips.
+
+ETH timeline in `fact_marketcap` shows three distinct phases:
+
+| Date range | ETH stored mcap | State |
+|---|---:|---|
+| 2017-05-19 to 2026-01-27 | $10B–$340B | Correct (real Ethereum) |
+| **2026-01-28 to 2026-02-15** | **~$2-3M** | **Wrong** (winning variant: micro-token) |
+| 2026-02-16 to 2026-03-05 | ~$240B | Correct again |
+| 2026-03-06 onward | $41M (per 2026-04-25 obs) | Wrong (different winning variant) |
+
+So the 2026-02-10 commit is a *lower bound* on continuous-corruption start; the bug-firing condition predates it (the 2026-01-28 ETH transition shows the duplicate-bearing allowlist was already in use on Render then), but the empirical evidence shows the corruption became persistent only from ~2026-03-06.
+
+Across all 139 affected symbols, **38 (27%) show ≥1 day-to-day order-of-magnitude jump in `fact_marketcap` post-2026-02-10** — proxy for flap-and-flop transitions. The other 101 symbols had a single losing variant from the start, no flapping observed at the order-of-magnitude scale (smaller flapping may exist).
+
+**Implication for remediation:** "delete all rows for affected symbols since 2026-02-10 and refetch" is correct and safe. "Flag rows in a wrong-value range" is fragile because the wrong-value range itself is non-stationary.
+
+#### 4.6.3 Cell counts (potentially-corrupt)
+
+| Window | Rows in `fact_marketcap` | Rows in `fact_price` | Rows in `fact_volume` | Total cells |
+|---|---:|---:|---:|---:|
+| Post-2026-02-10 (75 days) | 9,762 | 9,762 | 9,762 | **29,286** |
+| Post-2024-01-01 (lower bound for trustworthiness per §9 of `DATA_LAKE_CONTEXT.md`) | 84,190 | (similar) | (similar) | **~250,000** |
+
+Top-10 affected symbols by post-Feb-10 row density (75 days max — symbols active for the full window): DUSD, FARTCOIN, ETH, USDT0, USUAL, SIGMA (74), USDF (74), AIN (73), ACE (73), ACT (73). Most affected symbols have nearly-full coverage of the post-Feb-10 window.
+
+**Note:** "potentially-corrupt" — the bug FLAPS, so some rows in the window are correct and some are wrong. Per §4.6.2, ~27% of affected symbols show clear flapping evidence (10×+ jumps); the remaining 73% likely had a single losing variant for the whole window (= more rows continuously wrong, not fewer).
+
+#### 4.6.4 Downstream consumer inventory
+
+77 `.py` files reference one or more of the corrupt tables (`grep -l "fact_(marketcap|price|volume)" --include="*.py"`). Filtering to **load-bearing production paths**:
+
+| File | Pattern | Affected? |
+|---|---|---|
+| `src/universe/snapshot.py` | reads `fact_marketcap` for mcap-rank filter; reads `fact_volume` for volume threshold | **YES** — affected symbols (e.g. ETH, SOL, DOGE) get bridged-variant mcap, may be silently excluded from baskets they should be in (or vice versa) |
+| `src/backtest/engine.py` | reads price/mcap series per symbol for backtests | **YES** — backtests over the corruption window use wrong values for the 139 symbols |
+| `src/data_lake/build_duckdb.py` | rebuilds DuckDB from bronze parquets | **YES** — DuckDB inherits corruption |
+| `majors_alts_monitor/data_io.py` | MSM data loader | **YES** — MSM labelling reads via this loader |
+| `majors_alts_monitor/msm_funding_v0/msm_data.py` | MSM basket weighting reads `fact_marketcap` | **YES** — affected basket members get bridged-variant weights |
+| `scripts/data_ingestion/build_silver_layer.py` | builds `silver_fact_price.parquet`, `silver_fact_marketcap.parquet` from bronze | **YES (propagation)** — silver inherits bronze corruption; any silver consumer also affected |
+| `scripts/apathy_bleed_gate5_spotcheck.py` | reads vol/mcap for Gate 5 trajectory | **YES** — Gate 5 candidates in the 139 get corrupt-data decisions |
+| `scripts/build_universe_snapshots.py` | universe snapshot builder | **YES** — same risk as `src/universe/snapshot.py` |
+| `src/danlongshort/portfolio.py` | reads `danlongshort_price_cache.parquet` (separate cache) | **PROBABLY** — depending on how the cache is fed (silver vs direct CG fetch). Verify in fix task. |
+| `src/data_lake/mapping_validation.py` | reads schemas for validation; doesn't use values | **NO (analytical)** |
+| `src/data_lake/perp_listings.py` | reads only `asset_id` column for membership checks | **NO (analytical)** |
+
+The remaining 65+ files are archive scripts, debug snapshots, notebooks, and one-off diagnostic tools — not load-bearing for ongoing analysis.
+
+#### 4.6.5 Remediation strategy implications
+
+These numbers inform the dedicated fix task's choice between the three options outlined in §7:
+
+| Option | Feasibility | Cost | Cleanness |
+|---|---|---|---|
+| **(re-fetch)** affected slice from CoinGecko | ~139 API calls (one per canonical slug, full 75-day or 730-day range per call) | Trivial — well under daily Basic-tier limits | **Cleanest.** Overwrites all flapping with single ground-truth source. |
+| **(flag)** add `data_quality` column marking known-bad rows | Per §4.6.2, "known-bad" is non-stationary — flagging requires per-(symbol, date) ground-truth anyway | Medium (schema change + every consumer adapts) | Worst — pushes complexity onto every downstream consumer. |
+| **(truncate + re-ingest)** drop and re-fetch from scratch | Same API cost as (re-fetch), broader scope | Trivial API; medium operational risk during truncation window | Heavy-handed but simple. |
+
+**Recommendation for the fix task:** Option (re-fetch). 139 API calls × ~75 days = recoverable in a single backfill run. After the writer-race code fix lands, run a one-shot backfill for affected symbols' canonical slugs, overwriting `fact_marketcap[asset_id IN (139 syms)]` and similar for `fact_price` / `fact_volume`. Document the backfill job's result counts in a follow-up to this memo.
+
+#### 4.6.6 What this audit does NOT do
+
+- No code change. `download_all_coins` still has the writer-race; no allowlist deduplication; no `is_unique` assert.
+- No re-fetch. Corrupt cells remain corrupt as of this commit.
+- No silver-layer rebuild. `silver_fact_*` continues to inherit bronze corruption.
+- No consumer regression test. Listed consumers should be exercised post-fix to confirm correct behavior on previously-affected symbols.
+
+These belong in the dedicated `coingecko-data-integrity-fix` task per §7. The numbers here just bound the work.
+
 ---
 
 ## 5. `dim_asset.coingecko_id` is a structural placeholder (medium severity, dormant)

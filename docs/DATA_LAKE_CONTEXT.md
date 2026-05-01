@@ -179,6 +179,22 @@ Concrete implication: **new backfill jobs cannot reproduce pre-2024 data on the 
 
 **Path note (FIXED):** danlongshort files now live at `/data/curated/data_lake/` and are backed up by the nightly Drive sync. The path-class bug that affected Apathy pre-2026-04-20 was applied here too; the fix is verified at `configs/danlongshort_alerts.yaml:15-18`. The yaml's `paths:` block now points to `/data/curated/data_lake/danlongshort_*` and the `# NOTE` comment explicitly references the prior bug in past tense.
 
+### Mads Long Short positions log (Drive-only, no pipeline integration)
+
+**Strategy:** Mads's personal long/short book on Variational. Long BTC perp + short basket of altcoins. **Distinct from Apathy Bleed** (different cohort structure, different gate logic, different sizing) and **distinct from danlongshort** (different venue, different ledger). Three separate books, three separate sources of truth.
+
+**Location:** `Mads Portfolio/mads_portfolio_log.md` in Mads's personal Drive (NOT under `Render Exports/`). No corresponding file in the repo or in `/data/curated/data_lake/`.
+
+**Contents (as of 2026-05-01 hand-off from Mads):** account state, current 16 short positions + BTC long hedge, full trade journal for the current round (opened 2026-04-10, 33 trades), closed positions with realized PnL (ARIA −$4,055, DEXE −$3,875), decisions log with reasoning per call, Mads's market philosophy section (track record, framework, anecdotes), beta context (working assumption: blended β = 1.3).
+
+**Maintainer:** Mads, via his own Claude Code sessions. The portfolio log itself is the **source of truth** for the Mads Long Short book — there is no positions CSV for this account anywhere in the lake; no pipeline writes it.
+
+**Boundary — for Dan / Dan's Claude:**
+
+- **Read-only.** Drive Desktop on Dan's PC may surface the file if synced; treat it as reference material only.
+- **Render's pipeline does NOT touch `Mads Portfolio/`.** The nightly export's `target_folder_id` resolves to `Render Exports/` (id `1J4qy2zH-bo98A2WsA0wq0AkCXtH7sGEj`); the `Mads Portfolio/` folder is outside that scope by design and must not be added to `configs/gdrive_export.yaml::sources` or to any other writer code path.
+- **Don't edit.** If a future session spots a conflict between the portfolio log and Apathy book / lake docs, flag to Mads via chat — don't modify the file. Mads (or his Claude) maintains it.
+
 ### Universe / eligibility / panels
 
 | File | Size | Description |
@@ -451,6 +467,18 @@ The audit memo `reports/apathy_universe_cut_audit_2026_04_29.md` is repo-only (n
 - **Long-lived context docs** (the 4 above) → in Drive sync.
 - **Audit memos / decision write-ups / one-off investigations** → repo-only under `reports/`.
 - If a `reports/` artifact becomes load-bearing for ongoing operations (referenced from `DATA_LAKE_CONTEXT.md` §13 followups, or read by tooling), promote to one of the canonical 4 by either folding the content in or by adding it to the sync sources list (small config change, see commit `abb477a` for the pattern).
+
+### 16.7 Out-of-scope Drive folders — `Mads Portfolio/`
+
+Separate from `Render Exports/` (the folder this section governs), Mads maintains a personal Drive folder `Mads Portfolio/` that is **explicitly outside Render's sync scope**. The canonical artifact there is `Mads Portfolio/mads_portfolio_log.md` — the source of truth for the Mads Long Short book (see §5).
+
+Convention:
+
+- **Render writes only to `Render Exports/`.** The `Mads Portfolio/` folder must not be added to `configs/gdrive_export.yaml::sources`, must not become a target of `upload_or_update_file`, and must not appear in any future writer code path.
+- **Dan's Claude treats `Mads Portfolio/` as read-only reference material.** Read it when relevant for context; don't edit; don't suggest auto-syncing it.
+- **Cross-doc conflicts are flagged, not fixed.** If a future session reading `mads_portfolio_log.md` spots a contradiction with `STRATEGIES.md` / `data_dictionary.yaml` / `apathy_bleed_book.csv` — surface the conflict to Mads in chat. Mads (or his Claude) reconciles.
+
+This convention also applies to any future Drive folders Mads (or Dan) chooses to keep outside the Render-managed surface.
 
 ---
 
