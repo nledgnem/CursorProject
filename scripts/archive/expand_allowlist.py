@@ -98,7 +98,24 @@ def expand_allowlist(output_path: Path, n: int = 1000, min_mcap: int = 1000000):
         "coingecko_id": coins_df["coingecko_id"],
         "venue": "BINANCE",  # Placeholder - update based on actual perp availability
     })
-    
+
+    # Deduplicate by symbol — keep first occurrence (highest mcap, since /coins/markets is
+    # ordered market_cap_desc above). Without this, multiple coins with the same ticker
+    # (e.g. wrapped/bridged variants of ETH) would share a `symbol` and trigger the
+    # writer-race in src/providers/coingecko.py::download_all_coins, where the symbol-keyed
+    # dict silently overwrites earlier entries. See DATA_LAKE_CONTEXT.md §13 / §9 entry 0.
+    n_before = len(allowlist_df)
+    allowlist_df = allowlist_df.drop_duplicates(subset=["symbol"], keep="first").reset_index(drop=True)
+    n_dedup = n_before - len(allowlist_df)
+    if n_dedup > 0:
+        print(f"[INFO] Deduplicated {n_dedup} rows with duplicate symbols (kept highest-mcap variant per symbol).")
+
+    # Defensive: refuse to write an allowlist that would re-trigger the writer-race.
+    assert allowlist_df["symbol"].is_unique, (
+        "Allowlist still has duplicate symbols after dedupe — refusing to write. "
+        "Investigate before re-running."
+    )
+
     # Save
     output_path.parent.mkdir(parents=True, exist_ok=True)
     allowlist_df.to_csv(output_path, index=False)

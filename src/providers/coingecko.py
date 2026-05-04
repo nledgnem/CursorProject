@@ -265,7 +265,25 @@ def download_all_coins(
     """
     print(f"Loading allowlist from {allowlist_path}")
     allowlist_df = pd.read_csv(allowlist_path)
-    
+
+    # Defensive guard against the 2026-04-30 writer-race incident
+    # (DATA_LAKE_CONTEXT.md §9 entry 0, §13 followups, reports/apathy_universe_cut_audit_2026_04_29.md §4).
+    # The dict writes below (`all_prices[symbol] = ...`) are keyed by symbol; if the
+    # allowlist contains multiple rows with the same symbol but different coingecko_ids
+    # (bridged/wrapped variants), the loop silently overwrites earlier results and the
+    # last-iterated variant wins. Refuse to run rather than silently corrupt fact_*.
+    sym_counts = allowlist_df["symbol"].astype(str).value_counts()
+    duplicates = sym_counts[sym_counts > 1]
+    if len(duplicates) > 0:
+        examples = list(duplicates.head(5).items())
+        raise ValueError(
+            f"Allowlist has {len(duplicates)} duplicate symbols (out of {allowlist_df['symbol'].nunique()} "
+            f"unique). The writer-race in download_all_coins would silently overwrite results for these. "
+            f"Examples (symbol, count): {examples}. "
+            f"Run scripts/archive/expand_allowlist.py to rebuild a deduplicated allowlist, or fix "
+            f"data/perp_allowlist.csv manually so each symbol appears exactly once."
+        )
+
     all_prices: Dict[str, Dict[date, float]] = {}
     all_mcaps: Dict[str, Dict[date, float]] = {}
     all_volumes: Dict[str, Dict[date, float]] = {}
