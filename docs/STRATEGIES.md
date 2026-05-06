@@ -2,7 +2,7 @@
 
 > **⚠️ This file is the single source of truth in the repo (`docs/STRATEGIES.md`).** Edits made directly in the Drive copy will be overwritten on the next nightly sync from Render. To update: edit the repo copy, commit, push to main. Render's nightly export will propagate to Drive (preserving file ID), and Drive Desktop will sync to your PC.
 
-**Last updated:** 2026-04-29 (second update same day) — refreshed §6 realized outcomes (DEXE and PIEVERSE closed at the 60% stop level) and added new entries to §7 / §8 reflecting first losses; **`[DECISION 2026-04-29 — Mads + Dan]`** CoinGecko ingestion universe reduction from top ~3,000 → top 1,000 by mcap added to §2 universe note (status: PENDING EXECUTION, full context in DATA_LAKE_CONTEXT.md §4 and `data_dictionary.yaml::data_sources.coingecko.ingestion_universe`). Original document dated 2026-04-09; sections 1, 3–5 substantively unchanged.
+**Last updated:** 2026-05-06 — alert config simplified to STOP_HIT-only with once-per-position dedup; STRATEGIES.md role attribution corrected (Apathy = Claude-advisory + Dan-ratifying via Cohort Shorts project chat; Mads not in the Apathy decision loop). Prior update 2026-04-29 (second update same day): refreshed §6 realized outcomes (DEXE and PIEVERSE closed at the 60% stop level) and added new entries to §7 / §8 reflecting first losses; **`[DECISION 2026-04-29]`** CoinGecko ingestion universe reduction from top ~3,000 → top 1,000 by mcap added to §2 universe note (status: PENDING EXECUTION, full context in DATA_LAKE_CONTEXT.md §4 and `data_dictionary.yaml::data_sources.coingecko.ingestion_universe`). Original document dated 2026-04-09; sections 1, 3–5 substantively unchanged.
 
 ## 1. Thesis
 
@@ -17,7 +17,7 @@ Altcoin hype cycles are structurally finite. When a mid/small-cap altcoin experi
 - **Sizing:** Notional-matched to total short notional (1:1 ratio) `[VERIFIED]`
 - **Venue:** Variational (primary), Hyperliquid (secondary) `[VERIFIED]`
 - **Beta-hedged alternative tested:** BTC-only beta-hedged (size BTC to basket's rolling 30d beta) improved alpha from 75% → 92% but doubled worst drawdown from -30% to -64%. BTC+ETH two-factor hedge (ETH 0–30%) degraded Sharpe from 3.31 → 1.71–1.97. **Current decision: notional match.** `[VERIFIED]`
-- **Mads' view:** He believes ETH should eventually be part of the hedge leg since alts correlate more with ETH, but acknowledged the backtest period had BTC dominance. Open to revisiting. `[VERIFIED]`
+- **Open question:** ETH-in-hedge is regime-dependent — alts may correlate more with ETH in some regimes, but the backtest period had BTC dominance. Current decision is BTC-only; revisit when more live data accumulates. `[VERIFIED]`
 
 ### Short Leg
 - **Instruments:** Altcoin perpetual futures, equal-weighted per leg `[VERIFIED]`
@@ -38,10 +38,10 @@ Three explicit lists plus two algorithmic filters `[VERIFIED]`:
 - **Why cohorts:** Fixed formation windows create a clean snapshot of "who pumped most," preventing signal drift. The 45-day window acts as a natural noise filter — only coins with sustained momentum make the cut. `[VERIFIED]`
 - **Formation window:** 45 calendar days (trailing lookback) `[VERIFIED — swept 30, 45, 60, 75, 90, 120, 150 days; 45d consistently top-ranked]`
 - **Execution lag:** 0 days (immediate) `[VERIFIED — lag tested at 0, 7, 14, 15, 30, 60 days; 0d won decisively]`
-- **Holding period:** 150 days in backtest baseline `[VERIFIED]`. Mads preferred 180 days for clean 4-cohort rotation (180 ÷ 45 = 4). Backtested: 180d comparable Sharpe but ~17% worse worst-case drawdown. 135d (3 × 45) was tightest on risk. **Current live deployment uses variable hold-days per cohort due to seeded entry.** `[VERIFIED]`
+- **Holding period:** 150 days in backtest baseline `[VERIFIED]`. 180 days was considered for clean 4-cohort rotation (180 ÷ 45 = 4); backtested: 180d comparable Sharpe but ~17% worse worst-case drawdown. 135d (3 × 45) was tightest on risk. **Current live deployment uses variable hold-days per cohort due to seeded entry.** `[VERIFIED]`
 - **Cohort cadence:** Every 45 days, non-overlapping formation windows `[VERIFIED]`
 - **Steady-state book:** ~3–4 overlapping cohorts, ~15–20 positions if picking 3–5 per cohort `[VERIFIED]`
-- **No position doubling:** If a coin appears in consecutive cohorts' top 7, skip it in the newer one. Original exit date stands, no extensions. `[VERIFIED — Mads initially considered extending, then changed his mind]`
+- **No position doubling:** If a coin appears in consecutive cohorts' top 7, skip it in the newer one. Original exit date stands, no extensions. `[VERIFIED — extension was considered then dropped]`
 
 ---
 
@@ -50,8 +50,8 @@ Three explicit lists plus two algorithmic filters `[VERIFIED]`:
 ### Signal Generation
 - **Method:** Hybrid — systematic scanner + discretionary overlay `[VERIFIED]`
 - **Scanner:** Ranks all eligible altcoins by 45-day relative return vs BTC. Outputs Top 7 for discretionary review. Shows 6 return numbers per coin: formation, post-formation, and total in both USD and vs-BTC terms. `[VERIFIED]`
-- **Discretionary selection:** Mads and Dan review the Top 7 and pick 3–7 per cohort. Selection criteria include narrative risk, perp liquidity, sector concentration, post-formation return direction, and formation return magnitude. `[VERIFIED]`
-- **Who decides:** Mads has final authority on coin selection. Dan executes. `[VERIFIED]`
+- **Discretionary selection:** Coin selection happens in the Cohort Shorts Claude project chat. Workflow: scanner-reminder Telegram nudges Dan around 40/43/45 days since last cohort entry → Dan exports the latest data lake artifacts (`silver_fact_price.parquet`, `single_coin_panel.csv`, `universe_eligibility.parquet`, `msm_timeseries.csv`, `stablecoins.csv`) from Render to the "Render Data Lake Exports" Drive folder via the nightly export pipeline → Dan opens the Cohort Shorts project chat → Claude pulls the files via the Drive connector, applies universe filters (`is_perp_active`, exclusion lists, length/digit filter), ranks the eligible universe by 45-day relative return vs BTC, cross-references against `perp_coverage_summary.csv` for venue availability, and produces a Top 7 table with 6 return numbers per coin (formation/post-formation/total in USD and vs-BTC) → Dan picks 3–7 discretionarily in chat using narrative risk, perp liquidity, sector concentration, post-formation direction, and formation-return magnitude as criteria → Claude generates the exact `apathy_log_entry.py` commands with stop prices. `[VERIFIED]`
+- **Who decides:** Claude (advisory, in Cohort Shorts project chat) recommends Top 7 and assists discretionary selection → Dan ratifies the final 3–7 picks → Dan executes on Variational UI, sets stops, runs `apathy_log_entry.py` locally, pushes to git → Render picks up the new rows on next deploy via the append-only `trade_id` merge. `[VERIFIED]`
 
 ### Gates
 1. **Pre-Listing Bias / Perp Check:** Coin must have `is_perp_active == 1` on the execution day in panel data, AND must have a listed perp on Variational or Hyperliquid (cross-referenced via `perp_coverage_summary.csv`). `[VERIFIED]`
@@ -71,16 +71,16 @@ Three explicit lists plus two algorithmic filters `[VERIFIED]`:
 - **Level:** 60% adverse excursion per individual short leg (if shorted at $1.00, stop at $1.60) `[VERIFIED]`
 - **Implementation:** Set manually as stop-loss orders on Variational UI at entry time `[VERIFIED]`
 - **Why 60% and not 50%:** Swept 20%–150% + no-stop. 60% dominated (avg Sharpe 2.57 across setups). 50% triggered too many false stop-outs — coins that briefly spiked +55% then collapsed. The extra 10 cents of breathing room materially improved returns. `[VERIFIED]`
-- **Override:** Mads/Dan can manually close before stop if discretionary judgment warrants (see ARIA close below). `[VERIFIED]`
-- **Telegram alerts:** Warning at 45% adverse, Critical at 55%, Stop Hit at 60% — checked hourly. `[VERIFIED]`
+- **Override:** Dan can manually close before stop if discretionary judgment warrants (Claude may flag in the project chat; Dan executes). See ARIA close below. `[VERIFIED]`
+- **Telegram alerts:** Stop Hit at 60% — checked hourly, fires exactly once per trade_id and stays silent until the position closes. The 45% Warning and 55% Critical tiers are classified internally for rising-edge tracking but no longer surfaced to Telegram or the alert log per `[DECISION 2026-05-06 — Dan]` (`configs/apathy_alerts.yaml` thresholds preserved for classification semantics). `[VERIFIED]`
 
 ### Time Exit
 - Each position has a hard exit date = entry_date + hold_days (varies by seeded cohort) `[VERIFIED]`
-- No extensions — Mads explicitly decided against this `[VERIFIED]`
+- No extensions — explicit policy decision `[VERIFIED]`
 - Telegram reminders at 7, 3, and 1 day before expiry `[VERIFIED]`
 
 ### Manual Override
-- Mads/Dan can close any position at any time via Variational UI `[VERIFIED]`
+- Dan can close any position at any time via Variational UI `[VERIFIED]`
 - Must run `apathy_close_trade.py` to update the book CSV after manual close `[VERIFIED]`
 
 ### No partial-take or scaling rules defined `[VERIFIED — not discussed]`
@@ -97,7 +97,7 @@ Three explicit lists plus two algorithmic filters `[VERIFIED]`:
 ### Alert Types and Cadences
 - **~00:05 UTC daily:** Macro regime status (APR, fragmentation, gate status) — from `live_data_fetcher.py` `[VERIFIED]`
 - **08:00 UTC daily:** Apathy Bleed portfolio snapshot (positions, mark prices from Variational public API, unrealized PnL, nearest expiry, nearest stop, regime) + exit date reminders + scanner cohort reminders `[VERIFIED]`
-- **Hourly:** Stop proximity checks — only sends Telegram if a position breaches 45%/55%/60% thresholds. Dedup: one alert per position per UTC hour per tier; tier crossing fires immediately. `[VERIFIED]`
+- **Hourly:** Stop proximity checks — only sends Telegram if a position breaches the 60% stop. Per `[DECISION 2026-05-06 — Dan]`, the 45% Warning and 55% Critical tiers are silent (classified internally for rising-edge tracking but not surfaced). STOP_HIT fires exactly once per position and stays silent until the position closes (cleanup of `last_tier_by_trade` removes closed trade_ids). `[VERIFIED]`
 - **Scanner reminder:** Fires at 40, 43, 45 days since last cohort entry `[VERIFIED]`
 
 ### State Files (on Render persistent disk `/data/`)
@@ -162,11 +162,11 @@ Three explicit lists plus two algorithmic filters `[VERIFIED]`:
 ### What Worked
 1. **ARIA validated the thesis spectacularly.** +614% formation return → dumped 72% within hours of entry. This is exactly the "retail hype exhaustion" the strategy bets on. The formation return magnitude was the highest in the basket and produced the fastest/largest profit. `[VERIFIED]`
 
-2. **Discretionary overlay added value immediately.** Mads closed ARIA manually at +71.8% rather than waiting 175 days. The backtest holds to expiry, but live discretion to take extreme profits early is sensible risk management. `[VERIFIED]`
+2. **Discretionary overlay added value immediately.** Dan closed ARIA manually at +71.8% rather than waiting 175 days. The backtest holds to expiry, but live discretion to take extreme profits early is sensible risk management. `[VERIFIED]`
 
 3. **The 60% stop level was correct.** At entry, all 15 positions were within 3% of entry price. The stop prices set on Variational UI all matched entry × 1.60. No false stop-out drama on day one. `[VERIFIED]`
 
-4. **`[Update 2026-04-29]` The 60% stop level fired and held, twice.** DEXE (entry 2026-04-09, closed 2026-04-18 at −62.6%, 9 days held) and PIEVERSE (entry 2026-04-09, closed 2026-04-20 at −60.3%, 11 days held) both hit the +60% adverse threshold. Both were closed manually at or marginally past the stop — Mads used the stop level as a guide for manual closure rather than waiting for automated execution. The empirical validation of the 60% level (chosen via backtest sweep across 20%–150%) carries through to live operation. Without the stop discipline, both positions would have continued bleeding: DEXE briefly traded above $14 (+74%), PIEVERSE above $0.85 (+67%). `[VERIFIED]`
+4. **`[Update 2026-04-29]` The 60% stop level fired and held, twice.** DEXE (entry 2026-04-09, closed 2026-04-18 at −62.6%, 9 days held) and PIEVERSE (entry 2026-04-09, closed 2026-04-20 at −60.3%, 11 days held) both hit the +60% adverse threshold. Both were closed manually by Dan at or marginally past the stop — the 60% stop level served as a guide for manual closure rather than waiting for automated execution. The empirical validation of the 60% level (chosen via backtest sweep across 20%–150%) carries through to live operation. Without the stop discipline, both positions would have continued bleeding: DEXE briefly traded above $14 (+74%), PIEVERSE above $0.85 (+67%). `[VERIFIED]`
 
 ### What Failed / Surprised Us
 1. **Variational's UPnL display is misleading.** The UI shows leveraged returns, not price returns. ICNT showed -55.76% UPnL which caused initial alarm, but the actual adverse price move was only +2.8%. This caused a false "URGENT" flag in our analysis. **Lesson: always calculate from entry price, never trust the venue's percentage display on a leveraged account.** `[VERIFIED]`
@@ -186,9 +186,9 @@ Three explicit lists plus two algorithmic filters `[VERIFIED]`:
 
 ## 8. Open Design Questions
 
-1. **Holding period: 150 vs 180 vs 135 days.** Mads initially committed to 180d for clean 4-cohort rotation. Backtest showed 180d comparable on Sharpe but -47.7% worst DD vs -30.5% for 150d. 135d tightest on risk. **Status: [OPEN — live deployment uses variable hold-days due to seeding, decision deferred until first cohort cycle completes]**
+1. **Holding period: 150 vs 180 vs 135 days.** 180d was initially the leading candidate for clean 4-cohort rotation. Backtest showed 180d comparable on Sharpe but -47.7% worst DD vs -30.5% for 150d. 135d tightest on risk. **Status: [OPEN — live deployment uses variable hold-days due to seeding, decision deferred until first cohort cycle completes]**
 
-2. **BTC+ETH hedge leg.** Mads believes alts correlate more with ETH and wants ETH in the hedge. Backtest with ETH 0–30% degraded returns due to rebalancing cost and ETH underperformance in sample. Mads acknowledged this is regime-dependent. **Status: [OPEN — using BTC-only for now, revisit when live experience accumulated]**
+2. **BTC+ETH hedge leg.** Alts may correlate more with ETH in some regimes, suggesting ETH belongs in the hedge. Backtest with ETH 0–30% degraded returns due to rebalancing cost and ETH underperformance in sample — this is regime-dependent. **Status: [OPEN — using BTC-only for now, revisit when live experience accumulated]**
 
 3. **Beta-hedged BTC sizing.** BTC-only beta-hedged (size BTC to basket's rolling 30d beta) showed Sharpe 3.80 and 92% alpha but -64% worst drawdown. Smoothed version: 3.26 Sharpe, -43% DD. Better alpha, worse tail. **Status: [OPEN — Phase 2 upgrade after live validation of notional match]**
 
@@ -200,11 +200,13 @@ Three explicit lists plus two algorithmic filters `[VERIFIED]`:
 
 7. **Replaced position policy.** When ARIA was closed early, SIGN was entered as a replacement. No formal rule exists for when/whether to replace early closes. DEXE and PIEVERSE were NOT replaced after closing. **Status: [OPEN — discretionary for now; the divergent treatment of ARIA vs DEXE/PIEVERSE suggests an implicit rule (replace winners, don't replace stop-outs) but it isn't formalized]**
 
-8. **Multiple strategy accounts.** Apathy Bleed runs on its own Variational settlement pool. Mads wants separate accounts per strategy. Hyperliquid supports subaccounts. **Status: [VERIFIED — architecture supports this, Apathy Bleed is isolated]**
+8. **Multiple strategy accounts.** Apathy Bleed runs on its own Variational settlement pool. Separate accounts per strategy is the current design. Hyperliquid supports subaccounts. **Status: [VERIFIED — architecture supports this, Apathy Bleed is isolated]**
 
-9. **`[Added 2026-04-29]` Hedge rebalancing on early closes.** Each cohort's LONG_BTC hedge was sized at formation to match the cohort's total short notional. When a short closes early — whether profitably (ARIA) or via stop (DEXE, PIEVERSE) — the cohort's BTC hedge is not reduced. Result: book is currently over-hedged on BTC by ~$6,000 (open shorts ~$39K, BTC longs ~$45K). Net effect is a small directional long-BTC bias on the residual book. **Status: [OPEN — need explicit policy. Options: (a) leave hedges static, accept residual bias as small; (b) trim BTC hedge proportionally on each early close; (c) re-hedge to current open-short notional only on cohort expiry. Discuss with Mads.]**
+9. **`[Added 2026-04-29]` Hedge rebalancing on early closes.** Each cohort's LONG_BTC hedge was sized at formation to match the cohort's total short notional. When a short closes early — whether profitably (ARIA) or via stop (DEXE, PIEVERSE) — the cohort's BTC hedge is not reduced. Result: book is currently over-hedged on BTC by ~$6,000 (open shorts ~$39K, BTC longs ~$45K). Net effect is a small directional long-BTC bias on the residual book. **Status: [OPEN — need explicit policy. Options: (a) leave hedges static, accept residual bias as small; (b) trim BTC hedge proportionally on each early close; (c) re-hedge to current open-short notional only on cohort expiry. Decision pending Dan's call (Claude can model the alternatives).]**
 
-10. **`[Added 2026-04-29]` Post-cut audit — universe reduction impact on historical picks.** Pre-flight check pending before executing the top-1000 cut: were the 16 live Apathy picks (cohort 2026-04-09) AND the 12 backtest cohorts' picks all ranked ≤1000 by mcap on their entry dates? If even one pick was ranked >1000, that's evidence the strategy uses long-tail coins and the cut would systematically exclude future similar picks. **Status: [OPEN — Claude Code investigation queued before allowlist re-run; if any pick was >1000, halt and surface to Dan/Mads.]**
+10. **`[Added 2026-04-29]` Post-cut audit — universe reduction impact on historical picks.** Pre-flight check pending before executing the top-1000 cut: were the 16 live Apathy picks (cohort 2026-04-09) AND the 12 backtest cohorts' picks all ranked ≤1000 by mcap on their entry dates? If even one pick was ranked >1000, that's evidence the strategy uses long-tail coins and the cut would systematically exclude future similar picks. **Status: [OPEN — Claude Code investigation queued before allowlist re-run; if any pick was >1000, halt and surface to Dan.]**
+
+11. **`[Added 2026-05-06]` Upstream data export pipeline reliability for cohort selection.** The Cohort Shorts project chat workflow depends on the nightly export of `silver_fact_price.parquet`, `single_coin_panel.csv`, `universe_eligibility.parquet`, `msm_timeseries.csv`, and `stablecoins.csv` to the "Render Data Lake Exports" Drive folder. The pipeline is built but had a deployment issue with the `RENDER_DATA_LAKE_PATH` env var — needs to be confirmed working ahead of the next cohort scan (~2026-05-24). **Status: [OPEN — Dan to verify export pipeline is healthy before May 24; if not, the cohort scan blocks until fixed.]** This is operationally upstream of the cohort-selection workflow and the scanner cannot run on stale data.
 
 ---
 
@@ -216,7 +218,7 @@ When the CoinGecko allowlist drops to top 1,000, Binance-perp listings outside t
 
 ## 9. What's NOT the Strategy
 
-1. **Apathy Bleed is NOT auto-executing.** The scanner generates candidates; Mads picks. Early versions of Claude jumped to "here's the trade to put on TODAY" — that's wrong. The signal is systematic, the execution is discretionary.
+1. **Apathy Bleed is NOT auto-executing.** Coin selection happens via discretionary review in the Cohort Shorts Claude project chat (Claude advisory, Dan ratifies). Execution is manual on Variational UI. Earlier framings of "the scanner picks the trade" or "here's the trade to put on TODAY" are wrong — the scanner produces a Top 7 candidate ranking; final selection is always discretionary.
 
 2. **The 4.53 Sharpe is NOT the tradeable number.** That was an Event Study Trajectory Sharpe (cross-sectional average of cohorts aligned to Day 0). It measures signal quality, not portfolio returns. The tradeable Continuous Sharpe is ~2.0–3.3 depending on start date. Both Claude and Gemini contributed to clarifying this.
 
@@ -228,7 +230,7 @@ When the CoinGecko allowlist drops to top 1,000, Binance-perp listings outside t
 
 6. **Apathy Bleed is NOT the same as `danlongshort`.** `danlongshort` is a separate beta-neutral long/short strategy with its own CSV, alert runner, and Telegram prefix. They share Render infrastructure but have no code or state overlap. Do not conflate them.
 
-7. **Do NOT write code or run analysis before getting explicit go-ahead.** Mads established this as a hard workflow rule. Always: (1) clarify what you plan to do, (2) identify failure modes, (3) assess if it's the right analysis, (4) wait for approval. This is stored in Claude's memory edits.
+7. **Do not write code or run analysis before getting explicit go-ahead.** This is a hard workflow rule established by Dan. Always: (1) clarify what you plan to do, (2) identify failure modes, (3) assess if it's the right analysis, (4) wait for approval. Stored in Claude's memory edits as part of the Apathy Bleed operating conventions.
 
 8. **`[Added 2026-04-29]` Apathy Bleed does NOT have a "5-Gates exclusion scanner."** A framework with that name was discussed in earlier exploratory chats (covering supply ratio, perp/spot vol, OI/mcap, funding regime, and vol/mcap trajectory) and never became part of the actual strategy. The only gates that exist in production are the three listed in §3: perp/venue check, Cold Flush APR gate, and the Oct 2025 quarantine. If you see "5-Gates" referenced in any other context document about Apathy Bleed, it is stale.
 
@@ -236,4 +238,4 @@ When the CoinGecko allowlist drops to top 1,000, Binance-perp listings outside t
 
 ## Summary
 
-**The most important thing the receiving session needs to know:** Apathy Bleed is live with real money ($30K deposit, ~$84K total notional [$39K open shorts + $45K BTC longs], 13 short legs + 4 BTC hedges on Variational). The monitoring infrastructure is deployed on Render. The book CSV at `/data/apathy_bleed_book.csv` is the single source of truth. Three positions have been closed: ARIA +71.8% (replaced with SIGN), DEXE −62.6% (no replacement, hit 60% stop), PIEVERSE −60.3% (no replacement, hit 60% stop). Net realized: **−$1,513**. The 60% stop level fired correctly on both losses. Open question: hedge rebalancing policy on early closes (book is currently over-hedged ~$6K on BTC). Next cohort scan is due ~May 24, 2026; first full cohort completes 2026-05-19. Do not make changes to the live pipeline without Dan's explicit approval and Mads' sign-off on any coin selection.
+**The most important thing the receiving session needs to know:** Apathy Bleed is live with real money ($30K deposit, ~$84K total notional [$39K open shorts + $45K BTC longs], 13 short legs + 4 BTC hedges on Variational). The monitoring infrastructure is deployed on Render. The book CSV at `/data/apathy_bleed_book.csv` is the single source of truth. Three positions have been closed: ARIA +71.8% (replaced with SIGN), DEXE −62.6% (no replacement, hit 60% stop), PIEVERSE −60.3% (no replacement, hit 60% stop). Net realized: **−$1,513**. The 60% stop level fired correctly on both losses. Open question: hedge rebalancing policy on early closes (book is currently over-hedged ~$6K on BTC). Next cohort scan is due ~May 24, 2026; first full cohort completes 2026-05-19. Do not make changes to the live pipeline without Dan's explicit approval. Coin-selection ratification is Dan's call (Claude advises in the Cohort Shorts project chat).
