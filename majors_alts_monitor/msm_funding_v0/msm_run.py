@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from typing import List, Dict, Any, Optional
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 import logging
 import sys
 
@@ -97,6 +97,7 @@ def run_msm_v0(
     end_date: date,
     run_id: Optional[str] = None,
     sanity_check_only: bool = False,
+    data_lake_override: Optional[Path] = None,
 ) -> None:
     """
     Run MSM v0 analysis over a date range.
@@ -116,8 +117,48 @@ def run_msm_v0(
     if run_id is None:
         run_id = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
     
-    # Initialize data loader
-    data_lake_dir = Path(config["data"]["data_lake_dir"])
+    # Resolve data lake directory.
+    # Precedence: --data-lake CLI arg > repo_paths.data_lake_root() (which honors RENDER_DATA_LAKE_PATH).
+    # msm_config.yaml::data_lake_dir is no longer consulted — it pointed at a relative deploy snapshot
+    # that produced frozen Environment_APR (DATA_LAKE_CONTEXT §13). Field is left untouched in the
+    # config; we emit a deprecation warning if it's still present so callers notice.
+    if (config.get("data") or {}).get("data_lake_dir"):
+        logger.warning(
+            "msm_config.yaml::data.data_lake_dir is deprecated and IGNORED. "
+            "Pass --data-lake or set RENDER_DATA_LAKE_PATH; default is repo_paths.data_lake_root()."
+        )
+    if data_lake_override is not None:
+        data_lake_dir = Path(data_lake_override).expanduser().resolve()
+    else:
+        from repo_paths import data_lake_root
+        data_lake_dir = data_lake_root()
+    logger.info(f"Resolved data_lake_dir: {data_lake_dir}")
+
+    # Fail-fast freshness check on silver feed.
+    # msm_run.py historically read from a relative-path deploy snapshot, producing frozen
+    # Environment_APR for ~5 weeks before the bug was caught (see DATA_LAKE_CONTEXT §13).
+    # Refuse to run if the silver cross-sectional file is missing or stale beyond threshold.
+    SILVER_FRESHNESS_THRESHOLD_DAYS = 3
+    silver_cs_path = data_lake_dir / "silver_funding_cross_sectional_daily.parquet"
+    if not silver_cs_path.exists():
+        raise SystemExit(
+            f"Silver funding data is missing: silver_funding_cross_sectional_daily.parquet "
+            f"not found at {silver_cs_path}. Resolved data_lake_dir={data_lake_dir}. "
+            f"Set --data-lake or RENDER_DATA_LAKE_PATH to the canonical persistent path. "
+            f"Refusing to produce stale msm output."
+        )
+    silver_max_raw = pd.read_parquet(silver_cs_path, columns=["date"])["date"].max()
+    max_date = pd.Timestamp(silver_max_raw).date()
+    today = datetime.now(timezone.utc).date()
+    drift_days = (today - max_date).days
+    if drift_days > SILVER_FRESHNESS_THRESHOLD_DAYS:
+        raise SystemExit(
+            f"Silver funding data is stale: max(date)={max_date}, today={today}, "
+            f"drift={drift_days} days. Threshold={SILVER_FRESHNESS_THRESHOLD_DAYS} days. "
+            f"Refusing to produce stale msm output."
+        )
+    logger.info(f"Silver freshness OK: max(date)={max_date}, drift={drift_days}d (threshold={SILVER_FRESHNESS_THRESHOLD_DAYS}d).")
+
     loader = MSMDataLoader(data_lake_dir)
     
     # Run sanity check
@@ -643,13 +684,19 @@ def main():
         action="store_true",
         help="Only run data sanity check",
     )
-    
+    parser.add_argument(
+        "--data-lake",
+        type=Path,
+        default=None,
+        help="Override data_lake_dir from msm_config.yaml (use the canonical persistent path on Render).",
+    )
+
     args = parser.parse_args()
-    
+
     # Parse dates
     start_date = datetime.strptime(args.start_date, "%Y-%m-%d").date()
     end_date = datetime.strptime(args.end_date, "%Y-%m-%d").date()
-    
+
     # Run
     try:
         run_msm_v0(
@@ -658,6 +705,7 @@ def main():
             end_date,
             run_id=args.run_id,
             sanity_check_only=args.sanity_check_only,
+            data_lake_override=args.data_lake,
         )
         # If we reach here without exception, all Data Quality tripwires have passed.
         print("Pipeline executed successfully. Data Quality Gate: ALL TRIPWIRES PASSED.")

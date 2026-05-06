@@ -104,6 +104,13 @@ def main() -> int:
     else:
         start_date = date.fromisoformat(args.start_date)
 
+    # Resolve data lake path once for both Step 3.5 (writer) and Step 4 (reader).
+    # Without this hoist, --skip-ingestion left data_lake_path undefined for Step 4.
+    data_lake_override = os.environ.get("RENDER_DATA_LAKE_PATH", "").strip()
+    data_lake_path = Path(data_lake_override).expanduser() if data_lake_override else (PROJECT_ROOT / "data" / "curated" / "data_lake")
+    if not data_lake_path.is_absolute():
+        data_lake_path = (PROJECT_ROOT / data_lake_path).resolve()
+
     # ------------------------------------------------------------------
     # Steps 1-3: Updating Data Lake (halt on failure)
     # ------------------------------------------------------------------
@@ -196,10 +203,6 @@ def main() -> int:
             logger.error("Silver layer builder not found: %s", SCRIPT_BUILD_SILVER)
             return 1
 
-        data_lake_override = os.environ.get("RENDER_DATA_LAKE_PATH", "").strip()
-        data_lake_path = Path(data_lake_override).expanduser() if data_lake_override else (PROJECT_ROOT / "data" / "curated" / "data_lake")
-        if not data_lake_path.is_absolute():
-            data_lake_path = (PROJECT_ROOT / data_lake_path).resolve()
         ok = run_step(
             cwd=PROJECT_ROOT,
             cmd=[
@@ -232,6 +235,7 @@ def main() -> int:
             "majors_alts_monitor.msm_funding_v0.msm_run",
             "--start-date", start_date.isoformat(),
             "--end-date", end_date.isoformat(),
+            "--data-lake", str(data_lake_path),
         ],
         step_name="Step 4: Execute Strategy Engine (majors_alts_monitor/msm_funding_v0/msm_run.py)",
     )
