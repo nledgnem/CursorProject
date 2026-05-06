@@ -1,13 +1,12 @@
 # Apathy Bleed Universe Cut — Pre-Flight Audit
 
-> **STATUS: PAUSED 2026-04-30 — universe cut blocked pending CoinGecko data-integrity fix.**
-> Step 3 of the audit surfaced a P0 production bug (`download_all_coins` writer-race, see §4)
-> that silently corrupts `fact_price` / `fact_marketcap` / `fact_volume` for ~139 symbols
-> including ETH (off by ~5,000×), SOL (~700×), DOGE (~120×), and others. Shipping the universe
-> cut on top of corrupted data would entrench the corruption in the smaller table without fixing
-> the underlying defect. Universe-cut work pauses at end-of-Step-3; resumes only after the
-> dedicated `coingecko-data-integrity-fix-2026-04-29` task lands. See §4 (writer-race), §5
-> (`dim_asset` placeholder), and §7 (status / next actions).
+> **STATUS: WRITER-RACE RESOLVED 2026-05-05; universe cut READY TO EXECUTE as Phase E.**
+> The §4 writer-race that paused this work shipped its full remediation 2026-05-05 (Phase B+C
+> fail-fast guard + allowlist dedupe via PR #4 merge `87a4c50`; Phase D historical re-fetch via
+> PR #5 merge `c7de283` + manual Render shell run). All four verification signals PASS; flap-flop
+> spot-checks at corruption-era dates correctly recovered to canonical mcaps (see §8 resolution
+> addendum for empirical numbers). Universe cut to top 1,000 by mcap is no longer gated and can
+> execute via `scripts/archive/expand_allowlist.py --n 1000 --min-mcap 1000000 --output data/perp_allowlist.csv`.
 
 **Date:** 2026-04-29 (revised 2026-04-30 with Step 3 findings + pause)
 **Decision:** Mads + Dan, 2026-04-29 — reduce CoinGecko ingestion universe from current 2,997-row sticky allowlist to top 1,000 by market cap.
@@ -328,3 +327,78 @@ A new task — `coingecko-data-integrity-fix-2026-04-29` — picks up from this 
 - `data_dictionary.yaml` `data_sources.coingecko.notes` — appended with writer-race warning.
 
 Single docs-only commit. No allowlist or fetcher changes in this commit.
+
+---
+
+## 8. Resolution addendum (2026-05-05)
+
+Phase B+C+D shipped. Writer-race RESOLVED.
+
+### 8.1 What landed
+
+| Phase | PR | Merge SHA | What |
+|---|---|---|---|
+| **B** Code defenses | #4 | `87a4c50` (2026-05-04) | Fail-fast guard in `download_all_coins` against duplicate symbols; `assert symbol.is_unique` in `expand_allowlist.py`; commits `b1e53d1` |
+| **C** Allowlist dedupe | #4 | `87a4c50` (2026-05-04) | `data/perp_allowlist.csv` reduced 2,997 → 2,716 rows. Backup at `data/perp_allowlist.2997_pre_writer_race_dedupe.bak.csv` (commit `b16f58f`). Dedupe commit `ac80300`. USC dropped entirely (audit per §1.4 + bug-impact §4.6); one NaN-symbol row dropped (data hygiene). |
+| **D.0–D.1** Phase D scripts | #5 | `c7de283` (2026-05-05) | `scripts/verify_ingestion_integrity.py` (pluggable post-deploy check, `--mode writer_race` initial mode); `scripts/refetch_writer_race_affected.py` (one-shot driver). Commit `ce12374`. |
+| **D.2–D.4** Re-fetch on Render | — | manually executed 2026-05-05 17:36 UTC | 138 canonical slugs over `[2024-05-10, 2026-05-05]` (start bumped from 2024-05-06 to dodge `offset_days=-2` padding tripping the 730-day Basic-tier ceiling — first attempt 401d on this boundary). Atomic upsert: 76,766 stale rows dropped + 73,920 canonical rows inserted in `fact_marketcap`; similar magnitudes in `fact_price` (77,140/73,920) and `fact_volume` (76,884/73,920). 0 errors in 374s wall time. |
+| **D.5** Verification | — | 2026-05-05 | All four signals PASS (Signals 1+2 INDETERMINATE locally, but Signal 3+4 direct PASS; flap-flop spot-checks at 2026-02-21, 2026-03-06, 2025-09-01, 2025-08-01 all recovered to canonical mcaps). |
+| **D.6** Cache invalidation | — | 2026-05-05 | `/data/curated/data_lake/danlongshort_price_cache.parquet` deleted on Render shell. Next danlongshort run rebuilds from corrected bronze. |
+
+### 8.2 Empirical verification
+
+Pre-fix → post-fix on `fact_marketcap[asset_id, date=2026-05-05]`:
+
+| Symbol | Pre-fix (sample 2026-04-25) | Post-fix (2026-05-05) | Recovery factor |
+|---|---:|---:|---:|
+| ETH | $41M | $284B | ~6,900× |
+| SOL | $95M | $48.6B | ~511× |
+| DOGE | $252M | $17.1B | ~67× |
+| USDT | absent | $189.5B | n/a (was missing) |
+
+Flap-flop spot-checks (the tougher test — verifies historical-era dates corrected, not just today):
+
+| Date | Symbol | Pre-fix (audit memo) | Post-fix (verified 2026-05-05) | Verdict |
+|---|---|---:|---:|---|
+| 2026-02-21 | ETH | ~$2M | $237B | PASS |
+| 2026-03-06 | ETH | ~$2M | $250B | PASS |
+| 2025-09-01 | USDT | ~$1.7M | $168B | PASS |
+| 2025-08-01 | SHIB | ~$1.5M | $7.3B | PASS |
+
+### 8.3 Caveat — 9 ambiguous canonical picks
+
+For 9 symbols where two distinct real coins share a ticker (not just bridged variants of one coin), the canonical pick was made by **highest current mcap** as a deterministic-but-imperfect heuristic. Pre-fix value was random per iteration order; post-fix is deterministic regardless of choice — strictly better. Verified zero references in any Apathy Bleed cohort (live or backtest) before commit.
+
+| Symbol | Canonical (highest mcap) | Rejected alternative(s) |
+|---|---|---|
+| ANT | `autonomi` | `aragon` |
+| AURA | `aura-on-sol` | `aura-finance` |
+| ALPHA | `alpha-fi` | `alpha-finance` |
+| AVA | `concierge-io` | `ava-ai` |
+| ANY | `anyspend` | `anyswap` |
+| ADX | `adex` | `adrena` |
+| AIN | `infinity-ground` | `ai-network` |
+| ACE | `endurance` | `ace-data-cloud-2` |
+| ACT | `act-i-the-ai-prophecy` | `achain`, `acet-token` |
+
+Reversal possible by editing `outputs/writer_race_canonical_slug_mapping.csv` and re-running `scripts/refetch_writer_race_affected.py` against the affected slug. Mirrored in `data_dictionary.yaml::data_sources.coingecko.canonical_slug_resolutions`.
+
+### 8.4 What's NOT fixed
+
+- **Pre-2024-05-10 rows for affected symbols.** Basic-tier API depth ceiling prevents re-fetch of older history. Pre-2024 era is independently flagged as suspect for the unrelated broken-Analyst-tier-pipeline reason (DATA_LAKE_CONTEXT.md §9 entry 1) — Phase D doesn't fix that, doesn't claim to.
+- **`dim_asset.coingecko_id` placeholder** (audit §5). Still OPEN. Not bundled into writer-race remediation. Separate cleanup task.
+- **`verify_ingestion_integrity.py` log-path coverage** (Signals 1+2). Returns INDETERMINATE on Render shell because the script's candidate log paths don't match Render's actual daemon stdout location. Not a blocker — Signal 3 (parquet read on affected blue-chips) is direct empirical evidence stronger than logs. Cleanup item filed in DATA_LAKE_CONTEXT.md §13.
+
+### 8.5 Phase E — universe cut now unblocked
+
+The original 2026-04-29 decision to reduce CoinGecko ingestion universe from ~3,000 to top 1,000 by mcap is no longer gated. Re-run path:
+
+```
+python scripts/archive/expand_allowlist.py --n 1000 --min-mcap 1000000 --output data/perp_allowlist.csv
+```
+
+The `expand_allowlist.py` builder now has the dedupe + uniqueness assert from Phase B, so a fresh build is guaranteed not to reintroduce the writer-race trigger condition. Expected outcome: 2,716 → ~1,000 rows, drops bottom-tier sub-$10M-mcap coins from the daily ingestion.
+
+Pre-flight live-pick audit (§1) already cleared the operational hypothesis — all 16 SHORT picks ranked ≤1,000 by mcap, median #157.
+
+Status as of this addendum: **READY TO EXECUTE.** Awaiting Dan/Mads decision on timing.
