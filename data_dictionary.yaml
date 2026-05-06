@@ -100,6 +100,69 @@ data_sources:
       OPEN as of 2026-05-05 (not bundled into writer-race remediation).
       See DATA_LAKE_CONTEXT.md section 13.
 
+    ingestion_universe:
+      type: sticky_allowlist_csv
+      file: data/perp_allowlist.csv
+      columns: [symbol, coingecko_id, venue]
+      loaded_by: src/providers/coingecko.py::download_all_coins
+      built_by: scripts/archive/expand_allowlist.py
+      build_method: >
+        Paginates /coins/markets ordered market_cap_desc with min_mcap=$1M
+        floor; deduped by symbol (keeping highest-mcap variant per symbol);
+        is_unique asserted before write. Phase B writer-race defenses are
+        active in both the builder and the loader.
+      current_size: 977  # post-Phase-E top-1000 cut on 2026-05-05
+      refresh_cadence: quarterly_manual  # NOT dynamic_daily_rebuild
+      last_refresh: 2026-05-05
+      next_refresh_due: 2026-08-05
+      refresh_runbook: docs/runbooks/allowlist_refresh.md
+      reminder_mechanism: >
+        system_heartbeat.py fires a once-per-day Telegram alert after
+        next_refresh_due until the refresh lands (refresh updates
+        last_refresh/next_refresh_due here, which silences the reminder).
+
+      decision_2026_04_29:
+        decided_by: [Mads, Dan]
+        decision: reduce_universe_to_top_1000_by_mcap
+        status: EXECUTED
+        executed_date: 2026-05-05
+        rationale: >
+          At rank ~1000 the mcap floor is roughly $10-20M which is below
+          practical short-leg liquidity for our strategies (Apathy Bleed:
+          $3K short legs held days-months on Variational/Hyperliquid;
+          danlongshort: beta-neutral L/S on Binance perps). Coins below
+          that floor are unlikely to be picked even if they pump in
+          relative-return terms; ingesting them is wasted API budget +
+          analytical noise.
+        audit_memo: reports/apathy_universe_cut_audit_2026_04_29.md
+        execution_commits:
+          - 92f545f  # backup of pre-cut 2,716-row allowlist
+          - 8bd997b  # the cut itself: 2,716 -> 977 rows
+        prior_universe_size: 2716  # post-writer-race-dedupe state
+        new_universe_size: 977     # after dedupe-by-symbol on top-1000-by-mcap
+
+      decision_2026_05_05:
+        decided_by: [Mads, Dan]
+        decision: keep_static_quarterly_refresh  # NOT dynamic_daily_rebuild
+        rationale: >
+          Reproducibility-friendly: backtests re-run within a quarter use the
+          same universe membership, no looking-ahead artifact from
+          inter-quarter rotation. Avoids gappy data for coins flickering
+          around rank 1000 (would oscillate in/out of ingestion under a
+          dynamic regime). Avoids mid-trade drop-out for ARIA-class positions
+          where post-trade mcap falls below cutoff -- visible-mcap continuity
+          preserved until next quarterly refresh. Cost accepted: coins
+          entering top 1000 between refreshes not tracked until refresh;
+          coins falling out continue to be fetched (small wasted API budget).
+          Phase F (dynamic daily rebuild from fact_markets_snapshot) was
+          considered and explicitly deferred.
+        deferred_alternative: phase_f_dynamic_daily_rebuild
+        deferred_alternative_design: >
+          Would add a Step 0.6 to run_live_pipeline.py: rebuild
+          data/perp_allowlist.csv from the just-written fact_markets_snapshot
+          (top 1000 by current rank, $1M floor, dedupe by symbol). Zero new
+          API cost. ~30 lines of code. Not implemented per this decision.
+
     canonical_slug_resolutions:
       # Where two distinct real coins share a ticker (not just bridged variants
       # of one coin), the writer-race-fix Phase C/D used a deterministic-but-

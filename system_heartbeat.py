@@ -20,6 +20,14 @@ LOG_DIR = REPO_ROOT / "logs"
 LOG_PATH = LOG_DIR / "system_heartbeat.log"
 LAST_PIPELINE_SUCCESS_PATH = heartbeat_last_success_path()
 
+# Marker for the once-per-day allowlist refresh-due Telegram alert. Lives on the
+# Render persistent disk alongside the pipeline-success marker so it survives
+# daemon restarts. Format: "<UTC date>|<last_refresh date>" — the second field
+# tracks the data_dictionary.yaml::ingestion_universe.last_refresh value at the
+# time the alert was sent, so when the operator advances last_refresh after a
+# refresh, we treat the marker as stale and the next overdue period fires fresh.
+ALLOWLIST_REMINDER_MARKER = LAST_PIPELINE_SUCCESS_PATH.parent / ".last_allowlist_refresh_reminder_utc"
+
 
 UTC_RUN_TIMES = ("00:05",)  # UTC once per day (early UTC morning)
 RUN_WINDOW_SECONDS = 55  # trigger if within this window after HH:MM
@@ -68,6 +76,124 @@ def _needs_catchup_pipeline(now_utc: datetime, last_success: Optional[date]) -> 
     if last_success is None:
         return True
     return last_success < today
+
+
+def _check_and_alert_allowlist_refresh() -> None:
+    """Send a once-per-day Telegram if the CoinGecko allowlist is overdue for quarterly refresh.
+
+    Reads next_refresh_due + last_refresh from
+        data_dictionary.yaml::data_sources.coingecko.ingestion_universe
+
+    Idempotent per UTC day via ALLOWLIST_REMINDER_MARKER. The marker also tracks
+    the last_refresh value at alert-send time, so when the operator updates
+    last_refresh after running the refresh runbook, the marker is treated as
+    stale and the next overdue period fires fresh alerts.
+
+    Non-fatal: any error is logged and swallowed; the reminder is best-effort,
+    same pattern as the nightly_export Telegram alerts.
+    """
+    try:
+        import yaml  # local import; not needed elsewhere in this module
+    except Exception:
+        logging.exception("PyYAML unavailable; skipping allowlist refresh-due check.")
+        return
+
+    try:
+        with open(REPO_ROOT / "data_dictionary.yaml", "rb") as f:
+            cfg = yaml.safe_load(f)
+        iu = (
+            cfg.get("data_sources", {})
+            .get("coingecko", {})
+            .get("ingestion_universe")
+        )
+        if iu is None:
+            # Block doesn't exist (yet) — nothing to remind about. Silent.
+            return
+        next_due = iu.get("next_refresh_due")
+        last_refresh = iu.get("last_refresh")
+        if next_due is None or last_refresh is None:
+            return
+
+        # YAML may deserialize as datetime.date or as plain string; coerce to date.
+        if not isinstance(next_due, date):
+            try:
+                next_due = datetime.strptime(str(next_due), "%Y-%m-%d").date()
+            except Exception:
+                logging.warning("Could not parse next_refresh_due=%r; skipping reminder.", next_due)
+                return
+        if not isinstance(last_refresh, date):
+            try:
+                last_refresh = datetime.strptime(str(last_refresh), "%Y-%m-%d").date()
+            except Exception:
+                logging.warning("Could not parse last_refresh=%r; skipping reminder.", last_refresh)
+                return
+
+        today = _utc_now().date()
+        if today < next_due:
+            return  # Not yet due
+
+        # Idempotent dedupe via marker file.
+        ALLOWLIST_REMINDER_MARKER.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            marker_raw = ALLOWLIST_REMINDER_MARKER.read_text(encoding="utf-8").strip()
+        except FileNotFoundError:
+            marker_raw = ""
+        except Exception:
+            logging.exception("Could not read %s; treating as no prior reminder.", ALLOWLIST_REMINDER_MARKER)
+            marker_raw = ""
+
+        marker_date = ""
+        marker_last_refresh = ""
+        if marker_raw:
+            parts = marker_raw.split("|", 1)
+            marker_date = parts[0] if len(parts) >= 1 else ""
+            marker_last_refresh = parts[1] if len(parts) >= 2 else ""
+
+        # If the operator advanced last_refresh since our last alert, treat marker as stale.
+        if marker_last_refresh and marker_last_refresh != last_refresh.isoformat():
+            marker_date = ""
+
+        if marker_date == today.isoformat():
+            return  # already alerted today
+
+        # Fire the alert.
+        try:
+            from src.notifications.telegram_client import send_telegram_text
+        except Exception:
+            logging.exception("Telegram client import failed; cannot send refresh-due alert.")
+            return
+
+        days_since_refresh = (today - last_refresh).days
+        days_overdue = (today - next_due).days
+        msg = (
+            f"⏰ Allowlist refresh due. Last refreshed {last_refresh.isoformat()}; "
+            f"{days_since_refresh} days have elapsed (overdue by {days_overdue} days). "
+            f"Run `python scripts/archive/expand_allowlist.py --n 1000 --min-mcap 1000000 "
+            f"--output data/perp_allowlist.csv` per `docs/runbooks/allowlist_refresh.md`. "
+            f"Until refreshed, the ingestion universe drifts further from current top-1000 each day."
+        )
+        try:
+            send_telegram_text(msg)
+        except Exception:
+            logging.exception("Telegram send failed; will retry tomorrow.")
+            # Don't write marker — that way tomorrow's tick will retry.
+            return
+
+        try:
+            ALLOWLIST_REMINDER_MARKER.write_text(
+                f"{today.isoformat()}|{last_refresh.isoformat()}\n",
+                encoding="utf-8",
+            )
+        except Exception:
+            logging.exception("Could not write %s; alert may re-fire today.", ALLOWLIST_REMINDER_MARKER)
+
+        logging.info(
+            "Allowlist refresh-due Telegram sent (last_refresh=%s, next_due=%s, today=%s, overdue=%s days).",
+            last_refresh, next_due, today, days_overdue,
+        )
+    except Exception:
+        # Outer guard: refresh reminders are best-effort; never crash the heartbeat.
+        logging.exception("Allowlist refresh-due check failed (non-fatal).")
 
 
 def _ensure_pythonpath_repo_root() -> None:
@@ -169,6 +295,7 @@ def main() -> None:
     dashboard_proc: Optional[subprocess.Popen] = None
     last_trigger_key: Optional[str] = None  # YYYY-MM-DDTHH:MM in UTC
     last_pipeline_attempt_wall_s: float = 0.0
+    last_allowlist_check_date: Optional[str] = None  # YYYY-MM-DD; in-memory dedupe so we read YAML only once per UTC day per daemon-run
 
     try:
         dashboard_proc = _popen_dashboard()
@@ -262,7 +389,7 @@ def main() -> None:
                     logging.exception("Failed to send Telegram alert about Drive export failure.")
 
         def heartbeat_tick() -> None:
-            nonlocal dashboard_proc, last_trigger_key
+            nonlocal dashboard_proc, last_trigger_key, last_allowlist_check_date
 
             now = _utc_now()
 
@@ -272,6 +399,14 @@ def main() -> None:
                     logging.warning("Dashboard process exited (code=%s). Restarting.", dashboard_proc.returncode)
                 dashboard_proc = _popen_dashboard()
                 logging.info("Dashboard restarted (pid=%s).", dashboard_proc.pid)
+
+            # Allowlist refresh-due reminder: once per UTC day, regardless of pipeline state.
+            # In-memory dedupe avoids re-reading data_dictionary.yaml every 5s tick; the
+            # function itself uses ALLOWLIST_REMINDER_MARKER for cross-restart dedupe.
+            today_iso = now.date().isoformat()
+            if last_allowlist_check_date != today_iso:
+                last_allowlist_check_date = today_iso
+                _check_and_alert_allowlist_refresh()
 
             last_success = _load_last_pipeline_success_date()
 
