@@ -24,8 +24,6 @@ from src.notifications.telegram_client import send_telegram_text
 
 logger = logging.getLogger(__name__)
 
-TIER_RANK = {"NONE": 0, "WARNING": 1, "CRITICAL": 2, "STOP_HIT": 3}
-
 ALERT_LOG_FIELDS = ["timestamp_utc", "alert_type", "trade_id", "cohort", "ticker", "dedup_bucket", "message"]
 
 
@@ -71,13 +69,15 @@ def classify_short_tier(adverse: float, cfg: ApathyAlertsConfig) -> str:
 
 
 def run_stop_proximity(cfg: ApathyAlertsConfig, rows: list[dict[str, str]], prices: dict[str, float]) -> None:
+    # Per [DECISION 2026-05-06 — Dan]: STOP_HIT (60%) is the only stop-proximity
+    # alert that fires. WARNING (45%) and CRITICAL (55%) tiers are still classified
+    # so STOP_HIT rising-edge detection works through gradual price walks, but
+    # they are not surfaced to Telegram or written to the alert log. STOP_HIT
+    # fires exactly once per trade_id, then stays silent until the position
+    # closes (cleanup below removes closed trade_ids from state).
     state_path = cfg.stop_proximity_state_json
-    state = _load_json(
-        state_path,
-        {"last_tier_by_trade": {}, "hour_tier_sent": {}},
-    )
+    state = _load_json(state_path, {"last_tier_by_trade": {}})
     last_tier: dict[str, str] = {str(k): str(v) for k, v in (state.get("last_tier_by_trade") or {}).items()}
-    hour_tier_sent: dict[str, dict] = dict(state.get("hour_tier_sent") or {})
 
     open_short_ids = {
         (r.get("trade_id") or "").strip()
@@ -87,10 +87,8 @@ def run_stop_proximity(cfg: ApathyAlertsConfig, rows: list[dict[str, str]], pric
     for k in list(last_tier.keys()):
         if k not in open_short_ids:
             last_tier.pop(k, None)
-            hour_tier_sent.pop(k, None)
 
     now = _utc_now()
-    hour_key = now.strftime("%Y-%m-%dT%H")
 
     for r in rows:
         if (r.get("status") or "").upper() != "OPEN":
@@ -100,6 +98,11 @@ def run_stop_proximity(cfg: ApathyAlertsConfig, rows: list[dict[str, str]], pric
         tid = (r.get("trade_id") or "").strip()
         if not tid:
             continue
+
+        prev = last_tier.get(tid, "NONE")
+        if prev == "STOP_HIT":
+            continue
+
         tkr = (r.get("ticker") or "").strip().upper()
         cohort = (r.get("cohort") or "").strip().upper()
         try:
@@ -112,61 +115,32 @@ def run_stop_proximity(cfg: ApathyAlertsConfig, rows: list[dict[str, str]], pric
         adverse = short_adverse_move(entry, mark)
         stop_px = float(r.get("stop_price_usd") or entry * 1.60)
         curr = classify_short_tier(adverse, cfg)
-        prev = last_tier.get(tid, "NONE")
 
-        r_curr = TIER_RANK.get(curr, 0)
-        r_prev = TIER_RANK.get(prev, 0)
-
-        should_send = False
-        if r_curr > r_prev and r_curr >= TIER_RANK["WARNING"]:
-            should_send = True
-        elif r_curr == r_prev and r_curr >= TIER_RANK["WARNING"]:
-            hs = hour_tier_sent.get(tid) or {}
-            if not (hs.get("hour") == hour_key and hs.get("tier") == curr):
-                should_send = True
-        elif r_curr < r_prev:
-            hour_tier_sent.pop(tid, None)
-
-        if should_send:
-            pct_display = adverse * 100.0
-            if curr == "STOP_HIT":
-                msg = (
-                    f"🔴 STOP HIT: {tkr} ({cohort}) breached {cfg.stop_threshold_pct * 100:.0f}% stop. "
-                    f"Close position immediately.\n"
-                    f"Entry: ${entry:.2f} | Current: ${mark:.2f} | Stop: ${stop_px:.2f}"
-                )
-            elif curr == "CRITICAL":
-                msg = (
-                    f"🚨 STOP CRITICAL: {tkr} ({cohort}) at +{pct_display:.1f}% from entry "
-                    f"(${entry:.2f} → ${mark:.2f}).\n"
-                    f"Stop at ${stop_px:.2f} (+{cfg.stop_threshold_pct * 100:.0f}%). Action needed if continues."
-                )
-            else:
-                msg = (
-                    f"⚠️ STOP WARNING: {tkr} ({cohort}) at +{pct_display:.1f}% from entry "
-                    f"(${entry:.2f} → ${mark:.2f}).\n"
-                    f"Stop at ${stop_px:.2f} (+{cfg.stop_threshold_pct * 100:.0f}%). Action needed if continues."
-                )
+        if curr == "STOP_HIT":
+            msg = (
+                f"🔴 STOP HIT: {tkr} ({cohort}) breached {cfg.stop_threshold_pct * 100:.0f}% stop. "
+                f"Close position immediately.\n"
+                f"Entry: ${entry:.2f} | Current: ${mark:.2f} | Stop: ${stop_px:.2f}"
+            )
             send_telegram_text(msg)
             append_alert_log(
                 cfg.alert_log_csv,
                 {
                     "timestamp_utc": now.isoformat(),
-                    "alert_type": f"STOP_{curr}",
+                    "alert_type": "STOP_STOP_HIT",
                     "trade_id": tid,
                     "cohort": cohort,
                     "ticker": tkr,
-                    "dedup_bucket": f"{hour_key}|{curr}",
+                    "dedup_bucket": f"once_per_position|{tid}",
                     "message": msg.replace("\n", " / "),
                 },
             )
-            logger.info("Stop proximity alert: %s %s %s", tkr, cohort, curr)
-            hour_tier_sent[tid] = {"hour": hour_key, "tier": curr}
+            logger.info("Stop proximity alert: %s %s STOP_HIT", tkr, cohort)
 
         last_tier[tid] = curr
 
     state["last_tier_by_trade"] = last_tier
-    state["hour_tier_sent"] = hour_tier_sent
+    state.pop("hour_tier_sent", None)
     _save_json(state_path, state)
 
 
