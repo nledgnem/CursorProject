@@ -71,13 +71,19 @@ def _coingecko_oldest_allowed_date(end_d: date) -> date:
 
 def fetch_binance_exchange_info() -> Optional[Dict[str, Any]]:
     url = f"{BINANCE_FAPI}/fapi/v1/exchangeInfo"
-    try:
-        r = requests.get(url, timeout=60, proxies={"http": None, "https": None})
-        r.raise_for_status()
-        return r.json()
-    except Exception as e:
-        print(f"[ERROR] Binance exchangeInfo: {e}")
-        return None
+    delay = 5.0
+    for attempt in range(1, 4):  # 3 attempts total: 1, 2, 3
+        try:
+            r = requests.get(url, timeout=60, proxies={"http": None, "https": None})
+            r.raise_for_status()
+            return r.json()
+        except Exception as e:
+            print(f"[WARN] Binance exchangeInfo attempt {attempt}/3 failed: {e}")
+            if attempt < 3:
+                time.sleep(delay)
+                delay *= 3.0
+    print("[ERROR] Binance exchangeInfo: all 3 attempts exhausted")
+    return None
 
 
 def parse_usdt_perp_universe(exchange_info: Dict[str, Any]) -> pd.DataFrame:
