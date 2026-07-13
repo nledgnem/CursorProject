@@ -281,10 +281,24 @@ def run(*, config_path: Path | None = None) -> None:
             logger.error("Missing export source: key=%s path=%s", k, resolved_sources[k])
         raise FileNotFoundError(f"Missing export sources: {missing}")
 
-    # Guard: never re-upload a price-less or stale single_coin_panel.csv.
+    # Guard: never re-upload a price-less or stale single_coin_panel.csv, but do
+    # NOT abort the whole export -- skip ONLY the panel and let the other sources
+    # (MSM, parquets, docs) propagate. A bad panel must not block everything else.
+    blocked_sync_names: set[str] = set()
     panel_src = resolved_sources.get("single_coin_panel_csv")
     if panel_src is not None:
-        _assert_panel_priced(panel_src)
+        try:
+            _assert_panel_priced(panel_src)
+        except RuntimeError as e:
+            logger.error("[EXPORT] Panel guard tripped; skipping panel upload only. %s", e)
+            send_telegram_text(
+                f"⚠️ Panel export SKIPPED [{_utc_today_iso()} UTC]\n{e}\n"
+                f"Other sources still exported. Fix panel generation (Binance source) and re-run."
+            )
+            resolved_sources.pop("single_coin_panel_csv", None)
+            panel_drive = cfg.filenames.get("single_coin_panel_csv")
+            if panel_drive:
+                blocked_sync_names.add(str(panel_drive))  # block sync-loop fallback too
 
     # Auth + uploader
     service = build_drive_service()
@@ -295,7 +309,8 @@ def run(*, config_path: Path | None = None) -> None:
     )
     cache = DriveIdCache(DRIVE_ID_CACHE_PATH, folder_id=folder_id)
 
-    uploaded_drive_names: set[str] = set()
+    # Seed with blocked names so a skipped panel is never re-picked by the sync loop.
+    uploaded_drive_names: set[str] = set(blocked_sync_names)
     n_uploaded = 0
 
     # Upload explicit sources first (handles files outside data_lake).
