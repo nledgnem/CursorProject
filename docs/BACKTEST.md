@@ -207,6 +207,7 @@ Top 7 edges Top 5 on every metric simultaneously. Top 10 starts to dilute with w
 ### Mode A: Notional Match (current live)
 - Sharpe 3.31 [CI 2.53, 5.34]
 - Alpha 75.5%, Win Rate 100%, Worst DD -30.5%
+  - `[CORRECTION — see §22]` The **75.5% alpha is superseded and unverifiable**: the original engine was never committed, and the rebuilt auditable engine gives **~30% (mean terminal) / ~41% (peak profile)** — likely overstated ~1.7–2.5×. Figures above left unaltered for provenance; do not read/propagate the 75.5% without the §22 correction.
 - Drag 0.60% (entry + exit)
 - Implementation: $1 long BTC vs $1 short alts. No rebalancing.
 
@@ -298,6 +299,7 @@ The portfolio will be underwater for stretches of 2–3 weeks. Within-cohort dra
 - **Proportional BTC hedge reduction on stop trigger.** When an alt leg is stopped, the BTC hedge is currently NOT reduced — full $1 BTC long is maintained against the now-frozen short. This is a known mismatch with the Gemini brief.
 - **Out-of-sample validation.** All cohorts informed parameter selection. The Oct 2025 quarantined cohorts serve as a partial stress test but are not a true holdout.
 - **Stop-loss slippage modeling.** Backtest assumes exits at exactly 60%. Real altcoin perps can gap 5–10% beyond trigger.
+- **Continuous gate ramp not modeled.** The engine applies the Cold Flush gate as a binary exec-date halt; live `gate_policy.py` uses a 2%→5% linear risk-weight ramp. Backtest cohorts run at full size where the coded live ramp would have sized down. (See §23.)
 
 ## 21. Open Backtest Questions
 `[OPEN]`
@@ -305,6 +307,48 @@ The portfolio will be underwater for stretches of 2–3 weeks. Within-cohort dra
 2. Is the funding cost stability assumption valid in extreme hype regimes (could spike to 30%+ APR)?
 3. Would the BTC+ETH hedge work better in regimes where ETH outperforms BTC?
 4. Does the rolling entry model work better with stricter entry filters (e.g., minimum +50% vs BTC, minimum 3 consecutive weeks in top 5)?
+
+## 22. Baseline Extension & Re-Audit — Jul 2026
+`[VERIFIED]` Context: this extension was produced for a live re-entry decision, so bias control was prioritized over a clean headline. The original continuous engine (Part B) was never committed to the repo, so it was rebuilt from spec (§11–13) as `scripts/apathy_bleed_backtest.py` and re-validated before extending. Data: the CoinGecko price feed for `single_coin_panel.csv` died ~2026-04-04 (CoinGecko Pro monthly-credit exhaustion — the same break that migrated the live strategy to Binance on 2026-04-28). For this analysis the panel was reconstructed as a merged series: CoinGecko core (through 2026-04-04) + Binance USD-M klines front-fill (2024-03-17→2024-04-03, to un-clip the first cohort's formation) and tail (2026-04-05→2026-07-13). The 2026-04-04 CoinGecko→Binance seam was checked per-leg and splice-adjusted (ratio back-adjustment); raw vs splice-adjusted cohort PnL differed ≤0.2pt. The merged panel is a **dated analysis artifact, not a committed production input.**
+
+### Validation gate (Top 5, 45d/0d/150d, original window 2024-05→2025-11)
+| Metric | Documented (§15) | Auditable engine (un-clipped) |
+|---|---|---|
+| Sharpe | 3.31 [2.53, 5.34] | 2.83 [1.81, 5.76] |
+| Win rate | 100% | 92% |
+| Worst cohort DD | -30.5% | -37.8% |
+| Alpha | 75.5% | 29.7% mean-terminal / 41.1% peak-of-profile |
+| Clean cohorts | ~13 | 13 |
+
+Sharpe, win rate, clean-cohort count, and the Feb-2025 funding cost (-8.36% vs documented -8.38%) reproduce. **Alpha does not.** The documented 75.5% could not be reproduced under any construction (arithmetic, compounded, peak-of-profile, or un-clipped formation — all land 29–44%). Its engine was never committed and is unverifiable. **Treat 75.5% as legacy/unverifiable and likely overstated ~1.7–2.5×; the auditable alpha is ~30% (mean terminal) / ~41% (peak profile).**
+
+### Honest deploy framing (bias corrections vs the §14–19 headline)
+`[VERIFIED]`
+- **Start-date spread** (45d spacing, 6 offsets): Sharpe 1.68–4.10, **mean 2.45** (reproduces §17's ~2.51). The 3.31 headline is a favorable draw; expected Sharpe is ~2.5.
+- **With-events baseline** (Oct-2025 cohorts INCLUDED — live cannot skip October): N=19, **Sharpe 1.13 [0.46, 2.47], alpha 19.0%, win 79%, worst DD -61.7%.** This is the deploy-honest number.
+
+### The two new completed cohorts (2026-01, 2026-02)
+`[VERIFIED]` Exactly 2 new clean cohorts qualify (Dec-2025 quarantined on the Oct rule; 2026-03+ still in flight). Both passed the enforced gates (cold-flush APR 2.4–3.8 > 2.0; no halt). Both are catastrophic — the adverse regime that cost the live book. Splice-adjusted, Top 7 (live parameter set):
+
+| Cohort | PnL | Worst DD | Funding | Legs (seam: formation CoinGecko / harvest crosses to Binance 2026-04-05) |
+|---|---|---|---|---|
+| 2026-01-01 | -44.2% | -48.0% | -12.3% | RIVER, NIGHT, ICNT, SKYAI, PIEVERSE, VVV, CHZ |
+| 2026-02-01 | -40.3% | -53.9% | -9.8% | RIVER, AXS, VVV, STABLE, KITE, ROSE, GWEI |
+
+(At Top 5: -47.4% / -49.5%.) RIVER recurs as the squeeze driver (cf. §6).
+
+### Extended baseline (13 clean + 2 new = 15, Top 5)
+Sharpe **0.96 [0.25, 3.25]**, alpha 19.2%, win 80%, worst DD -68.6%. Adding two out-of-sample cohorts collapses the risk-adjusted number.
+
+**Caveats.** Only 2 new clean cohorts — negligible statistical weight; do not over-read. The sample is overwhelmingly favorable-regime (2024–25 bull tape); the adverse regime is represented only by these 2 cohorts plus the 6 quarantined Oct-2025 ones. **The backtest validates that the Apathy Bleed signal exists; it does not validate deploy timing.** Live trading was exited 2026-05-12 at ~$6k loss with the regime judged unsuited — consistent with these findings.
+
+## 23. Macro Gate — As-Coded Methodology (correction to §6, §10)
+`[VERIFIED]` §6/§10 describe the gates as point-in-time binary halts. The actual sensor code (`majors_alts_monitor/msm_funding_v0/macro_environment.py`, `src/macro_regime/gate_policy.py`) differs in ways that matter:
+
+- **Environment_APR** = 7-day trailing mean of a daily **truncated interquartile mean** (trims top/bottom 25%) of cross-sectional 8h funding, annualized ×1095×100 to percentage points. It is a **smoothed weekly average, not an exec-day point reading**, and it deliberately **excludes the hot coins the strategy shorts**.
+- **The live gate is a continuous risk-weight ramp**, not a binary halt: weight 0 below 2.0% APR, linear 0→1 across 2.0–5.0%, capped at 1.0 above. The 2.0% floor and the 0.000075 Fragmentation ceiling match the brief exactly.
+- **Implication for the loss window:** because the sensor is a 7-day mean and the coded gate ramps rather than halts, Cold Flush never tripped in Feb–May 2026 (APR held 3–5.5). Had the coded ramp been applied, the Jan/Feb 2026 cohorts (exec APR ~2.4–3.8) would have entered at reduced weight (~0.13–0.6) rather than full size; actual live sizing on the Apathy Bleed book was discretionary/manual (per §19), so this is a hypothetical, not a statement about realized sizing.
+- **Data caveat:** Environment_APR was frozen ~5 weeks once (DATA_LAKE_CONTEXT §13); a 3-day freshness fail-fast now guards it.
 
 ---
 

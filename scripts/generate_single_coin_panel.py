@@ -308,6 +308,55 @@ def fetch_open_interest_daily(
     return out
 
 
+def fetch_klines_daily_binance(
+    binance_symbol: str,
+    start_d: date,
+    end_d: date,
+) -> Dict[date, float]:
+    """
+    Daily UTC close from Binance USD-M perpetual klines (interval=1d).
+
+    Replaces the CoinGecko historical price source, which went dead ~2026-04-04
+    when the CoinGecko Pro monthly-credit cap was exhausted (the same break that
+    migrated the live strategy to Binance klines on 2026-04-28; see
+    src/danlongshort/portfolio.py). Mirrors that migration for panel generation.
+
+    Trade-off: Binance close is the PERP mark, not CoinGecko SPOT. The wedge is
+    <0.05 on 30d beta for majors, 0.15-0.30 for low-volume alts. Pre-perp-listing
+    history does not exist on Binance, so the pre-perp spot buffer is lost -- but
+    the strategy only shorts once is_perp_active==1, so formation/harvest on perp
+    closes is acceptable.
+    """
+    url = f"{BINANCE_FAPI}/fapi/v1/klines"
+    out: Dict[date, float] = {}
+    cursor = _ms(start_d)
+    end_ms = _ms(end_d + timedelta(days=1))
+    while cursor < end_ms:
+        params = {"symbol": binance_symbol, "interval": "1d", "startTime": cursor,
+                  "endTime": end_ms, "limit": 1500}
+        try:
+            r = requests.get(url, params=params, timeout=30, proxies={"http": None, "https": None})
+            r.raise_for_status()
+            chunk = r.json()
+        except Exception:
+            break
+        if not isinstance(chunk, list) or not chunk:
+            break
+        for k in chunk:
+            ts = int(k[0])
+            dd = datetime.fromtimestamp(ts / 1000.0, tz=timezone.utc).date()
+            try:
+                out[dd] = float(k[4])  # close
+            except (TypeError, ValueError):
+                continue
+        last_t = int(chunk[-1][0])
+        cursor = last_t + 24 * 60 * 60 * 1000
+        time.sleep(BINANCE_SLEEP)
+        if len(chunk) < 1500:
+            break
+    return out
+
+
 def load_optional_oi_parquet(path: Path) -> Optional[pd.DataFrame]:
     if not path.exists():
         return None
@@ -386,16 +435,17 @@ def generate_panel_data(
         onboard: date = row["onboard_date"]
         print(f"[{idx}/{len(universe)}] {ticker} ({cg_id}) {bsym} onboard={onboard}")
 
-        spot_fetch_start = min(panel_start, onboard - timedelta(days=PRE_PERP_SPOT_BUFFER_DAYS))
-        cg_floor = _coingecko_oldest_allowed_date(end_date)
-        if spot_fetch_start < cg_floor:
-            print(
-                f"  [INFO] CoinGecko history clamp: request start {spot_fetch_start} -> {cg_floor} "
-                "(set COINGECKO_MAX_HISTORY_LOOKBACK_DAYS for Analyst+ / longer lookback)"
-            )
-            spot_fetch_start = cg_floor
-        prices, mcaps = fetch_spot_mcap_history(cg_id, spot_fetch_start, end_date)
-        time.sleep(CG_SLEEP if get_coingecko_api_key() else 0.0)
+        # Price source migrated from CoinGecko historical to Binance USD-M klines
+        # (2026-07: CoinGecko Pro credit cap exhaustion killed the historical feed
+        # ~2026-04-04). Binance perps have no pre-perp-listing history, so start at
+        # onboard. Market cap is no longer sourced historically -- only the current
+        # snapshot from /coins/markets (build_top_perp_universe) is reliable; it is
+        # written on the latest row only. The Apathy Bleed backtest consumes only
+        # close_price_usd / funding / is_perp_active, not historical mcap/rank.
+        price_start = max(panel_start, onboard)
+        prices = fetch_klines_daily_binance(bsym, price_start, end_date)
+        mcaps = {end_date: row["snapshot_market_cap_usd"]} if pd.notna(row.get("snapshot_market_cap_usd")) else {}
+        time.sleep(BINANCE_SLEEP)
 
         days = pd.date_range(panel_start, end_date, freq="D")
         recs: List[Dict[str, Any]] = []
@@ -463,6 +513,20 @@ def generate_panel_data(
     df["decision_date_utc"] = df["decision_date_utc"].dt.strftime("%Y-%m-%d")
 
     out = df[target_columns]
+
+    # Fail loud: refuse to write a price-less panel. The CoinGecko-cap outage
+    # produced panels with fresh dates but 100%-null close_price_usd for months
+    # (silently re-uploaded nightly). Guard against a repeat with the Binance
+    # source down: the newest date must have at least some non-null closes.
+    newest = out["decision_date_utc"].max()
+    newest_close = out.loc[out["decision_date_utc"] == newest, "close_price_usd"]
+    if newest_close.notna().sum() == 0:
+        raise RuntimeError(
+            f"Panel price enrichment FAILED: close_price_usd is entirely null on the "
+            f"newest date ({newest}). Binance klines source is down or symbol resolution "
+            f"broke. Refusing to write a price-less panel to {output_csv}."
+        )
+
     output_csv = Path(output_csv)
     output_csv.parent.mkdir(parents=True, exist_ok=True)
     out.to_csv(output_csv, index=False)

@@ -183,6 +183,56 @@ def _iter_sync_files(sync_dir: Path, patterns: list[str]) -> list[Path]:
     return sorted(found, key=lambda x: str(x))
 
 
+def _assert_panel_priced(panel_path: Path, *, max_stale_days: int = 4) -> None:
+    """
+    Refuse to export a degraded single_coin_panel.csv.
+
+    Two failure modes seen in the 2026-04 CoinGecko-cap outage: (1) newest-date
+    close_price_usd entirely null (price enrichment dead), and (2) newest date
+    older than N days (generation stalled) -- both were silently re-uploaded
+    nightly with a fresh Drive timestamp, masking the break. Raise on either so
+    the heartbeat alerts instead of propagating a bad panel to the PM's Drive.
+    """
+    import csv as _csv
+    from datetime import date as _date
+
+    newest_str = ""
+    newest_has_close = False
+    with panel_path.open("r", encoding="utf-8", newline="") as fh:
+        rdr = _csv.DictReader(fh)
+        if "close_price_usd" not in (rdr.fieldnames or []):
+            raise RuntimeError(f"Panel export guard: {panel_path} missing close_price_usd column")
+        # Single pass: track max date and whether that date has any non-null close.
+        by_date_has_close: dict[str, bool] = {}
+        for row in rdr:
+            d = (row.get("decision_date_utc") or "").strip()
+            if not d:
+                continue
+            c = (row.get("close_price_usd") or "").strip()
+            by_date_has_close[d] = by_date_has_close.get(d, False) or bool(c)
+    if not by_date_has_close:
+        raise RuntimeError(f"Panel export guard: {panel_path} has no rows")
+    newest_str = max(by_date_has_close)
+    newest_has_close = by_date_has_close[newest_str]
+    if not newest_has_close:
+        raise RuntimeError(
+            f"Panel export guard: close_price_usd entirely null on newest date "
+            f"({newest_str}) in {panel_path}. Refusing to upload a price-less panel."
+        )
+    try:
+        y, m, d = (int(x) for x in newest_str.split("-")[:3])
+        age = (_date.today() - _date(y, m, d)).days
+    except Exception:
+        age = 0
+    if age > max_stale_days:
+        raise RuntimeError(
+            f"Panel export guard: newest panel date {newest_str} is {age}d stale "
+            f"(> {max_stale_days}d) in {panel_path}. Generation appears stalled; "
+            f"refusing to re-upload."
+        )
+    logger.info("[EXPORT] Panel guard OK: newest=%s (age %dd), close populated.", newest_str, age)
+
+
 def run(*, config_path: Path | None = None) -> None:
     """
     Nightly export entrypoint.
@@ -230,6 +280,11 @@ def run(*, config_path: Path | None = None) -> None:
         for k in missing:
             logger.error("Missing export source: key=%s path=%s", k, resolved_sources[k])
         raise FileNotFoundError(f"Missing export sources: {missing}")
+
+    # Guard: never re-upload a price-less or stale single_coin_panel.csv.
+    panel_src = resolved_sources.get("single_coin_panel_csv")
+    if panel_src is not None:
+        _assert_panel_priced(panel_src)
 
     # Auth + uploader
     service = build_drive_service()
