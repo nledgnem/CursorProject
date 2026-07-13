@@ -77,7 +77,7 @@
 
 **The Cold Flush Regime:** `[VERIFIED]` `Environment_APR < 2.0%`. Shorting into this regime triggers failure because retail capitulation has already occurred. Order books are dry, leaving shorts exposed to violent, low-volume dead-cat bounces.
 
-**Toxic Chaos Regime:** `[VERIFIED]` `Fragmentation_Spread >= 0.000075`. If the cross-sectional variance blows out past this threshold, idiosyncratic contagion overrides global beta, destroying pair-trade math.
+**Fragmentation_Spread gate (halt when Fragmentation_Spread >= 0.000075), previously labelled 'Toxic Chaos':** `[VERIFIED]` `Fragmentation_Spread >= 0.000075`. If the cross-sectional variance blows out past this threshold, idiosyncratic contagion overrides global beta, destroying pair-trade math.
 
 ## 7. Pre-Listing Bias / Survivorship Corrections
 `[VERIFIED]` The `is_perp_active == 1` gate was introduced early in the quantitative design to prevent "Phantom Trading".
@@ -114,7 +114,7 @@
 **Mandatory Implementations Required:**
 1. **50% Hard Volatility Stop-Loss:** Explicit instructions were given to cut any individual short leg exceeding +50% adverse excursion to prevent the RIVER / FARTCOIN echo squeeze liquidations. (Includes rule to proportionally reduce the BTC hedge to maintain delta neutrality).
 2. **Execution Drag:** A pessimistic 50bps round-trip friction penalty was mandated to replace the pending funding rate audit.
-3. **Macro Gate Alignment:** Enforce the Cold Flush (<2.0% APR) and Toxic Chaos (>0.000075 Spread) sensors on the exact calendar day of execution.
+3. **Macro Gate Alignment:** Enforce the Cold Flush (<2.0% APR) and the Fragmentation_Spread gate (halt when Fragmentation_Spread >= 0.000075) sensors on the exact calendar day of execution.
 4. **Bootstrapping:** Recommended to calculate confidence intervals on the Sharpe to account for the ~80% overlap in continuous monthly cohorts.
 
 ---
@@ -295,7 +295,7 @@ The portfolio will be underwater for stretches of 2–3 weeks. Within-cohort dra
 
 ## 20. What Was NOT Tested
 `[OPEN]` Items mandated by Gemini handoff that were not implemented in the Claude phase:
-- **Toxic Chaos gate** (Fragmentation_Spread >= 0.000075). Not wired into the backtest engine. Cold Flush gate is implemented and tested.
+- **Fragmentation_Spread gate** (halt when Fragmentation_Spread >= 0.000075). Not wired into the backtest engine. Cold Flush gate is implemented and tested.
 - **Proportional BTC hedge reduction on stop trigger.** When an alt leg is stopped, the BTC hedge is currently NOT reduced — full $1 BTC long is maintained against the now-frozen short. This is a known mismatch with the Gemini brief.
 - **Out-of-sample validation.** All cohorts informed parameter selection. The Oct 2025 quarantined cohorts serve as a partial stress test but are not a true holdout.
 - **Stop-loss slippage modeling.** Backtest assumes exits at exactly 60%. Real altcoin perps can gap 5–10% beyond trigger.
