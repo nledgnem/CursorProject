@@ -1,0 +1,9 @@
+[
+  {
+    "peer": "Samsung",
+    "event": "Samsung prelim Q2 guidance (op. profit ~89.4T KRW, ~18x YoY, ~6% above estimates) triggered a memory-sector selloff; MU/SNDK/WDC each fell ~7% overnight/premarket on profit-taking and margin-sustainability concerns despite the beat",
+    "source": "CNBC, 24/7 Wall St, Yahoo Finance (Samsung Q2 2026 guidance coverage, 2026-07-07)",
+    "broke_at_utc": "2026-07-07T00:00:00Z",
+    "expected_move": ">4% (MU/SNDK/WDC each ~7%)"
+  }
+]

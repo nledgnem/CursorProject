@@ -1,0 +1,48 @@
+ticker,company,instrument_class,cash_open_eligible,verify_instrument,cme_ssf_covered,cme_ssf_liquid,cme_ssf_adv_contracts,eu_offvenue_coverage,notes
+AMD,Advanced Micro Devices,equity,yes,no,Y,,,,CME SSF covered (fact card May-2026)
+QCOM,Qualcomm,equity,yes,no,Y,,,,CME SSF covered (fact card May-2026)
+CRCL,Circle Internet Group,equity,yes,no,N,,,,Not CME-covered; recent IPO; confirm normal listed cash session
+COIN,Coinbase Global,equity,yes,no,N,,,,Not CME-covered; crypto-news-sensitive; prime uncovered hunting ground
+META,Meta Platforms,equity,yes,no,Y,,,,CME SSF covered (fact card May-2026)
+LLY,Eli Lilly,equity,yes,no,Y,,,,CME SSF covered (fact card May-2026)
+TSM,Taiwan Semiconductor Manufacturing,equity,yes,no,N,,,,Not CME-covered; US ADR; TWSE lights window; foreign
+HIMS,Hims & Hers Health,equity,yes,no,N,,,,Not CME-covered; excluded by INV-COST (spread too wide)
+PLTR,Palantir Technologies,equity,yes,no,Y,,,,CME SSF covered (fact card May-2026)
+LITE,Lumentum Holdings,equity,yes,no,N,,,,Not CME-covered
+ARM,Arm Holdings,equity,yes,no,N,,,,Not CME-covered; US ADR; uncovered + decent spread
+AAOI,Applied Optoelectronics,equity,yes,no,N,,,,Not CME-covered
+NOK,Nokia,equity,yes,no,N,,,,Not CME-covered; US ADR; Helsinki lights window; foreign
+NFLX,Netflix,equity,yes,no,Y,,,,CME SSF covered (fact card May-2026)
+NVO,Novo Nordisk,equity,yes,no,N,,,,Not CME-covered; US ADR; Copenhagen lights window; foreign
+USAR,USA Rare Earth,equity,yes,no,N,,,,Not CME-covered
+HOOD,Robinhood Markets,equity,yes,no,N,,,,Not CME-covered; crypto-news-sensitive; cost-floor INSUFFICIENT_DATA (thin)
+INTC,Intel,equity,yes,no,Y,,,,CME SSF covered (fact card May-2026)
+TSLA,Tesla,equity,yes,no,Y,,,exists_liquidity_unverified,CME SSF covered; Eurex SSF page exists (block-traded; non-continuous)
+MU,Micron Technology,equity,yes,no,Y,,,,CME SSF covered (fact card May-2026)
+RKLB,Rocket Lab,equity,yes,no,N,,,,Not CME-covered
+CBRS,VERIFY - Chain Bridge Bancorp?,equity,yes,yes,N,,,,Not CME-covered; verify ticker/instrument on Variational
+MRVL,Marvell Technology,equity,yes,no,N,,,,Not CME-covered; uncovered + decent spread
+NBIS,Nebius Group,equity,yes,yes,N,,,,Not CME-covered; verify exact ticker/instrument on Variational
+NVDA,Nvidia,equity,yes,no,Y,,,exists_liquidity_unverified,CME SSF covered; Eurex SSF page exists (block-traded; non-continuous)
+SNDK,SanDisk,equity,yes,yes,N,,,,Not CME-covered; verify exact ticker/instrument on Variational
+MSTR,Strategy (MicroStrategy),equity,yes,no,N,,,,Not CME-covered; BTC-proxy; crypto-news-sensitive; prime uncovered hunting ground
+GOOGL,Alphabet,equity,yes,no,Y,,,,CME SSF covered (fact card May-2026)
+MSFT,Microsoft,equity,yes,no,Y,,,,CME SSF covered (fact card May-2026)
+OPENAI,OpenAI,pre_ipo,no,no,,,,,Pre-IPO/private reference; no listed cash open - EXCLUDE from convergence
+ANTHROPIC,Anthropic,pre_ipo,no,no,,,,,Pre-IPO/private reference; no listed cash open - EXCLUDE from convergence
+QNTX,Quantinx (verify),pre_ipo,no,yes,,,,,Pre-IPO/private-style reference - EXCLUDE from convergence
+SPCX,SpaceX,pre_ipo,no,no,,,,,Pre-IPO; named in 6/30 CME release but NOT in May fact card table - RE-VERIFY final list at launch; excluded here anyway
+CL,WTI Crude Oil,non_equity,no,no,,,,,Commodity - not priority for this monitor
+BZ,Brent Crude Oil,non_equity,no,no,,,,,Commodity - not priority
+COPPER,Copper,non_equity,no,no,,,,,Commodity - not priority
+NATGAS,Natural Gas,non_equity,no,no,,,,,Commodity - not priority
+XAG,Silver,non_equity,no,no,,,,,Commodity - not priority
+XAU,Gold,non_equity,no,no,,,,,Commodity - not priority
+XPT,Platinum,non_equity,no,no,,,,,Commodity - not priority
+XPD,Palladium,non_equity,no,no,,,,,Commodity - not priority
+QQQ,Invesco QQQ (Nasdaq 100 ETF),non_equity,no,no,,,,,Index ETF - usable as hedge proxy; not a single-name target
+SOXL,Direxion Semiconductor Bull 3x,non_equity,no,no,,,,,Leveraged ETF - not a single-name target
+US500,S&P 500 index,non_equity,no,no,,,,,Index - usable as hedge proxy
+EWJ,iShares MSCI Japan ETF,non_equity,no,no,,,,,Country ETF - not priority
+EWY,iShares MSCI South Korea ETF,non_equity,no,no,,,,,Country ETF - not priority
+URNM,Sprott Uranium Miners ETF,non_equity,no,no,,,,,Sector ETF - not priority

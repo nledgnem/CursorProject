@@ -1,0 +1,6 @@
+watch_peer,peer_market,traded_us_name,expected_sign,mechanism,status
+SK Hynix (000660.KS),KRX,MU,same,"Memory (DRAM/HBM) demand+pricing read-through; a Hynix beat/raise on HBM pricing is bullish MU",CANDIDATE_UNVALIDATED
+Samsung Electronics (005930.KS),KRX,MU,same,"Memory pricing/capex read-through; BUT a capacity-EXPANSION signal can be BEARISH MU (oversupply) even on a 'beat' -> sign is state-dependent, verify",CANDIDATE_UNVALIDATED
+TSMC (2330.TW / TSM),TWSE,NVDA,same,"Foundry/AI-accelerator demand read-through; TSMC raising HPC/AI outlook is bullish NVDA",CANDIDATE_UNVALIDATED
+TSMC (2330.TW / TSM),TWSE,AMD,same,"Foundry demand read-through to AMD AI/CPU",CANDIDATE_UNVALIDATED
+SK Hynix (000660.KS),KRX,NVDA,same,"HBM supply to NVDA; Hynix HBM commentary read-through",CANDIDATE_UNVALIDATED
