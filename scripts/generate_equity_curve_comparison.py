@@ -3,6 +3,7 @@ Generate equity_curve_comparison.png: raw + gated L/S and macro indices,
 with light green background shading when Gate is ON.
 Also prints Q3/Q4 diagnostic (Sharpe and MDD for Raw L/S in Q3/Q4 only).
 """
+import sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -11,6 +12,14 @@ from pathlib import Path
 
 sns.set(style="whitegrid")
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from src.macro_regime.btcdom_trend import (  # noqa: E402
+    apply_gate,
+    compute_btcdom_trend,
+    compute_mrf_gate,
+)
 MSM_PATH = ROOT / "reports" / "msm_funding_v0" / "msm_v0_full_2023_2026" / "msm_timeseries.csv"
 RECON_PATH = ROOT / "data" / "curated" / "data_lake" / "btcdom_reconstructed.csv"
 BINANCE_PATH = ROOT / "data" / "curated" / "data_lake" / "binance_btcdom.csv"
@@ -51,23 +60,36 @@ def main():
         labels=["Q1: Negative/Low", "Q2: Weak", "Q3: Neutral", "Q4: High"],
         include_lowest=True,
     )
-    msm["BTCDOM_Trend"] = np.where(msm["btcd_index_decision"] > msm["sma_30_decision"], "Rising", "Falling")
-    gate = (msm["funding_regime"] == "Q2: Weak") & (msm["BTCDOM_Trend"] == "Rising")
-    msm["is_mrf_active"] = gate
-    msm["y_filtered"] = np.where(gate, msm["y"], 0.0)
-    msm["recon_filtered"] = np.where(gate, msm["ret_btcdom_recon"], 0.0)
-    msm["binance_filtered"] = np.where(gate, msm["ret_btcdom_binance"], 0.0)
-    msm["cum_raw_ls"] = (1 + msm["y"]).cumprod() - 1
-    msm["cum_filtered_ls"] = (1 + msm["y_filtered"]).cumprod() - 1
-    msm["cum_recon_btcdom"] = (1 + msm["ret_btcdom_recon"]).cumprod() - 1
-    msm["cum_binance_btcdom"] = (1 + msm["ret_btcdom_binance"]).cumprod() - 1
-    msm["cum_recon_filtered"] = (1 + msm["recon_filtered"]).cumprod() - 1
-    msm["cum_binance_filtered"] = (1 + msm["binance_filtered"]).cumprod() - 1
+    msm["BTCDOM_Trend"] = compute_btcdom_trend(msm["btcd_index_decision"], msm["sma_30_decision"])
+    msm["is_mrf_active"] = compute_mrf_gate(msm["funding_regime"], msm["BTCDOM_Trend"])
 
-    df = msm.dropna(subset=["y", "funding_regime", "BTCDOM_Trend", "ret_btcdom_recon", "ret_btcdom_binance"]).copy()
+    # Drop un-evaluable rows BEFORE building any cumulative series. Previously the
+    # trend was a bare np.where, so a missing BTCDOM index produced a fabricated
+    # "Falling", the gate read False, and the row contributed a silent 0.0 to every
+    # cumulative curve below. No silent truncation -- report what was dropped.
+    required = ["y", "funding_regime", "BTCDOM_Trend", "ret_btcdom_recon", "ret_btcdom_binance"]
+    n_before = len(msm)
+    df = msm.dropna(subset=required).copy()
+    n_dropped = n_before - len(df)
+    if n_dropped:
+        print(
+            f"[macro] Dropped {n_dropped}/{n_before} rows with incomplete macro inputs "
+            f"({', '.join(required)}) before computing cumulative curves."
+        )
     if df.empty:
         print("No data for chart.")
         return
+
+    gate = df["is_mrf_active"].fillna(False).astype(bool)
+    df["y_filtered"] = apply_gate(df["y"], gate)
+    df["recon_filtered"] = apply_gate(df["ret_btcdom_recon"], gate)
+    df["binance_filtered"] = apply_gate(df["ret_btcdom_binance"], gate)
+    df["cum_raw_ls"] = (1 + df["y"]).cumprod() - 1
+    df["cum_filtered_ls"] = (1 + df["y_filtered"]).cumprod() - 1
+    df["cum_recon_btcdom"] = (1 + df["ret_btcdom_recon"]).cumprod() - 1
+    df["cum_binance_btcdom"] = (1 + df["ret_btcdom_binance"]).cumprod() - 1
+    df["cum_recon_filtered"] = (1 + df["recon_filtered"]).cumprod() - 1
+    df["cum_binance_filtered"] = (1 + df["binance_filtered"]).cumprod() - 1
 
     # Chart
     sns.set_context("talk")

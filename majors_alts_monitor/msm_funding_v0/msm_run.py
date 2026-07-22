@@ -39,6 +39,15 @@ except ImportError:
     )
     from majors_alts_monitor.utils.data_quality_gate import run_gold_layer_audit
 
+# Canonical BTCDOM trend / MRF gate logic. macro_environment.py already imports
+# from src.macro_regime at module level, so this resolves in both execution modes.
+from src.macro_regime.btcdom_trend import (
+    apply_gate,
+    compute_btcdom_trend,
+    compute_mrf_gate,
+    trend_label,
+)
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -563,50 +572,91 @@ def run_msm_v0(
             include_lowest=True,
         )
 
-        # BTCDOM trend: 30d SMA of reconstructed BTCDOM, Rising/Falling
-        data_lake_dir = Path(config["data"]["data_lake_dir"])
+        # BTCDOM trend: 30d SMA of reconstructed BTCDOM, Rising/Falling.
+        #
+        # STALE DATA TRIPWIRE (ARCHITECTURE.md SOP rule 5). Mirrors the silver
+        # funding freshness guard above. Existence + schema checks are NOT enough:
+        # btcdom_reconstructed.csv is fully rewritten every night, so its mtime
+        # advances daily even when its terminal date does not. From 2026-02-02 to
+        # 2026-07-21 the file was present, correctly shaped, and 174 days stale --
+        # and the old code logged nothing because both checks below passed.
+        # PATH BUG (fixed 2026-07-22): this block used to REBIND data_lake_dir to
+        #     Path(config["data"]["data_lake_dir"])   # "./data/curated/data_lake"
+        # i.e. the msm_config.yaml key that lines 131-137 above explicitly mark as
+        # "deprecated and IGNORED" because it is a RELATIVE deploy-snapshot path.
+        # Effect on Render: Step 3 wrote btcdom_reconstructed.csv to the persistent
+        # disk (/data/curated/data_lake), while Step 4 read the repo seed copy,
+        # which only changes on deploy. Verified 2026-07-22 -- btcd_index_decision
+        # in the Drive msm_timeseries matches the REPO copy to 6dp on every date
+        # and differs from the Render-disk copy by ~2%.
+        #
+        # This means fixing TARGET_END alone would NOT have fixed the incident:
+        # the extended index would have landed on the disk that Step 4 never read.
+        #
+        # Use the resolved data_lake_dir from the top of this function (which honors
+        # --data-lake / RENDER_DATA_LAKE_PATH). Do not re-derive it from config here.
+        BTCDOM_FRESHNESS_THRESHOLD_DAYS = 3
         btcdom_path = data_lake_dir / "btcdom_reconstructed.csv"
-        recon = None
-        if btcdom_path.exists():
-            recon = pd.read_csv(btcdom_path, parse_dates=["date"]).sort_values("date")
-            if "reconstructed_index_value" in recon.columns:
-                recon["sma_30"] = recon["reconstructed_index_value"].rolling(window=30, min_periods=30).mean()
-                trend_df = recon[["date", "reconstructed_index_value", "sma_30"]].rename(
-                    columns={"date": "decision_date", "reconstructed_index_value": "btcd_index_decision"}
-                )
-                df = df.merge(trend_df, on="decision_date", how="left")
-                df["BTCDOM_Trend"] = np.where(df["btcd_index_decision"] > df["sma_30"], "Rising", "Falling")
-            else:
-                logger.warning("btcdom_reconstructed.csv missing column reconstructed_index_value; BTCDOM_Trend not set.")
-        else:
-            logger.warning(f"btcdom_reconstructed.csv not found at {btcdom_path}; BTCDOM_Trend not set.")
-
-        # Strict 7-day BTCDOM log return for Gold Layer (btcdom_7d_ret)
-        if recon is not None and "reconstructed_index_value" in recon.columns:
-            btc = recon[["date", "reconstructed_index_value"]].copy()
-            btc["date"] = pd.to_datetime(btc["date"]).dt.normalize()
-            btc = btc.rename(columns={"reconstructed_index_value": "btcdom_price"})
-            btc_start = btc.rename(columns={"date": "decision_date", "btcdom_price": "btcdom_price_start"})
-            btc_end = btc.rename(columns={"date": "next_date", "btcdom_price": "btcdom_price_end"})
-            df = df.merge(btc_start, on="decision_date", how="left")
-            df = df.merge(btc_end, on="next_date", how="left")
-            df["btcdom_7d_ret"] = np.log(
-                df["btcdom_price_end"].astype(float) / df["btcdom_price_start"].astype(float)
+        if not btcdom_path.exists():
+            raise SystemExit(
+                f"BTCDOM macro index is missing: btcdom_reconstructed.csv not found at "
+                f"{btcdom_path}. Resolved data_lake_dir={data_lake_dir}. "
+                f"Refusing to produce msm output without the macro trend input."
             )
-            df.drop(columns=["btcdom_price_start", "btcdom_price_end"], inplace=True)
-        else:
-            logger.warning(
-                "btcdom_reconstructed.csv not available or missing reconstructed_index_value; "
-                "btcdom_7d_ret cannot be computed for Gold Layer."
+        recon = pd.read_csv(btcdom_path, parse_dates=["date"]).sort_values("date")
+        if "reconstructed_index_value" not in recon.columns:
+            raise SystemExit(
+                f"BTCDOM macro index is malformed: {btcdom_path} has no "
+                f"'reconstructed_index_value' column. Refusing to produce msm output."
             )
 
-        # Gate status and gated return (y_filtered = y when gate ON, else 0; y_gated alias for PM)
-        if "BTCDOM_Trend" in df.columns:
-            gate = (df["funding_regime"] == "Q2: Weak") & (df["BTCDOM_Trend"] == "Rising")
-        else:
-            gate = pd.Series(False, index=df.index)
-        df["is_mrf_active"] = gate.astype(bool)
-        df["y_filtered"] = np.where(df["is_mrf_active"], df["y"], 0.0)
+        btcdom_max_date = pd.Timestamp(recon["date"].max()).date()
+        btcdom_drift_days = (datetime.now(timezone.utc).date() - btcdom_max_date).days
+        if btcdom_drift_days > BTCDOM_FRESHNESS_THRESHOLD_DAYS:
+            raise SystemExit(
+                f"BTCDOM macro index is stale: max(date)={btcdom_max_date}, "
+                f"drift={btcdom_drift_days} days. "
+                f"Threshold={BTCDOM_FRESHNESS_THRESHOLD_DAYS} days. "
+                f"Check TARGET_END / coverage in scripts/data_ingestion/btcdom_backfill.py "
+                f"(Step 3). Refusing to produce msm output on a stale macro trend."
+            )
+        logger.info(
+            f"BTCDOM freshness OK: max(date)={btcdom_max_date}, drift={btcdom_drift_days}d "
+            f"(threshold={BTCDOM_FRESHNESS_THRESHOLD_DAYS}d)."
+        )
+
+        recon["sma_30"] = recon["reconstructed_index_value"].rolling(window=30, min_periods=30).mean()
+        trend_df = recon[["date", "reconstructed_index_value", "sma_30"]].rename(
+            columns={"date": "decision_date", "reconstructed_index_value": "btcd_index_decision"}
+        )
+        df = df.merge(trend_df, on="decision_date", how="left")
+        # Nullable by construction: NA where the index or its SMA is missing.
+        # Never fabricates a direction. See src/macro_regime/btcdom_trend.py.
+        df["BTCDOM_Trend"] = compute_btcdom_trend(df["btcd_index_decision"], df["sma_30"])
+
+        # Strict 7-day BTCDOM log return for Gold Layer (btcdom_7d_ret).
+        # recon presence, schema and freshness are all enforced above, so there is
+        # no "source unavailable" branch left to fall through.
+        btc = recon[["date", "reconstructed_index_value"]].copy()
+        btc["date"] = pd.to_datetime(btc["date"]).dt.normalize()
+        btc = btc.rename(columns={"reconstructed_index_value": "btcdom_price"})
+        btc_start = btc.rename(columns={"date": "decision_date", "btcdom_price": "btcdom_price_start"})
+        btc_end = btc.rename(columns={"date": "next_date", "btcdom_price": "btcdom_price_end"})
+        df = df.merge(btc_start, on="decision_date", how="left")
+        df = df.merge(btc_end, on="next_date", how="left")
+        df["btcdom_7d_ret"] = np.log(
+            df["btcdom_price_end"].astype(float) / df["btcdom_price_start"].astype(float)
+        )
+        df.drop(columns=["btcdom_price_start", "btcdom_price_end"], inplace=True)
+
+        # Gate status and gated return.
+        # is_mrf_active is NULLABLE boolean: NA means "could not be evaluated",
+        # which is not the same as False ("evaluated and declined"). y_filtered
+        # is NaN in the NA case rather than 0.0 -- an un-evaluable week must not
+        # read as a flat week.
+        gate = compute_mrf_gate(df["funding_regime"], df["BTCDOM_Trend"])
+        df["is_mrf_active"] = gate
+        df["y_filtered"] = apply_gate(df["y"], gate)
         df["y_gated"] = df["y_filtered"]
 
         # Run Data Quality Gatekeeper on Gold Layer dataframe before persisting
@@ -631,8 +681,9 @@ def run_msm_v0(
         latest_row = latest_df.iloc[-1]
         latest_date = latest_row["decision_date"].date()
         funding_label = str(latest_row["funding_regime"])
-        btcd_label = str(latest_row.get("BTCDOM_Trend", "Unknown")) if pd.notna(latest_row.get("BTCDOM_Trend")) else "Unknown"
-        gate_on = bool(latest_row.get("is_mrf_active", False))
+        btcd_label = trend_label(latest_row.get("BTCDOM_Trend"))
+        raw_gate = latest_row.get("is_mrf_active")
+        gate_on = bool(raw_gate) if pd.notna(raw_gate) else False
         gate_label = "ACTIVE - DEPLOY L/S BASKET" if gate_on else "INACTIVE - HOLD 100% CASH"
         status = (
             "\n=========================================\n"

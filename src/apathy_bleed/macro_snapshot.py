@@ -6,6 +6,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 from src.macro_regime.gate_policy import ENVIRONMENT_APR_ENTRY_GATE_PCT
+from src.macro_regime.btcdom_trend import trend_label
 
 def _safe_float(v) -> float:
     try:
@@ -18,7 +19,9 @@ def _safe_float(v) -> float:
 
 def _regime_label(row: dict) -> str:
     funding = str(row.get("funding_regime", "Unknown"))
-    btcd = str(row.get("BTCDOM_Trend", "Unknown"))
+    # trend_label, not str(): a SQL NULL read back from macro_features would
+    # otherwise render as the literal "None" in the 08:00 UTC Telegram snapshot.
+    btcd = trend_label(row.get("BTCDOM_Trend"))
     gate = row.get("is_mrf_active", None)
     try:
         gate_on = bool(int(gate)) if isinstance(gate, (int, str)) and str(gate).isdigit() else bool(gate)

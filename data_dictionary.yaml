@@ -1377,21 +1377,38 @@ msm_timeseries:
   path: /data/exports/msm_timeseries.csv  # NOT under /data/curated/data_lake/, but mirrored to Drive via gdrive_export.yaml::sources
   source:
     builder: majors_alts_monitor/msm_funding_v0/msm_run.py + msm_outputs.py
-  pipeline_step: "run_live_pipeline.py Step 4 (paused since 2024-12-30)"
-  status: PAUSED   # strategy not running; file is the last good gold output
+  pipeline_step: "run_live_pipeline.py Step 4"
+  status: ALIVE-DAILY   # corrected 2026-07-22: the PAUSED entry below was 6 months stale
   primary_key: [decision_date]
-  grain: weekly (Monday decision_date, next_date 7 days later)
-  observed_2026_04_28:
-    rows: 48
-    date_range: "decision_date 2024-02-05 -> 2024-12-30 (last next_date 2024-12-31)"
-    size_kb: 21.7
-  schema_drift_note: |
-    The CSV in Drive was last produced 2024-12-30 against an older code base.
-    Current msm_outputs.py defines additional columns
-    (F_tk_apr, Environment_APR, Fragmentation_Spread, Z_Score_90d, Delta_APR,
-    LogModulus_APR, Conditioned_Momentum, w_risk) that would appear if the
-    strategy were re-run today. The columns documented below are exactly the
-    16 in the historical CSV.
+  grain: |
+    Weekly (Monday decision_date, next_date 7 days later), PLUS one intra-week
+    "Live T-0 Row" appended by msm_run.py at the funding feed's max date
+    (msm_run.py:223-225). The T-0 row is expected and data_quality_gate.py
+    exempts the final row from the weekday-consistency check.
+  observed_2026_07_22:
+    rows: 106
+    columns: 35
+    date_range: "decision_date 2024-07-22 -> 2026-07-21"
+    size_kb: 75.6
+    note: |
+      The series is a ROLLING window (~105 rows / 730-day lookback), not an
+      append-only history: older rows fall off the front as new ones arrive.
+  prior_doc_error_2026_07_22: |
+    The previous version of this entry claimed status PAUSED, 48 rows, 16
+    columns, decision_date 2024-02-05 -> 2024-12-30, and stated that the
+    extended columns "would appear if the strategy were re-run". All of that
+    was wrong as of 2026-04-28 already: the strategy runs nightly and the live
+    file has 106 rows and 35 columns. Anyone orienting from the old entry would
+    have badly misjudged what this file is.
+  reproducibility_warning: |
+    ROWS ARE NOT POINT-IN-TIME STABLE. The basket is re-selected as top-30 by
+    marketcap against the marketcap table AS IT STANDS AT RUN TIME, not as it
+    stood at decision_date, so every historical row is rewritten nightly.
+    Measured 2026-07-22 between the 2026-04-06 run and the 2026-07-21 Drive
+    copy, on 90 identical decision_dates: basket_members differ on all 90 rows,
+    and F_tk / F_tk_apr / y differ by a median ~14%. A conclusion drawn from an
+    earlier snapshot cannot be reproduced from a later one. This contradicts the
+    PiT guarantee described in ARCHITECTURE.md and is not yet fixed.
   columns:
     - name: decision_date
       type: date
@@ -1509,6 +1526,78 @@ msm_timeseries:
       type: float
       unit: weekly_simple_return_decimal
       definition: "Simple return ETH over [decision_date, next_date], asof pricing."
+      gotchas:
+        - |
+          All realised-return columns (r_alts, r_maj_weighted, y, r_btc, r_eth,
+          y_hot, y_cold) are NaN on rows whose next_date runs past the end of
+          fact_price coverage -- i.e. the most recent Monday and the Live T-0
+          row. Before 2026-07-22 these were emitted as EXACTLY 0.0 (both ends of
+          the unbounded as-of lookup resolved to the same close), so an
+          unfinished week read as a flat week. Guard: msm_returns.py
+          compute_returns_for_week.
+
+    # --- BTCDOM macro block (added to the docs 2026-07-22) ---
+    - name: btcd_index_decision
+      type: float
+      unit: index_points   # NOT a percentage. Base ~2448 at 2024-07-04; bound < 6000.
+      frequency: sampled at decision_date from a daily series
+      definition: |
+        Straight rename of reconstructed_index_value from
+        data/curated/data_lake/btcdom_reconstructed.csv, left-merged on
+        decision_date (msm_run.py). A reconstructed BTCDOM *futures index level*,
+        NOT the BTC dominance percentage. Never compare it directly to a
+        "dominance is 56.3%" figure.
+      gotchas:
+        - "Null for any decision_date absent from btcdom_reconstructed.csv (left merge)."
+    - name: sma_30
+      type: float
+      unit: index_points
+      definition: |
+        30-CALENDAR-DAY SMA of the daily reconstructed index, min_periods=30.
+        Computed on the daily series before the merge, so the first ~29 days
+        after the index start (2024-07-04) are legitimately null.
+    - name: BTCDOM_Trend
+      type: string
+      enum: [Rising, Falling, null]
+      definition: |
+        "Rising" when btcd_index_decision > sma_30, "Falling" when <=, and NULL
+        when either input is missing. Canonical implementation:
+        src/macro_regime/btcdom_trend.py::compute_btcdom_trend.
+      gotchas:
+        - |
+          NULLABLE SINCE 2026-07-22. Consumers MUST handle a null. Before that
+          date this was a bare np.where, and because NaN comparisons evaluate
+          False, a MISSING index rendered as the string "Falling". Between
+          2026-02-02 and 2026-07-21 that produced 26 consecutive fabricated
+          "Falling" rows while BTC dominance actually rose (~54% -> ~56.3%).
+          Treat any historical snapshot of this column over that window as
+          unusable. See docs/runbooks/btcdom_macro_index.md.
+    - name: btcdom_7d_ret
+      type: float
+      unit: log_return_over_7_days
+      definition: |
+        log(index at next_date / index at decision_date), via two left merges.
+        Because it needs a price at next_date, it goes null ONE ROW EARLIER than
+        btcd_index_decision when the upstream index truncates.
+      gotchas:
+        - "A bounded trailing null block is normal (window not yet closed); interior nulls are a defect and now halt the run."
+    - name: is_mrf_active
+      type: boolean   # NULLABLE
+      definition: |
+        Macro Regime Filter gate: funding_regime == "Q2: Weak" AND
+        BTCDOM_Trend == "Rising". NULL when either input is unknown, so
+        "evaluated and declined" stays distinguishable from "could not evaluate".
+        Canonical implementation: src/macro_regime/btcdom_trend.py::compute_mrf_gate.
+    - name: y_filtered
+      type: float
+      definition: |
+        y where the gate is ON, 0.0 where the gate is OFF, NaN where the gate
+        could not be evaluated. The NaN case is new as of 2026-07-22; previously
+        np.where(gate, y, 0.0) collapsed "declined" and "un-evaluable" into an
+        identical 0.0, which is how six months of un-evaluable weeks read as flat.
+    - name: y_gated
+      type: float
+      definition: "Alias of y_filtered, kept for PM-facing reports."
   known_consumers:
     - "Historical research notebooks under notebooks/"
     - "MSM equity curve generation (scripts/generate_equity_curve_comparison.py et al.)"
