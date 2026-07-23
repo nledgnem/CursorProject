@@ -18,11 +18,26 @@ Assumption Ledger (cross-sectional volatility drag fix)
 
 import polars as pl
 from typing import List, Tuple, Optional, Dict, Union
-from datetime import date
+from datetime import date, datetime
 import logging
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
+
+def _max_price_date(prices: pl.DataFrame) -> Optional[date]:
+    """Latest date present in the price frame, or None if undeterminable."""
+    if prices is None or len(prices) == 0:
+        return None
+    try:
+        value = prices["date"].max()
+    except Exception:  # pragma: no cover - defensive
+        return None
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    return value
 
 
 def get_close_asof(
@@ -224,6 +239,27 @@ def compute_returns_for_week(
         - rejection_reason: "skipped_price_coverage" or "skipped_returns_computation" or None
     """
     try:
+        # INCOMPLETE WINDOW GUARD.
+        # get_close_asof is an unbounded backward as-of lookup, so when next_date
+        # runs past the end of the price data BOTH ends resolve to the same last
+        # close and the return comes back as EXACTLY 0.0 rather than NaN -- an
+        # unfinished week reading as a flat week. Worse, when only next_date is
+        # past the end (e.g. the final Monday row), the "7-day" return is really a
+        # 1-2 day return wearing a weekly label, which is entirely plausible-looking.
+        #
+        # Emit NaN instead, and keep the row: its macro columns (Environment_APR,
+        # Fragmentation_Spread, funding_regime, ...) are still valid and are what
+        # the live dashboard reads. Only the realised returns are unknowable.
+        max_price_date = _max_price_date(prices)
+        if max_price_date is not None and next_date > max_price_date:
+            logger.warning(
+                f"Week {decision_date}->{next_date}: return window extends past price "
+                f"coverage (max price date {max_price_date}). Realised returns are NaN "
+                f"(incomplete window), not 0.0."
+            )
+            nan = float("nan")
+            return (nan, {m: nan for m in majors}, nan, nan), None
+
         returns = compute_returns(
             prices, marketcap, asset_ids, majors, majors_weights,
             decision_date, next_date, min_price_coverage_pct

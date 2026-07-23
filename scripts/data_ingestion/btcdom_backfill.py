@@ -9,7 +9,8 @@ Production BTCDOM backfill: updates data/curated/data_lake/btcdom_reconstructed.
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+import os
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 from typing import List, Dict
@@ -30,7 +31,38 @@ OUT_CSV_PATH = DATA_LAKE_DIR / "btcdom_reconstructed.csv"
 STATE_DB_PATH = PROJECT_ROOT / "btcdom_state.db"
 
 T0 = date(2024, 7, 4)
-TARGET_END = date(2026, 1, 29)
+
+# Upper bound of the reconstruction window.
+#
+# DO NOT REINTRODUCE A HARDCODED ABSOLUTE END DATE HERE.
+#
+# This was previously `TARGET_END = date(2026, 1, 29)`. It was added on
+# 2026-03-05 (commit b17103f) as a deliberate *research* bound, with the comment
+# "Hard bound the backtest window to the historically clean period to avoid
+# tail-end data drops in March 2026." On 2026-03-12 (commit 81e840e) this script
+# was promoted into the live pipeline as Step 3 and that explanatory comment was
+# deleted in the same change, while the constant was kept.
+#
+# Consequence: btcdom_reconstructed.csv was fully rewritten every night -- so its
+# mtime advanced daily and it looked fresh -- while its terminal date stayed at
+# 2026-01-29 for roughly six months. Every downstream merge on decision_date
+# silently produced NaN, and BTCDOM_Trend fabricated "Falling" on 26 consecutive
+# weekly rows while BTC dominance actually rose. See docs/runbooks/btcdom_macro_index.md.
+#
+# The bound is now derived from actual BTC price coverage in fact_price. Research
+# windows go through the env overrides below, which are explicit and temporary by
+# construction rather than silently permanent.
+#
+#   BTCDOM_TARGET_END        ISO date; caps the window (research/backtest only)
+#   BTCDOM_TAIL_MARGIN_DAYS  drop N trailing days to dodge tail-end data drops
+#   BTCDOM_MAX_COVERAGE_LAG_DAYS  fail if BTC price coverage lags today by more
+#
+_END_OVERRIDE_RAW = os.environ.get("BTCDOM_TARGET_END", "").strip()
+TARGET_END_OVERRIDE: date | None = (
+    date.fromisoformat(_END_OVERRIDE_RAW) if _END_OVERRIDE_RAW else None
+)
+TAIL_MARGIN_DAYS = int(os.environ.get("BTCDOM_TAIL_MARGIN_DAYS", "0"))
+MAX_COVERAGE_LAG_DAYS = int(os.environ.get("BTCDOM_MAX_COVERAGE_LAG_DAYS", "3"))
 
 
 def generate_rebalance_dates(start: date, end: date) -> List[date]:
@@ -77,12 +109,36 @@ def main() -> None:
     )
     storage = StateStorage(db_path=STATE_DB_PATH)
 
-    print(f"Determining last BTC date between {T0} and {TARGET_END}...")
-    last_btc_date = compute_last_btc_date_in_window(dl, T0, TARGET_END)
+    today_utc = datetime.now(timezone.utc).date()
+    window_end = TARGET_END_OVERRIDE or today_utc
+    if TARGET_END_OVERRIDE is not None:
+        print(
+            f"WARNING: BTCDOM_TARGET_END={TARGET_END_OVERRIDE} is set. This caps the "
+            f"reconstruction and must not be set in production."
+        )
+
+    print(f"Determining last BTC date between {T0} and {window_end}...")
+    last_btc_date = compute_last_btc_date_in_window(dl, T0, window_end)
     print(f"Last BTC date in window: {last_btc_date}")
 
     if last_btc_date < T0:
         raise ValueError(f"BTC coverage ends before T0 ({T0}); cannot backfill")
+
+    # Fail loud if the upstream price feed itself has gone stale. Without this the
+    # script would happily emit a short file and report success -- which is exactly
+    # how the 2026-02..07 freeze stayed invisible for six months.
+    coverage_lag_days = (today_utc - last_btc_date).days
+    if TARGET_END_OVERRIDE is None and coverage_lag_days > MAX_COVERAGE_LAG_DAYS:
+        raise SystemExit(
+            f"BTC price coverage is stale: last fact_price BTC date={last_btc_date}, "
+            f"today={today_utc}, lag={coverage_lag_days} days "
+            f"(threshold={MAX_COVERAGE_LAG_DAYS}). Step 2 (CoinGecko price ingest) "
+            f"likely failed. Refusing to rebuild the macro index on stale prices."
+        )
+
+    if TAIL_MARGIN_DAYS > 0:
+        last_btc_date = last_btc_date - timedelta(days=TAIL_MARGIN_DAYS)
+        print(f"Applied tail margin of {TAIL_MARGIN_DAYS}d -> end date {last_btc_date}")
 
     print("Generating Thursday rebalance dates...")
     rebalance_dates = generate_rebalance_dates(T0, last_btc_date)

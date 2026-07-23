@@ -23,6 +23,7 @@ from src.macro_regime.gate_policy import (
     FRAGMENTATION_IDIOSYNCRATIC_TOXIC_CEILING,
     calculate_risk_weight,
 )
+from src.macro_regime.btcdom_trend import trend_label
 
 DEFAULT_DB_PATH = macro_state_db_path()
 REPORTS_ROOT = REPO_ROOT / "reports" / "msm_funding_v0"
@@ -63,7 +64,9 @@ def _safe_float(v) -> float:
 def _regime_label(row: dict) -> str:
     # Stable, human-readable label for comparisons + alerts.
     funding = str(row.get("funding_regime", "Unknown"))
-    btcd = str(row.get("BTCDOM_Trend", "Unknown"))
+    # trend_label, not str(): a SQL NULL read back from macro_features would
+    # otherwise render as the literal "None" in alerts and the dashboard.
+    btcd = trend_label(row.get("BTCDOM_Trend"))
     gate = row.get("is_mrf_active", None)
     try:
         gate_on = bool(int(gate)) if isinstance(gate, (int, str)) and str(gate).isdigit() else bool(gate)

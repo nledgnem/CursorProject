@@ -7,6 +7,7 @@ Output: reports/underwater_drawdown.png
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -15,6 +16,14 @@ import pandas as pd
 
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from src.macro_regime.btcdom_trend import (  # noqa: E402
+    apply_gate,
+    compute_btcdom_trend,
+    compute_mrf_gate,
+)
 MSM_PATH = ROOT / "reports" / "msm_funding_v0" / "msm_v0_full_2023_2026" / "msm_timeseries.csv"
 RECON_PATH = ROOT / "data" / "curated" / "data_lake" / "btcdom_reconstructed.csv"
 OUT_PNG = ROOT / "reports" / "underwater_drawdown.png"
@@ -53,13 +62,14 @@ def build_gated_series(msm: pd.DataFrame) -> pd.DataFrame:
     recon["sma_30"] = recon["reconstructed_index_value"].rolling(window=30, min_periods=30).mean()
     sma = recon[["date", "sma_30"]].rename(columns={"date": "decision_date", "sma_30": "sma_30_decision"})
     msm = msm.merge(sma, on="decision_date", how="left")
-    msm["BTCDOM_Trend"] = np.where(
-        msm["btcd_index_decision"] > msm["sma_30_decision"], "Rising", "Falling"
+    # Nullable trend/gate: a missing BTCDOM index yields NA, not a fabricated
+    # "Falling". y_gated is therefore NaN (unknown) rather than 0.0 (flat) on
+    # rows where the gate could not be evaluated -- main() drops those and says so.
+    msm["BTCDOM_Trend"] = compute_btcdom_trend(
+        msm["btcd_index_decision"], msm["sma_30_decision"]
     )
-
-    gate = (msm["funding_regime"] == "Q2: Weak") & (msm["BTCDOM_Trend"] == "Rising")
-    msm["is_mrf_active"] = gate
-    msm["y_gated"] = np.where(gate, msm["y"], 0.0)
+    msm["is_mrf_active"] = compute_mrf_gate(msm["funding_regime"], msm["BTCDOM_Trend"])
+    msm["y_gated"] = apply_gate(msm["y"], msm["is_mrf_active"])
     return msm
 
 
@@ -74,8 +84,19 @@ def main() -> None:
     msm = msm.sort_values("decision_date").reset_index(drop=True)
     msm = build_gated_series(msm)
 
-    # Build equity curves (wealth, not return)
-    df = msm[["decision_date", "y", "y_gated"]].dropna(subset=["y"]).copy()
+    # Build equity curves (wealth, not return). y_gated is NaN where the macro
+    # gate could not be evaluated; those rows must not silently contribute 0.0
+    # to a cumulative product. Drop them and report the count.
+    n_before = len(msm)
+    df = msm[["decision_date", "y", "y_gated"]].dropna(subset=["y", "y_gated"]).copy()
+    n_dropped = n_before - len(df)
+    if n_dropped:
+        print(
+            f"[macro] Dropped {n_dropped}/{n_before} rows where the MRF gate could not "
+            f"be evaluated (missing BTCDOM index or funding regime)."
+        )
+    if df.empty:
+        raise SystemExit("No rows with an evaluable macro gate; cannot build chart.")
     df["wealth_raw"] = (1 + df["y"]).cumprod()
     df["wealth_gated"] = (1 + df["y_gated"]).cumprod()
 

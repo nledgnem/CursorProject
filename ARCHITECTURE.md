@@ -121,9 +121,26 @@ The system has transitioned from a static historical backtest to a live, automat
 - **Step 0.5 (non-fatal)**: perp listings snapshot (Hyperliquid + Variational)
 - **Step 1 (fatal)**: funding + open interest + liquidations via CoinGlass (single invocation of `scripts/fetch_coinglass_data.py` with `--incremental --merge-existing`; populates `fact_funding`, `fact_open_interest`, AND `fact_liquidations` over the Binance-perp universe — when no `--fetch-*` flag is passed, the script's fallback flips all three on)
 - **Step 2 (fatal)**: price/mcap via CoinGecko
-- **Step 3 (fatal)**: macro index build
+- **Step 3 (fatal)**: macro index build (`btcdom_reconstructed.csv`)
 - **Step 3.5 (fatal)**: silver layer build
 - **Step 4 (fatal)**: strategy run
+
+### 🧨 BTCDOM staleness guards (added 2026-07-22)
+
+Step 3 rewrites `btcdom_reconstructed.csv` in full every night, so **its mtime advances daily even when its content does not**. Existence and timestamp checks cannot detect a freeze here. From 2026-02-02 to 2026-07-21 a hardcoded `TARGET_END = date(2026, 1, 29)` — a research bound promoted into the live tree on 2026-03-12 with its explanatory comment deleted in the same commit — froze the index for ~6 months while every check passed. Downstream, `BTCDOM_Trend` was a bare `np.where(index > sma, ...)`, and because `NaN > NaN` is `False`, the missing data rendered as a confident `"Falling"` on 26 consecutive rows while dominance actually rose.
+
+Four fatal guards now cover this class:
+
+| Guard | Where | Fires on |
+|---|---|---|
+| `MAX_COVERAGE_LAG_DAYS` (3) | `scripts/data_ingestion/btcdom_backfill.py` | `fact_price` BTC coverage lagging today |
+| `BTCDOM_FRESHNESS_THRESHOLD_DAYS` (3) | `msm_run.py`, mirrors the silver guard | the index CSV's max date lagging today |
+| nullable trend + gate | `src/macro_regime/btcdom_trend.py` | n/a — it cannot emit a direction from a null |
+| `MAX_TRAILING_INCOMPLETE_ROWS` (2) | `majors_alts_monitor/utils/data_quality_gate.py` | interior nulls, or an over-long null tail, in `btcdom_7d_ret` |
+
+**Do not reintroduce an absolute end date in `btcdom_backfill.py`.** The window is derived from actual price coverage; research windows go through the `BTCDOM_TARGET_END` / `BTCDOM_TAIL_MARGIN_DAYS` env vars, which are explicit and temporary by construction. Recovery procedure, rebuild validation and open issues: `docs/runbooks/btcdom_macro_index.md`.
+
+**Second path bug, fixed in the same change.** The BTCDOM block in `msm_run.py` rebound `data_lake_dir` to `config["data"]["data_lake_dir"]` — the relative deploy-snapshot path that the same file already marks deprecated and ignored. On Render, **Step 3 wrote the index to the persistent disk while Step 4 read the repo seed**, which only changes on deploy (verified: `btcd_index_decision` in the exported `msm_timeseries.csv` matched the repo copy to 6dp and differed from the Render-disk copy by ~2%). Fixing `TARGET_END` alone would not have fixed the incident. This is the same class as the Apathy (2026-04-20) and danlongshort (2026-04-21) path bugs: **always resolve the lake through `repo_paths.data_lake_root()`, never from a config-relative path.**
 
 ### 📤 Drive export hook (heartbeat-only)
 

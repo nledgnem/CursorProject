@@ -7,6 +7,12 @@ import numpy as np
 import pandas as pd
 
 
+# How many trailing rows may legitimately have a null btcdom_7d_ret: the most
+# recent Monday (whose 7-day window has not closed) plus the intra-week "Live
+# T-0 Row" appended by msm_run.py. Anything beyond that is staleness, not recency.
+MAX_TRAILING_INCOMPLETE_ROWS = 2
+
+
 def _assert_no_nans(df: pd.DataFrame, cols: Iterable[str]) -> None:
     """Raise ValueError if any of the given columns contain NaNs."""
     for col in cols:
@@ -58,20 +64,76 @@ def run_gold_layer_audit(df: pd.DataFrame) -> None:
         )
 
     # -------------------------------
-    # 2) NaNs Tripwire (aligned dates subset)
+    # 2) NaNs Tripwire (bounded-tail rule)
     # -------------------------------
-    # "Aligned dates" = rows where we have a 7-day BTCDOM return
+    # HISTORY -- why this is not a dropna any more:
+    #
+    # This block used to read:
+    #     aligned = df.dropna(subset=["btcdom_7d_ret"]).copy()
+    #     _assert_no_nans(aligned, ["F_tk_apr", "y", "btcdom_7d_ret"])
+    #
+    # It removed exactly the rows that were broken and then asserted the
+    # survivors were dense, so it could only fire when 100% of rows were null.
+    # From 2026-02-02 to 2026-07-21, 25% of rows had a null btcdom_7d_ret every
+    # single night and this gate passed cleanly every single night.
+    #
+    # The rule now: nulls in btcdom_7d_ret are tolerated ONLY as a short
+    # contiguous block at the END of the series -- the most recent week(s) whose
+    # 7-day window has not closed yet. An interior hole, or a tail longer than
+    # MAX_TRAILING_INCOMPLETE_ROWS, means the upstream BTCDOM index is truncated
+    # or stale and must halt the run.
     if "btcdom_7d_ret" not in df.columns:
         raise ValueError("DATA QUALITY GATE: Missing 'btcdom_7d_ret' column in Gold Layer.")
+    if "decision_date" not in df.columns:
+        raise ValueError("DATA QUALITY GATE: Missing 'decision_date' column in Gold Layer.")
 
-    aligned = df.dropna(subset=["btcdom_7d_ret"]).copy()
-    if aligned.empty:
+    ordered = df.assign(_dd=pd.to_datetime(df["decision_date"])).sort_values("_dd")
+    null_mask = ordered["btcdom_7d_ret"].isna().to_numpy()
+    n_null = int(null_mask.sum())
+
+    if n_null == len(ordered):
         raise ValueError(
             "DATA QUALITY GATE: No rows with valid btcdom_7d_ret. "
             "BTCDOM alignment or index ingestion may have failed."
         )
 
-    _assert_no_nans(aligned, ["F_tk_apr", "y", "btcdom_7d_ret"])
+    trailing_nulls = 0
+    for flag in null_mask[::-1]:
+        if not flag:
+            break
+        trailing_nulls += 1
+    interior_nulls = n_null - trailing_nulls
+
+    if interior_nulls > 0:
+        bad_dates = ordered.loc[
+            pd.Series(null_mask, index=ordered.index), "decision_date"
+        ].head(5).tolist()
+        raise ValueError(
+            f"DATA QUALITY GATE: btcdom_7d_ret has {interior_nulls} null row(s) that are "
+            f"NOT a trailing incomplete window. This means the BTCDOM index is truncated "
+            f"or has gaps, and BTCDOM_Trend cannot be trusted for those dates. "
+            f"First null decision_dates: {bad_dates}"
+        )
+
+    if trailing_nulls > MAX_TRAILING_INCOMPLETE_ROWS:
+        first_null_date = ordered.loc[
+            pd.Series(null_mask, index=ordered.index), "decision_date"
+        ].min()
+        raise ValueError(
+            f"DATA QUALITY GATE: btcdom_7d_ret is null for the last {trailing_nulls} rows "
+            f"(threshold={MAX_TRAILING_INCOMPLETE_ROWS}), starting {first_null_date}. "
+            f"The BTCDOM index is stale -- check TARGET_END / coverage in "
+            f"scripts/data_ingestion/btcdom_backfill.py (Step 3)."
+        )
+
+    # F_tk_apr is independent of BTCDOM and must be dense on EVERY row.
+    _assert_no_nans(ordered, ["F_tk_apr"])
+
+    # y and btcdom_7d_ret are asserted on the complete rows -- which, given the
+    # checks above, is provably "all rows except a bounded trailing window",
+    # not "whatever rows happened to survive a dropna".
+    complete = ordered.loc[~pd.Series(null_mask, index=ordered.index)]
+    _assert_no_nans(complete, ["y", "btcdom_7d_ret"])
 
     # -------------------------------
     # 3) Temporal Desync Tripwire
