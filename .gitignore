@@ -98,3 +98,8 @@ data/**/*.zip
 tmp/
 temp/
 scratch/
+
+# LL Pro / enrichment analysis modules — commit source only, never the regenerable cache/outputs
+enrichment/_cache/
+enrichment/enrichment_*.csv
+btcdom/*_lake_native.csv
