@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from datetime import date, timedelta
-from decimal import Decimal, getcontext
+from decimal import Decimal, InvalidOperation, getcontext
 from pathlib import Path
-from typing import Dict, List, Iterable, Tuple
+from typing import Dict, List, Iterable, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -14,6 +15,11 @@ from data_loader import DataLoader
 
 getcontext().prec = 28
 
+# Basket construction constants (previously the literal `head(20)`).
+TARGET_BASKET_N = 20          # constituents per rebalance
+CANDIDATE_BUFFER_MULT = 2     # pull 2x candidates so we can refill around price gaps
+MIN_BASKET_N = 15             # fail loud below this many valid-priced constituents
+
 
 def d(x) -> Decimal:
     if isinstance(x, Decimal):
@@ -21,6 +27,31 @@ def d(x) -> Decimal:
     if x is None:
         return Decimal("0")
     return Decimal(str(x))
+
+
+def _to_decimal_opt(x) -> Optional[Decimal]:
+    """
+    Convert to Decimal, returning None for anything not a usable finite number
+    (None, NaN, +/-inf, unparseable).
+
+    This exists because plain ``d()`` maps a float NaN to ``Decimal('NaN')``,
+    which then flows silently into arithmetic. A NaN rebalance price produced
+    NaN clamp bounds, and ``max(lb, min(ub, p_raw))`` raised
+    ``decimal.InvalidOperation`` the first time the reconstruction reached a
+    basket with a gappy constituent price (the 2026-01-29+ window). Callers on
+    the price-ingest path must use this and treat None as "no valid price".
+    """
+    if x is None:
+        return None
+    try:
+        if isinstance(x, float) and (math.isnan(x) or math.isinf(x)):
+            return None
+        dv = x if isinstance(x, Decimal) else Decimal(str(x))
+    except (InvalidOperation, ValueError, TypeError):
+        return None
+    if dv.is_nan() or dv.is_infinite():
+        return None
+    return dv
 
 
 def calculate_constituent_weights(marketcaps: pd.Series) -> pd.Series:
@@ -81,7 +112,13 @@ class IndexCalculator:
         btc_price_by_date: Dict[date, Decimal] = {}
         for d_val, grp in prices_btc.groupby("date"):
             close_val = grp["close"].iloc[0]
-            btc_price_by_date[d_val] = d(close_val)
+            btc_dec = _to_decimal_opt(close_val)
+            if btc_dec is None or btc_dec <= 0:
+                # Missing/NaN BTC close: leave the date absent. The rebalance loop
+                # raises loudly if a REBALANCE date is missing; _apply_segment skips
+                # a missing SEGMENT day (producing a gap, never a NaN index row).
+                continue
+            btc_price_by_date[d_val] = btc_dec
         results: List[Dict[str, object]] = []
         last_index_value: Decimal | None = None
         last_clamped_prices: Dict[str, Decimal] = {}
@@ -126,25 +163,60 @@ class IndexCalculator:
         if uni.empty:
             raise ValueError(f"No eligible universe on rebalance date {rebalance_date}")
         uni_sorted = uni.sort_values("marketcap", ascending=False)
-        top20 = uni_sorted.head(20)
-        asset_ids = top20["asset_id"].tolist()
-        mc_series = top20.set_index("asset_id")["marketcap"]
-        weights_series = calculate_constituent_weights(mc_series)
+        # Pull a buffer beyond the target basket size so we can still fill
+        # TARGET_BASKET_N valid-priced constituents when a top-ranked asset has a
+        # missing / NaN / non-positive close on this rebalance date.
+        #
+        # Historically every top-20 asset had a valid price, so this selects the
+        # SAME 20 and leaves the historical index byte-identical. It only diverges
+        # on dates where a would-be constituent's price is a gap -- exactly the
+        # 2026-01-29+ window that used to build a NaN rebalance price and crash
+        # `max(lb, min(ub, p_raw))` with decimal.InvalidOperation.
+        candidates = uni_sorted.head(TARGET_BASKET_N * CANDIDATE_BUFFER_MULT)
+        candidate_ids = candidates["asset_id"].tolist()
+        candidate_mc = candidates.set_index("asset_id")["marketcap"]
         btc_px = btc_price_by_date[rebalance_date]
-        prices_universe = self.dl.get_prices(asset_ids, rebalance_date, rebalance_date)
+        prices_universe = self.dl.get_prices(candidate_ids, rebalance_date, rebalance_date)
         if prices_universe.empty:
             raise ValueError(f"Missing prices for universe on rebalance date {rebalance_date}")
-        price_by_asset: Dict[str, Decimal] = {}
-        for aid in asset_ids:
+
+        # Keep only candidates that have a usable (finite, positive) close.
+        close_by_asset: Dict[str, Decimal] = {}
+        for aid in candidate_ids:
             row = prices_universe[prices_universe["asset_id"] == aid]
             if row.empty:
-                raise ValueError(f"Missing price for asset {aid} on rebalance date {rebalance_date}")
-            close_val = row["close"].iloc[0]
-            price_by_asset[aid] = d(close_val)
+                continue
+            px = _to_decimal_opt(row["close"].iloc[0])
+            if px is None or px <= 0:
+                continue
+            close_by_asset[aid] = px
+
+        # Select the TARGET_BASKET_N largest-cap assets that have a valid price.
+        asset_ids = [aid for aid in candidate_ids if aid in close_by_asset][:TARGET_BASKET_N]
+        n_valid = len(asset_ids)
+        dropped = [aid for aid in candidate_ids[:TARGET_BASKET_N] if aid not in close_by_asset]
+        if n_valid < MIN_BASKET_N:
+            raise ValueError(
+                f"Only {n_valid} of the top {TARGET_BASKET_N} constituents have a valid price on "
+                f"rebalance date {rebalance_date} (floor={MIN_BASKET_N}). "
+                f"Missing/NaN-priced among the top {TARGET_BASKET_N}: {dropped[:10]}. "
+                f"Refusing to reconstruct a degenerate basket."
+            )
+        if dropped:
+            # Loud but non-fatal: a top-N name had no price and the basket was
+            # refilled from the next-largest valid-priced candidate(s).
+            print(
+                f"[BTCDOM] {rebalance_date}: {len(dropped)} top-{TARGET_BASKET_N} asset(s) had no "
+                f"valid price ({dropped[:10]}); basket refilled to {n_valid} constituents."
+            )
+
+        mc_series = candidate_mc.loc[asset_ids]
+        weights_series = calculate_constituent_weights(mc_series)
+        price_by_asset: Dict[str, Decimal] = {aid: close_by_asset[aid] for aid in asset_ids}
         rebalance_prices: Dict[str, Decimal] = {}
         for aid in asset_ids:
-            alt_px = price_by_asset[aid]
-            rebalance_prices[aid] = (btc_px / alt_px) if alt_px != 0 else Decimal("0")
+            alt_px = price_by_asset[aid]  # guaranteed finite and > 0 by selection above
+            rebalance_prices[aid] = btc_px / alt_px
         quantities: Dict[str, Decimal] = {}
         for aid in asset_ids:
             w = d(weights_series.loc[aid])
