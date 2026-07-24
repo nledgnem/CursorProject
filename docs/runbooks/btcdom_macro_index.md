@@ -147,6 +147,52 @@ Fixing forward does not repair history. The 26 fabricated `"Falling"` rows were 
 into `macro_state.db` keyed on `decision_date` and are still there until corrected.
 Any Drive-side historical snapshot of `msm_timeseries.csv` carries them too.
 
+## Second bug, exposed by the fix: NaN reconstruction crash (2026-07-24)
+
+The first successful run on the fixed code un-froze the window and extended the
+reconstruction into the 2026-01-29 → present range **for the first time in six
+months**. It immediately hit a pre-existing latent bug in `index_calculator.py`
+(untouched by the freshness fix):
+
+```
+File "index_calculator.py", line 242, in _apply_segment
+    p_clamped = max(lb, min(ub, p_raw))
+decimal.InvalidOperation
+```
+
+**Mechanism** — same class as the original incident, one layer down:
+`_build_rebalance_params` read a **NaN `close`** for a top-20 constituent on a
+rebalance date. The `d()` helper maps `None → Decimal("0")` but a float `NaN`
+became `Decimal("NaN")`, which poisoned `rebalance_prices = btc/NaN = NaN`, hence
+NaN clamp bounds. `Decimal` comparisons against NaN **raise** (unlike float NaN,
+which compares False) — so the reconstruction crashed rather than silently
+emitting a NaN index. Had it not crashed, the NaN would have poisoned the
+segment's `numerator`/`divisor` and turned the whole rebalance segment's index to
+NaN. This was dormant only because the frozen window never reached a basket with a
+gappy price.
+
+**Fix** (`index_calculator.py`):
+- New `_to_decimal_opt()` returns `None` for NaN/inf/None/unparseable; a NaN can
+  no longer become a usable `Decimal`.
+- `_build_rebalance_params` now pulls a candidate buffer (`head(40)`) and selects
+  the `TARGET_BASKET_N` (20) largest-cap assets **that have a finite, positive
+  price**, refilling around gaps. Fails loud (`ValueError`) if fewer than
+  `MIN_BASKET_N` (15) valid constituents exist — a degenerate basket halts rather
+  than reconstructs.
+- BTC close is NaN-guarded at ingest; a missing rebalance-date BTC price still
+  raises, a missing segment-day price produces a gap (never a NaN row).
+
+**Seam verified**: over the 547-row historical window (2024-07-04 → 2026-01-01),
+new code and old code produce byte-identical output (max abs diff `0.0`). The fix
+only changes dates that previously crashed. Regression coverage:
+`tests/test_btcdom_reconstruction_nan_price.py`.
+
+**Still needs Render-side validation**: the specific asset(s)/date(s) with the NaN
+price live only in the Render `fact_price` (the window past the local seed's
+2026-01-05 end), so the exact gap was not reproduced locally. Confirm on Render
+with a read-only query, and seam-check the extended index at 2026-01-27 after the
+next run.
+
 ## Known open issues
 
 - **The reconstruction is not value-stable across runs, and this is now UNEXPLAINED.**
