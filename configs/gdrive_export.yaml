@@ -27,6 +27,7 @@ export_gdrive:
     data_lake_context_md: "docs/DATA_LAKE_CONTEXT.md"
     strategies_md: "docs/STRATEGIES.md"
     backtest_md: "docs/BACKTEST.md"
+    start_here_md: "START_HERE.md"
 
   # Used to produce the stable MSM snapshot after each pipeline run.
   msm_reports_root: "reports/msm_funding_v0"
@@ -47,6 +48,7 @@ export_gdrive:
       data_lake_context_md: "DATA_LAKE_CONTEXT.md"
       strategies_md: "STRATEGIES.md"
       backtest_md: "BACKTEST.md"
+      start_here_md: "START_HERE.md"
 
   retry:
     max_attempts: 5

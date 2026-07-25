@@ -156,7 +156,7 @@ Four fatal guards now cover this class:
   - `GDRIVE_OAUTH_CLIENT_ID`
   - `GDRIVE_OAUTH_CLIENT_SECRET`
   - `GDRIVE_OAUTH_REFRESH_TOKEN`
-- **Scope**: `https://www.googleapis.com/auth/drive.file` (can only access files the app creates)
+- **Scope**: `https://www.googleapis.com/auth/drive` (full Drive read/write) `[corrected 2026-07-24 — was documented as the narrower drive.file; expanded to full drive on 2026-04-30 per DATA_LAKE_CONTEXT §16.3, because the canonical context docs were human-authored in Drive and drive.file cannot see files the app didn't create]`
 - **OAuth app publishing status**: must be **"In production"** (NOT "Testing"). Testing-mode apps auto-revoke refresh tokens every 7 days, causing silent Drive sync failures. Set in Google Cloud Console → APIs & Services → OAuth consent screen → Audience → Publish app. For `drive.file`-scope-only apps, publishing is auto-approved with no Google review. **Status confirmed in production mode 2026-04-27 after a 4-day silent staleness incident traced to this exact misconfiguration.**
 
 ### 🎯 Target folder + persistence
