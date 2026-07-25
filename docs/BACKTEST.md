@@ -162,6 +162,8 @@
 
 **Finding:** Funding is a **net cost** of approximately 1–2.5% per cohort (~5–8% of gross alpha). Counter-intuitively, the BTC long pays MORE in funding than the alt shorts earn — during hype periods when alt funding is positive (good for shorts), BTC funding is also elevated and the long leg eats it.
 
+> `[CORRECTION 2026-07-24 — the 1–2.5% headline is the FAVORABLE-SAMPLE figure and is optimistic. It is contradicted by this doc's own §22 re-audit: the two adverse 2026 cohorts show funding of **−9.8% and −12.3%** (§22 cohort table), 4–6× this headline. Live confirms the adverse regime: the 33-day Apathy run cost −$804.85 on ~$48k short notional = ~1.7%, a **~7.6% / 150-day run-rate** (~18.5%/yr) — several times the 1–2.5% modeled here, and consistent with §22's 9–12%. Root: the model uses `funding_rate_8h_decimal` at a uniform 3 settlements/day, but Variational settles most alts 4-hourly (~6/day) and some (e.g. SIGN) hourly; whether that biases the total depends on whether the panel's 8h rate is a true 8h-equivalent — open check, needs the panel (compare modeled `rate×3` vs actual per-settlement funding for SIGN/ONT). Treat 1–2.5% as a favorable-regime floor, not a deploy estimate. Original left unaltered for provenance.]`
+
 | Setup | Sharpe (no funding) | Sharpe (with funding) | Funding Impact |
 |---|---|---|---|
 | 45d/7d / Top5 | 3.93 | 3.89 | -0.04 |
@@ -340,7 +342,7 @@ Sharpe, win rate, clean-cohort count, and the Feb-2025 funding cost (-8.36% vs d
 ### Extended baseline (13 clean + 2 new = 15, Top 5)
 Sharpe **0.96 [0.25, 3.25]**, alpha 19.2%, win 80%, worst DD -68.6%. Adding two out-of-sample cohorts collapses the risk-adjusted number.
 
-**Caveats.** Only 2 new clean cohorts — negligible statistical weight; do not over-read. The sample is overwhelmingly favorable-regime (2024–25 bull tape); the adverse regime is represented only by these 2 cohorts plus the 6 quarantined Oct-2025 ones. **The backtest validates that the Apathy Bleed signal exists; it does not validate deploy timing.** Live trading was exited 2026-05-12 at ~$6k loss with the regime judged unsuited — consistent with these findings.
+**Caveats.** Only 2 new clean cohorts — negligible statistical weight; do not over-read. The sample is overwhelmingly favorable-regime (2024–25 bull tape); the adverse regime is represented only by these 2 cohorts plus the 6 quarantined Oct-2025 ones. **The backtest validates that the Apathy Bleed signal exists; it does not validate deploy timing.** Live trading was exited **2026-05-12** with the regime judged unsuited — consistent with these findings. `[UPDATED 2026-07-24 — hard figure from Variational exchange records (export-trades.csv / export-transfers.csv, reconciled 2026-07-24): realized **−$5,424.66** = price **−$4,619.81** + funding **−$804.85**. Taker fees are not in either export; the ~$575 residual to the earlier "~$6k" recollection is consistent with ~28bps on $203k turnover but is inferred, not confirmed. The apathy_bleed_book.csv booked −$4,669.05 (notional-based; the ~$49 gap vs venue is intended-size-vs-actual-fill quantity). The book had misreported 17 phantom OPEN legs from ~05-12 until reconciled 2026-07-24.]`
 
 ## 23. Macro Gate — As-Coded Methodology (correction to §6, §10)
 `[VERIFIED]` §6/§10 describe the gates as point-in-time binary halts. The actual sensor code (`majors_alts_monitor/msm_funding_v0/macro_environment.py`, `src/macro_regime/gate_policy.py`) differs in ways that matter:

@@ -193,6 +193,15 @@ price live only in the Render `fact_price` (the window past the local seed's
 with a read-only query, and seam-check the extended index at 2026-01-27 after the
 next run.
 
+## Two BTCDOM implementations — do not confuse them
+
+There are now two reconstructions in the repo:
+
+- **Production (authoritative):** `scripts/data_ingestion/btcdom_backfill.py` — pipeline **Step 3**, writes `btcdom_reconstructed.csv`, consumed by `msm_run.py` (Step 4). This is the one hardened in the 2026-07-24 incident: freshness tripwire, nullable trend, NaN-safe clamp, bounded-tail DQ gate, seam-validated.
+- **Research (not wired in):** `btcdom/btcdom_lake_native.py` — a "lake-native" reconstruction from the LL Pro analysis work. Useful for exploration; **not** part of any pipeline.
+
+**If the research one is ever promoted to replace Step 3, it inherits every guard the production one earned** — freshness tripwire, nullable/NaN-safe trend, bounded-tail gate, and a seam re-validation against the 2026-01-29 boundary. Swapping in a fresh reconstruction without those reintroduces the exact failure class this runbook exists for (silent fabrication on stale/gappy input). Until then, `btcdom_backfill.py` is the source of truth.
+
 ## Known open issues
 
 - **The reconstruction is not value-stable across runs, and this is now UNEXPLAINED.**
