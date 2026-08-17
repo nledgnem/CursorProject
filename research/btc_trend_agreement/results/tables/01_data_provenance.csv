@@ -1,0 +1,5 @@
+asset,primary_venue,instrument,start,end,n_days,n_forward_filled_days,crosscheck_venue,crosscheck_instrument,crosscheck_overlap_days,crosscheck_daily_ret_corr,crosscheck_median_abs_level_diff_pct
+BTC,coinbase,BTC-USD,2015-07-20,2026-08-17,4047,0,binance,BTCUSDT,3287.0,0.9911936487229299,0.05651860819593235
+ETH,coinbase,ETH-USD,2016-05-18,2026-08-17,3744,2,binance,ETHUSDT,3287.0,0.9936970510518447,0.05758546062040182
+SOL,binance,SOLUSDT,2020-08-11,2026-08-16,2197,0,coinbase,SOL-USD,1887.0,0.9999217880681346,0.04266514968356283
+BTC_DVOL,deribit,BTC DVOL index,2021-03-24,2026-08-16,1972,0,,,,,

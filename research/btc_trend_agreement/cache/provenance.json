@@ -1,0 +1,118 @@
+{
+  "generated_utc": "2026-08-17T02:26:00+00:00",
+  "timestamp_convention": "daily UTC closes; value stamped on date t is known at 23:59:59 UTC on t",
+  "missing_data_treatment": "reindex to complete daily calendar, forward-fill (past-information only)",
+  "prices": {
+    "BTC": {
+      "start": "2015-07-20",
+      "end": "2026-08-17",
+      "n_days": 4047,
+      "n_filled_days": 0,
+      "filled_dates": [],
+      "venue": "coinbase",
+      "instrument": "BTC-USD",
+      "role": "primary",
+      "frequency": "daily",
+      "timezone": "UTC close",
+      "crosscheck": {
+        "venue": "binance",
+        "instrument": "BTCUSDT",
+        "overlap_days": 3287,
+        "daily_return_corr": 0.9911936487229299,
+        "median_abs_level_diff_pct": 0.05651860819593235
+      }
+    },
+    "ETH": {
+      "start": "2016-05-18",
+      "end": "2026-08-17",
+      "n_days": 3744,
+      "n_filled_days": 2,
+      "filled_dates": [
+        "2016-05-21",
+        "2016-05-22"
+      ],
+      "venue": "coinbase",
+      "instrument": "ETH-USD",
+      "role": "primary",
+      "frequency": "daily",
+      "timezone": "UTC close",
+      "crosscheck": {
+        "venue": "binance",
+        "instrument": "ETHUSDT",
+        "overlap_days": 3287,
+        "daily_return_corr": 0.9936970510518447,
+        "median_abs_level_diff_pct": 0.05758546062040182
+      }
+    },
+    "SOL": {
+      "start": "2020-08-11",
+      "end": "2026-08-16",
+      "n_days": 2197,
+      "n_filled_days": 0,
+      "filled_dates": [],
+      "venue": "binance",
+      "instrument": "SOLUSDT",
+      "role": "primary",
+      "frequency": "daily",
+      "timezone": "UTC close",
+      "crosscheck": {
+        "venue": "coinbase",
+        "instrument": "SOL-USD",
+        "overlap_days": 1887,
+        "daily_return_corr": 0.9999217880681346,
+        "median_abs_level_diff_pct": 0.04266514968356283
+      }
+    }
+  },
+  "dvol": {
+    "start": "2021-03-24",
+    "end": "2026-08-16",
+    "n_days": 1972,
+    "n_filled_days": 0,
+    "filled_dates": [],
+    "venue": "deribit",
+    "instrument": "BTC DVOL index",
+    "endpoint": "public/get_volatility_index_data",
+    "frequency": "daily",
+    "timezone": "UTC close"
+  },
+  "lake_crosscheck": {
+    "status": "compared",
+    "source": "project curated lake fact_price (CoinGecko), asset_id=BTC",
+    "overlap_start": "2024-01-07",
+    "overlap_end": "2026-01-05",
+    "best_alignment_shift_days": -1,
+    "corr_at_naive_alignment": -0.05634014503565011,
+    "corr_at_best_alignment": 0.9981929980572138,
+    "median_abs_level_diff_pct_at_best": 0.051187147274878164,
+    "scan": {
+      "-2": {
+        "daily_return_corr": -0.04842866442013151,
+        "median_abs_level_diff_pct": 1.227149913098674,
+        "overlap_days": 728
+      },
+      "-1": {
+        "daily_return_corr": 0.9981929980572138,
+        "median_abs_level_diff_pct": 0.051187147274878164,
+        "overlap_days": 729
+      },
+      "0": {
+        "daily_return_corr": -0.05634014503565011,
+        "median_abs_level_diff_pct": 1.2393463933558613,
+        "overlap_days": 730
+      },
+      "1": {
+        "daily_return_corr": 0.030579635391777386,
+        "median_abs_level_diff_pct": 1.881172851217805,
+        "overlap_days": 729
+      },
+      "2": {
+        "daily_return_corr": -0.018077075880661132,
+        "median_abs_level_diff_pct": 2.4516393792337112,
+        "overlap_days": 728
+      }
+    },
+    "finding": "fact_price.date is stamped ONE DAY LATER than the UTC close it represents (lake[t] == exchange close of t-1), consistent with CoinGecko market_chart 00:00 UTC snapshots. Once shifted the two agree to ~0.05% median. Naive same-date joins between the lake and exchange data are misaligned by one day.",
+    "note": "lake used as an INDEPENDENT CHECK only -- its BTC history starts 2024-01-07 and the local copy is stale (max 2026-01-05), so it cannot be the primary source for a 2015-present study"
+  }
+}

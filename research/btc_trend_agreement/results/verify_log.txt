@@ -1,0 +1,30 @@
+VERIFY 1 -- rebuild the core table from raw cached candles
+  [PASS] score 0 mean 20D matches pipeline -- -0.004387 vs -0.004387
+  [PASS] score 0 n matches pipeline -- 415 vs 415
+  [PASS] score 1 mean 20D matches pipeline -- 0.011717 vs 0.011717
+  [PASS] score 1 n matches pipeline -- 902 vs 902
+  [PASS] score 2 mean 20D matches pipeline -- 0.035534 vs 0.035534
+  [PASS] score 2 n matches pipeline -- 1069 vs 1069
+  [PASS] score 3 mean 20D matches pipeline -- 0.078798 vs 0.078798
+  [PASS] score 3 n matches pipeline -- 1276 vs 1276
+
+VERIFY 2 -- spot-check one date entirely by hand
+  [PASS] 2020-10-15 hand TrendScore == pipeline -- hand 3 vs pipeline 3  (R30=+0.067 R90=+0.257 R365=+0.440)
+  [PASS] 2020-10-15 hand fwd_20 == pipeline -- +0.230434
+
+VERIFY 3 -- look-ahead traps
+  [PASS] TrendScore(t) unchanged when future prices are deleted -- truncated 3 vs full 3
+  [PASS] shuffling future prices leaves all past TrendScores identical
+  [PASS] executed weight == target weight lagged by SIGNAL_LAG -- 2021-01-10 weight 1.0000 <- signal 2021-01-08 score 3
+  [PASS] drawdown multiplier uses only equity through t-1 -- max abs diff 0.00e+00
+  [PASS] shuffled-signal strategy does not beat buy & hold -- shuffled 3.2x vs B&H 225.0x
+
+VERIFY 4 -- overlapping-return inflation is real
+  [PASS] naive t is materially larger than HAC t (overlap inflation present) -- naive 13.05 vs HAC 3.54 (inflation 3.7x, sqrt(20)=4.5)
+
+VERIFY 5 -- exchange cross-source agreement
+  [PASS] Coinbase and Binance produce the same TrendScore >=97% of days -- 99.04% agreement over 2922 days
+  [PASS] 3-0 spread agrees across venues on the COMMON sample within 1pp -- Coinbase +5.82% vs Binance +5.97% over 2018-08-17..2026-07-27 (n=2902)
+    [info] Coinbase 3-0 spread: full sample +8.32%  vs  post-2018 common window +5.82%
+
+ALL CHECKS PASSED
