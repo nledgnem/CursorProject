@@ -10,7 +10,7 @@ It runs the full live pipeline DAG in order (halt-on-failure):
   Step 0.5: Ingest Perp Listings (Hyperliquid + Variational)
   Step 1: Ingest Raw Funding (fact_funding.parquet) via CoinGlass API
   Step 2: Ingest Raw Prices/Marketcap (fact_price.parquet / fact_marketcap.parquet)
-  Step 3: Build Macro Indices (btcdom_reconstructed.csv)
+  Step 3: Fetch Binance BTCDOM index (btcdom_binance_index.csv)
   Step 4: Execute Strategy Engine (MSM v0)
 
 Do not schedule msm_run.py or any ingestion scripts directly. Schedule this
@@ -47,7 +47,9 @@ SCRIPT_MARKETS_SNAPSHOT = PROJECT_ROOT / "scripts" / "fetch_high_priority_data.p
 SCRIPT_PERP_LISTINGS = PROJECT_ROOT / "scripts" / "run_perp_listings_ingestion.py"
 SCRIPT_FUNDING = PROJECT_ROOT / "scripts" / "fetch_coinglass_data.py"
 SCRIPT_PRICES_MCAP = PROJECT_ROOT / "scripts" / "incremental_update.py"
-SCRIPT_MACRO = PROJECT_ROOT / "scripts" / "data_ingestion" / "btcdom_backfill.py"
+# ADR 004: Binance's official BTCDOM index replaces our reconstruction of it.
+# btcdom_backfill.py is retained on disk for rollback but is no longer invoked.
+SCRIPT_MACRO = PROJECT_ROOT / "scripts" / "data_ingestion" / "btcdom_binance_index.py"
 SCRIPT_BUILD_SILVER = PROJECT_ROOT / "scripts" / "data_ingestion" / "build_silver_layer.py"
 MSM_RUN = PROJECT_ROOT / "majors_alts_monitor" / "msm_funding_v0" / "msm_run.py"
 
@@ -185,18 +187,31 @@ def main() -> int:
             logger.error("Halting: price/marketcap ingestion failed. Strategy will not run on stale prices.")
             return 1
 
-        # Step 3: Macro indices (BTCDOM reconstruction)
+        # Step 3: Macro index (Binance BTCDOM).
+        #
+        # NON-FATAL since ADR 003/004. BTCDOM is a context field -- it gates
+        # nothing. Halting here also stopped Environment_APR / w_risk /
+        # funding_regime from updating, i.e. the failure of the least important
+        # input blocked every important one. A failure now degrades: msm_run
+        # records btcdom_status, BTCDOM_Trend reads "Unknown", and the daily
+        # Telegram status nags until it is fixed.
         if not SCRIPT_MACRO.exists():
-            logger.error("Macro index builder not found: %s", SCRIPT_MACRO)
-            return 1
-        ok = run_step(
-            cwd=PROJECT_ROOT,
-            cmd=[sys.executable, str(SCRIPT_MACRO)],
-            step_name="Step 3: Build Macro Indices (scripts/data_ingestion/btcdom_backfill.py)",
-        )
-        if not ok:
-            logger.error("Halting: macro index build failed. Strategy will not run on stale macro.")
-            return 1
+            logger.warning(
+                "Macro index fetcher not found: %s. Continuing without it "
+                "(BTCDOM is a context field; see ADR 003).", SCRIPT_MACRO
+            )
+        else:
+            ok = run_step(
+                cwd=PROJECT_ROOT,
+                cmd=[sys.executable, str(SCRIPT_MACRO)],
+                step_name="Step 3: Fetch Binance BTCDOM index (scripts/data_ingestion/btcdom_binance_index.py)",
+            )
+            if not ok:
+                logger.warning(
+                    "Step 3 (BTCDOM index) failed. NOT halting: BTCDOM gates nothing "
+                    "since ADR 003. BTCDOM_Trend will read 'Unknown' and the daily "
+                    "status will flag the degraded feed until this is fixed."
+                )
 
         # Step 3.5: Build Silver Layer (prices, funding, marketcap) from updated Bronze
         if not SCRIPT_BUILD_SILVER.exists():

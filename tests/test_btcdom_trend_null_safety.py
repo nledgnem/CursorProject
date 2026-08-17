@@ -30,12 +30,17 @@ from majors_alts_monitor.utils.data_quality_gate import (
     run_gold_layer_audit,
 )
 from src.macro_regime.btcdom_trend import (
+    GATE_OFF_LABEL,
+    GATE_ON_LABEL,
+    GATE_UNKNOWN_LABEL,
     TREND_FALLING,
     TREND_RISING,
     TREND_UNKNOWN_LABEL,
     apply_gate,
     compute_btcdom_trend,
     compute_mrf_gate,
+    format_regime_label,
+    gate_label,
     trend_label,
 )
 
@@ -82,23 +87,44 @@ def test_trend_never_emits_a_direction_for_a_null_row():
 # 2. Gate must distinguish "declined" from "could not evaluate"
 # ----------------------------------------------------------------------------
 
-def test_gate_is_na_when_trend_unknown():
+def test_gate_is_funding_only():
+    """ADR 003: the gate is `funding_regime == "Q2: Weak"`, nothing else."""
     gate = compute_mrf_gate(
-        pd.Series(["Q2: Weak", "Q2: Weak", "Q2: Weak"]),
-        pd.Series([TREND_RISING, TREND_FALLING, pd.NA], dtype="string"),
+        pd.Series(["Q2: Weak", "Q3: Neutral", "Q1: Negative/Low", "Q4: High"])
     )
-    assert gate.iloc[0] is True or gate.iloc[0] == True  # noqa: E712
-    assert gate.iloc[1] == False  # noqa: E712
-    assert pd.isna(gate.iloc[2])
+    assert gate.iloc[0] == True  # noqa: E712
+    assert (gate.iloc[1:] == False).all()  # noqa: E712
 
 
 def test_gate_is_na_when_funding_regime_unknown():
-    gate = compute_mrf_gate(
-        pd.Series([None, "Q3: Neutral"], dtype="object"),
-        pd.Series([TREND_RISING, TREND_RISING], dtype="string"),
-    )
+    """The null channel must survive the ADR-003 simplification."""
+    gate = compute_mrf_gate(pd.Series([None, "Q3: Neutral", "Q2: Weak"], dtype="object"))
     assert pd.isna(gate.iloc[0])
     assert gate.iloc[1] == False  # noqa: E712
+    assert gate.iloc[2] == True  # noqa: E712
+
+
+def test_gate_rejects_a_stale_two_argument_call():
+    """
+    ADR 003 dropped the `trend` parameter instead of ignoring it, so any
+    un-migrated caller fails loudly rather than silently changing meaning.
+    """
+    with pytest.raises(TypeError):
+        compute_mrf_gate(
+            pd.Series(["Q2: Weak"]),
+            pd.Series([TREND_RISING], dtype="string"),
+        )
+
+
+def test_gate_no_longer_depends_on_btcdom_trend():
+    """
+    The regression ADR 003 is designed to prevent: a dark BTCDOM feed used to
+    make the gate un-evaluable. It must now evaluate cleanly regardless.
+    """
+    funding = pd.Series(["Q2: Weak", "Q3: Neutral"])
+    gate = compute_mrf_gate(funding)
+    assert gate.notna().all(), "a dark BTCDOM feed must not make the gate un-evaluable"
+    assert gate.iloc[0] == True  # noqa: E712
 
 
 def test_apply_gate_separates_flat_from_unknown():
@@ -130,6 +156,103 @@ def test_trend_label_passes_through_real_values():
 
 
 # ----------------------------------------------------------------------------
+# 3b. The gate must render THREE states, and identically across read paths
+# ----------------------------------------------------------------------------
+
+@pytest.mark.parametrize("value", [None, np.nan, float("nan"), pd.NA, "", "None", "nan", "<NA>", "null"])
+def test_gate_label_renders_unknown_for_every_missing_shape(value):
+    """
+    The regression: `bool(float("nan")) is True`, so the old renderer displayed
+    an UN-EVALUABLE gate as GATE:ON -- a risk-on gate shown as open when it
+    could not be evaluated at all.
+    """
+    assert gate_label(value) == GATE_UNKNOWN_LABEL
+    assert gate_label(value) != GATE_ON_LABEL
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        (True, GATE_ON_LABEL), (False, GATE_OFF_LABEL),
+        (np.True_, GATE_ON_LABEL), (np.False_, GATE_OFF_LABEL),
+        (1, GATE_ON_LABEL), (0, GATE_OFF_LABEL),
+        (1.0, GATE_ON_LABEL), (0.0, GATE_OFF_LABEL),
+        ("True", GATE_ON_LABEL), ("False", GATE_OFF_LABEL),
+        ("1", GATE_ON_LABEL), ("0", GATE_OFF_LABEL),
+    ],
+)
+def test_gate_label_renders_real_values(value, expected):
+    assert gate_label(value) == expected
+
+
+def test_gate_label_is_identical_across_read_paths():
+    """
+    SQLite hands back a NULL as None; a pandas frame hands the SAME NULL back as
+    NaN. The old renderer mapped those to GATE:OFF and GATE:ON respectively.
+    """
+    assert gate_label(None) == gate_label(float("nan")) == gate_label(pd.NA)
+
+
+def test_regime_label_does_not_fire_a_phantom_change_across_read_paths():
+    """
+    The exact 2026-08-17 alert pair:
+
+        Shift: Q4: High | Unknown | GATE:OFF -> Q4: High | Unknown | GATE:ON
+
+    Nothing had changed. `prev` came from SQLite (None) and the new row from the
+    CSV frame (NaN), and the renderer disagreed with itself about the same
+    missing value. Both rows must now produce byte-identical labels.
+    """
+    prev_from_sqlite = {"funding_regime": "Q4: High", "BTCDOM_Trend": None, "is_mrf_active": None}
+    new_from_csv = {"funding_regime": "Q4: High", "BTCDOM_Trend": np.nan, "is_mrf_active": np.nan}
+    assert format_regime_label(prev_from_sqlite) == format_regime_label(new_from_csv)
+    assert format_regime_label(new_from_csv).endswith(GATE_UNKNOWN_LABEL)
+
+
+def test_regime_label_funding_component_is_null_safe():
+    """
+    funding_regime had the same defect: str(None) == "None" vs str(nan) == "nan",
+    two different strings for the same missing value. It is now the ONLY gate
+    input (ADR 003), so a phantom change here would be worse than before.
+    """
+    a = format_regime_label({"funding_regime": None, "BTCDOM_Trend": None, "is_mrf_active": None})
+    b = format_regime_label({"funding_regime": np.nan, "BTCDOM_Trend": np.nan, "is_mrf_active": np.nan})
+    assert a == b
+    assert "None" not in a and "nan" not in a
+    assert a.startswith("Unknown")
+
+
+def test_regime_label_renders_a_fully_populated_row():
+    label = format_regime_label(
+        {"funding_regime": "Q2: Weak", "BTCDOM_Trend": TREND_RISING, "is_mrf_active": True}
+    )
+    assert label == f"Q2: Weak | {TREND_RISING} | {GATE_ON_LABEL}"
+
+
+def test_regime_label_survives_a_dark_btcdom_feed():
+    """ADR 003: BTCDOM is context now. A dark feed must still yield a real gate."""
+    label = format_regime_label(
+        {"funding_regime": "Q2: Weak", "BTCDOM_Trend": None, "is_mrf_active": True}
+    )
+    assert label == f"Q2: Weak | {TREND_UNKNOWN_LABEL} | {GATE_ON_LABEL}"
+
+
+def test_both_call_sites_delegate_to_the_canonical_renderer():
+    """
+    The renderer was duplicated verbatim in two modules, which is how one bug
+    shipped twice. Pin that they now agree.
+    """
+    import importlib
+
+    snapshot = importlib.import_module("src.apathy_bleed.macro_snapshot")
+    fetcher = importlib.import_module("scripts.live.live_data_fetcher")
+    row = {"funding_regime": "Q4: High", "BTCDOM_Trend": np.nan, "is_mrf_active": np.nan}
+    canonical = format_regime_label(row)
+    assert snapshot._regime_label(row) == canonical
+    assert fetcher._regime_label(row) == canonical
+
+
+# ----------------------------------------------------------------------------
 # 4. Data quality gate must fail loud on the incident shape
 # ----------------------------------------------------------------------------
 
@@ -148,7 +271,7 @@ def _gold_frame(n: int = 40) -> pd.DataFrame:
 
 
 def test_gate_passes_on_a_clean_frame():
-    run_gold_layer_audit(_gold_frame())
+    assert run_gold_layer_audit(_gold_frame()) == []
 
 
 def test_gate_tolerates_a_bounded_trailing_incomplete_window():
@@ -156,26 +279,90 @@ def test_gate_tolerates_a_bounded_trailing_incomplete_window():
     df = _gold_frame()
     df.loc[df.index[-MAX_TRAILING_INCOMPLETE_ROWS:], "btcdom_7d_ret"] = np.nan
     df.loc[df.index[-MAX_TRAILING_INCOMPLETE_ROWS:], "y"] = np.nan
-    run_gold_layer_audit(df)
+    assert run_gold_layer_audit(df) == []
 
 
-def test_gate_raises_on_long_stale_tail():
+def test_gate_raises_on_long_stale_tail_when_btcdom_is_critical():
     """
     The actual incident: 26 trailing null rows. The OLD gate passed this
-    because it dropped them before asserting.
+    because it dropped them before asserting. Still fatal in strict mode.
     """
     df = _gold_frame()
     df.loc[df.index[-26:], "btcdom_7d_ret"] = np.nan
     df.loc[df.index[-26:], "y"] = np.nan
     with pytest.raises(ValueError, match="stale"):
-        run_gold_layer_audit(df)
+        run_gold_layer_audit(df, btcdom_is_critical=True)
 
 
-def test_gate_raises_on_interior_null_hole():
+def test_gate_raises_on_interior_null_hole_when_btcdom_is_critical():
     """A gap in the middle of the series is never a 'recent window' excuse."""
     df = _gold_frame()
     df.loc[df.index[10:14], "btcdom_7d_ret"] = np.nan
     with pytest.raises(ValueError, match="NOT a trailing incomplete window"):
+        run_gold_layer_audit(df, btcdom_is_critical=True)
+
+
+# ----------------------------------------------------------------------------
+# 4b. ADR 003 severity split: BTCDOM advisory, decision inputs still fatal
+# ----------------------------------------------------------------------------
+
+def test_stale_btcdom_is_advisory_by_default_not_fatal():
+    """
+    The whole point of ADR 003's severity change: a stale CONTEXT field must not
+    halt the pipeline, because halting also stops Environment_APR / w_risk /
+    funding_regime -- the inputs that actually drive the gate -- from updating.
+    """
+    df = _gold_frame()
+    df.loc[df.index[-26:], "btcdom_7d_ret"] = np.nan
+    warnings = run_gold_layer_audit(df)          # default: not critical
+    assert len(warnings) == 1
+    assert "stale" in warnings[0]
+
+
+def test_interior_hole_is_advisory_by_default():
+    df = _gold_frame()
+    df.loc[df.index[10:14], "btcdom_7d_ret"] = np.nan
+    warnings = run_gold_layer_audit(df)
+    assert warnings and "NOT a trailing incomplete window" in warnings[0]
+
+
+def test_all_null_btcdom_is_advisory_by_default():
+    df = _gold_frame()
+    df["btcdom_7d_ret"] = np.nan
+    warnings = run_gold_layer_audit(df)
+    assert warnings and "No rows with valid btcdom_7d_ret" in warnings[0]
+
+
+def test_degrading_btcdom_never_goes_silent():
+    """
+    Degrading must mean 'keep running and keep complaining', never 'keep running
+    quietly'. Invisible degradation is exactly how the 2026-02..07 incident
+    survived six months, so a broken BTCDOM must ALWAYS return something for the
+    caller to log.
+    """
+    df = _gold_frame()
+    df.loc[df.index[-26:], "btcdom_7d_ret"] = np.nan
+    assert run_gold_layer_audit(df), "a degraded BTCDOM must never return zero warnings"
+
+
+def test_decision_inputs_stay_fatal_even_while_btcdom_is_advisory():
+    """The severity split must not leak: y and F_tk_apr still halt the run."""
+    df = _gold_frame()
+    df.loc[df.index[-26:], "btcdom_7d_ret"] = np.nan   # advisory
+    df.loc[df.index[5], "F_tk_apr"] = np.nan           # fatal
+    with pytest.raises(ValueError, match="F_tk_apr"):
+        run_gold_layer_audit(df)
+
+    df2 = _gold_frame()
+    df2.loc[df2.index[5], "y"] = np.nan
+    with pytest.raises(ValueError, match="'y'"):
+        run_gold_layer_audit(df2)
+
+
+def test_temporal_desync_stays_fatal():
+    df = _gold_frame()
+    df.loc[df.index[3], "next_date"] = df.loc[df.index[3], "decision_date"] + timedelta(days=9)
+    with pytest.raises(ValueError, match="TEMPORAL DESYNC"):
         run_gold_layer_audit(df)
 
 
@@ -187,11 +374,11 @@ def test_gate_raises_when_ftk_apr_has_any_null():
         run_gold_layer_audit(df)
 
 
-def test_gate_still_raises_when_everything_is_null():
+def test_gate_still_raises_when_everything_is_null_and_btcdom_is_critical():
     df = _gold_frame()
     df["btcdom_7d_ret"] = np.nan
     with pytest.raises(ValueError, match="No rows with valid btcdom_7d_ret"):
-        run_gold_layer_audit(df)
+        run_gold_layer_audit(df, btcdom_is_critical=True)
 
 
 # ----------------------------------------------------------------------------

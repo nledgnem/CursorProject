@@ -61,7 +61,11 @@ def main():
         include_lowest=True,
     )
     msm["BTCDOM_Trend"] = compute_btcdom_trend(msm["btcd_index_decision"], msm["sma_30_decision"])
-    msm["is_mrf_active"] = compute_mrf_gate(msm["funding_regime"], msm["BTCDOM_Trend"])
+    # ADR 003 (2026-08-17): the MRF gate is funding-only; BTCDOM_Trend was
+    # removed from it. This chart still requires BTCDOM_Trend below because the
+    # chart itself compares BTCDOM reconstructions -- that is a data requirement
+    # of this script, not a gate input.
+    msm["is_mrf_active"] = compute_mrf_gate(msm["funding_regime"])
 
     # Drop un-evaluable rows BEFORE building any cumulative series. Previously the
     # trend was a bare np.where, so a missing BTCDOM index produced a fabricated

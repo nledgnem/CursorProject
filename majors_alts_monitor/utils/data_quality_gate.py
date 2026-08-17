@@ -26,7 +26,9 @@ def _assert_no_nans(df: pd.DataFrame, cols: Iterable[str]) -> None:
             )
 
 
-def run_gold_layer_audit(df: pd.DataFrame) -> None:
+def run_gold_layer_audit(
+    df: pd.DataFrame, *, btcdom_is_critical: bool = False
+) -> list[str]:
     """
     Run Zero-Trust data quality tripwires on the final Gold Layer timeseries.
 
@@ -35,7 +37,32 @@ def run_gold_layer_audit(df: pd.DataFrame) -> None:
     - y: 7-day log return of Long Majors / Short Alts spread
     - btcdom_7d_ret: strict 7-day log return of BTCDOM index (decision_date -> next_date)
     - decision_date, next_date: weekly decision and next decision dates
+
+    Severity, and why it is split (ADR 003)
+    ---------------------------------------
+    A tripwire's severity should match the blast radius of what it guards:
+    bad data that produces a wrong DECISION must halt; bad data that produces a
+    wrong DISPLAY must be reported loudly and left to degrade.
+
+    FATAL (always raise) -- these feed the funding gate and the strategy:
+        F_tk_apr density and unit bounds, y density, temporal desync,
+        weekday consistency, empty frame.
+
+    ADVISORY (returned as warnings) -- BTCDOM is a context field since ADR 003:
+        btcdom_7d_ret all-null / interior holes / over-long stale tail.
+
+    Pass ``btcdom_is_critical=True`` to restore the old halt-on-BTCDOM behaviour
+    (and that is what the incident regression tests do, so the strict path stays
+    covered).
+
+    Returns
+    -------
+    list[str]
+        Advisory warnings, empty when clean. Callers are expected to LOG these --
+        degrading must never mean going quiet, which is precisely how the
+        2026-02..07 incident survived six months.
     """
+    warnings: list[str] = []
     if df.empty:
         raise ValueError("DATA QUALITY GATE: Gold Layer dataframe is empty.")
 
@@ -81,7 +108,10 @@ def run_gold_layer_audit(df: pd.DataFrame) -> None:
     # contiguous block at the END of the series -- the most recent week(s) whose
     # 7-day window has not closed yet. An interior hole, or a tail longer than
     # MAX_TRAILING_INCOMPLETE_ROWS, means the upstream BTCDOM index is truncated
-    # or stale and must halt the run.
+    # or stale. Since ADR 003 that is reported as an ADVISORY warning rather than
+    # halting the run -- BTCDOM is a context field, and halting the whole pipeline
+    # over it stopped the funding-based gate from updating too. Pass
+    # btcdom_is_critical=True to restore the halt.
     if "btcdom_7d_ret" not in df.columns:
         raise ValueError("DATA QUALITY GATE: Missing 'btcdom_7d_ret' column in Gold Layer.")
     if "decision_date" not in df.columns:
@@ -91,8 +121,14 @@ def run_gold_layer_audit(df: pd.DataFrame) -> None:
     null_mask = ordered["btcdom_7d_ret"].isna().to_numpy()
     n_null = int(null_mask.sum())
 
+    def _btcdom_problem(message: str) -> None:
+        """Raise when BTCDOM gates a decision; otherwise record and continue."""
+        if btcdom_is_critical:
+            raise ValueError(message)
+        warnings.append(message)
+
     if n_null == len(ordered):
-        raise ValueError(
+        _btcdom_problem(
             "DATA QUALITY GATE: No rows with valid btcdom_7d_ret. "
             "BTCDOM alignment or index ingestion may have failed."
         )
@@ -108,7 +144,7 @@ def run_gold_layer_audit(df: pd.DataFrame) -> None:
         bad_dates = ordered.loc[
             pd.Series(null_mask, index=ordered.index), "decision_date"
         ].head(5).tolist()
-        raise ValueError(
+        _btcdom_problem(
             f"DATA QUALITY GATE: btcdom_7d_ret has {interior_nulls} null row(s) that are "
             f"NOT a trailing incomplete window. This means the BTCDOM index is truncated "
             f"or has gaps, and BTCDOM_Trend cannot be trusted for those dates. "
@@ -119,7 +155,7 @@ def run_gold_layer_audit(df: pd.DataFrame) -> None:
         first_null_date = ordered.loc[
             pd.Series(null_mask, index=ordered.index), "decision_date"
         ].min()
-        raise ValueError(
+        _btcdom_problem(
             f"DATA QUALITY GATE: btcdom_7d_ret is null for the last {trailing_nulls} rows "
             f"(threshold={MAX_TRAILING_INCOMPLETE_ROWS}), starting {first_null_date}. "
             f"The BTCDOM index is stale -- check TARGET_END / coverage in "
@@ -133,7 +169,11 @@ def run_gold_layer_audit(df: pd.DataFrame) -> None:
     # checks above, is provably "all rows except a bounded trailing window",
     # not "whatever rows happened to survive a dropna".
     complete = ordered.loc[~pd.Series(null_mask, index=ordered.index)]
-    _assert_no_nans(complete, ["y", "btcdom_7d_ret"])
+    _assert_no_nans(complete, ["y"])          # y is decision-relevant -> fatal
+    try:
+        _assert_no_nans(complete, ["btcdom_7d_ret"])
+    except ValueError as exc:                  # context field -> advisory
+        _btcdom_problem(str(exc))
 
     # -------------------------------
     # 3) Temporal Desync Tripwire
@@ -176,4 +216,6 @@ def run_gold_layer_audit(df: pd.DataFrame) -> None:
             f"DATA QUALITY GATE: Validated Live T-0 Row present for {last_date.date()} "
             f"(Weekday {last_date.weekday()} vs Historical {historical_weekday})."
         )
+
+    return warnings
 
