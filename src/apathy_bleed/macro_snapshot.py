@@ -6,7 +6,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 from src.macro_regime.gate_policy import ENVIRONMENT_APR_ENTRY_GATE_PCT
-from src.macro_regime.btcdom_trend import trend_label
+from src.macro_regime.btcdom_trend import format_regime_label
 
 def _safe_float(v) -> float:
     try:
@@ -18,17 +18,15 @@ def _safe_float(v) -> float:
 
 
 def _regime_label(row: dict) -> str:
-    funding = str(row.get("funding_regime", "Unknown"))
-    # trend_label, not str(): a SQL NULL read back from macro_features would
-    # otherwise render as the literal "None" in the 08:00 UTC Telegram snapshot.
-    btcd = trend_label(row.get("BTCDOM_Trend"))
-    gate = row.get("is_mrf_active", None)
-    try:
-        gate_on = bool(int(gate)) if isinstance(gate, (int, str)) and str(gate).isdigit() else bool(gate)
-    except Exception:
-        gate_on = False
-    gate_label = "GATE:ON" if gate_on else "GATE:OFF"
-    return f"{funding} | {btcd} | {gate_label}"
+    """Thin delegate to the canonical renderer.
+
+    This function used to carry its own copy of the funding/trend/gate
+    formatting, byte-identical to the copy in
+    ``scripts/live/live_data_fetcher.py`` -- which is how one rendering bug
+    (``bool(float("nan")) is True``, so an un-evaluable gate displayed as
+    GATE:ON) shipped in two places at once. See ADR 003.
+    """
+    return format_regime_label(row)
 
 
 def _environment_regime_phrase(apr_pct_points: float) -> str:

@@ -68,7 +68,8 @@ def build_gated_series(msm: pd.DataFrame) -> pd.DataFrame:
     msm["BTCDOM_Trend"] = compute_btcdom_trend(
         msm["btcd_index_decision"], msm["sma_30_decision"]
     )
-    msm["is_mrf_active"] = compute_mrf_gate(msm["funding_regime"], msm["BTCDOM_Trend"])
+    # ADR 003 (2026-08-17): funding-only gate; BTCDOM_Trend is context, not input.
+    msm["is_mrf_active"] = compute_mrf_gate(msm["funding_regime"])
     msm["y_gated"] = apply_gate(msm["y"], msm["is_mrf_active"])
     return msm
 

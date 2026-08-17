@@ -1,0 +1,122 @@
+[02:25:59] SECTION 1 -- data acquisition
+[02:26:00]   -> table 01_data_provenance.csv  (4 rows)
+[02:26:00]   BTC 2015-07-20 -> 2026-08-17 (4047 days, 0 ffilled)
+[02:26:00]   DVOL 2021-03-24 -> 2026-08-16 (1972 days)
+[02:26:00]   lake cross-check: corr -0.0563 at naive same-date join -> 0.9982 at shift -1d (median level diff 0.051%)
+[02:26:00] SECTION 2 -- core replication
+[02:26:00]   -> table 02_btc_conditional_forward_returns.csv  (24 rows)
+[02:26:00]   -> table 03_coinbase_replication_20d.csv  (4 rows)
+[02:26:00]   score 0: coinbase -0.70% | ours -0.44%  (n=415)
+[02:26:00]   score 1: coinbase +1.30% | ours +1.17%  (n=902)
+[02:26:00]   score 2: coinbase +3.80% | ours +3.55%  (n=1069)
+[02:26:00]   score 3: coinbase +7.70% | ours +7.88%  (n=1276)
+[02:26:00] SECTION 3 -- autocorrelation-robust statistics
+[02:26:00]   -> table 04_hac_per_score_means_20d.csv  (4 rows)
+[02:26:00]   -> table 05_hac_group_regression_20d.csv  (1 rows)
+[02:26:00]   joint Wald 'all score means equal': F=2.96 p=0.03125
+[02:26:00]   score3-score0 = +8.32% (HAC t=2.82, p=0.00479)
+[02:26:00]   linear slope per score point = +2.96% (HAC t=2.97)
+[02:26:00]   -> table 06_non_overlapping_20d_all_phases.csv  (20 rows)
+[02:26:00]   non-overlapping (20 phases): median 3-0 diff = +8.44%, median p = 0.034, 14/20 phases significant at 5%
+[02:26:01]   -> table 07_block_bootstrap_20d.csv  (1 rows)
+[02:26:01]   bootstrap 3-0 spread 95% CI = [+2.06%, +14.47%], P(spread<=0) = 0.0055
+[02:26:01]   bootstrap P(strictly monotonic 0<1<2<3) = 0.561
+[02:26:01]   bootstrap Spearman rho = 0.1101 [-0.0058, 0.2215]
+[02:26:01]   -> table 08_multi_horizon_hac.csv  (6 rows)
+[02:26:01] SECTION 4 -- subperiod and regime robustness
+[02:26:01]   -> table 09_subperiod_20d.csv  (3 rows)
+[02:26:01]   2015-2019: 3-0 = +15.79%, rho=0.159, monotone=True  (n0=84)
+[02:26:01]   2020-2022: 3-0 = +9.45%, rho=0.148, monotone=True  (n0=189)
+[02:26:01]   2023-present: 3-0 = +0.54%, rho=0.025, monotone=False  (n0=142)
+[02:26:01]   -> table 10_by_calendar_year_20d.csv  (11 rows)
+[02:26:01]   -> table 11_expost_regime_20d.csv  (3 rows)
+[02:26:01] SECTION 5a -- incremental value of trend AGREEMENT
+[02:26:01]   -> table 12b_agreement_vs_single_horizon.csv  (5 rows)
+[02:26:01]   R30 > 0 (single horizon)               on-off = +4.35% (HAC t=2.36, p=0.018)
+[02:26:01]   R90 > 0 (single horizon)               on-off = +4.73% (HAC t=2.37, p=0.018)
+[02:26:01]   R365 > 0 (single horizon)              on-off = +4.25% (HAC t=1.90, p=0.057)
+[02:26:01]   TrendScore == 3 (full agreement)       on-off = +5.92% (HAC t=2.52, p=0.012)
+[02:26:01]   TrendScore >= 2 (majority agreement)   on-off = +5.24% (HAC t=2.70, p=0.007)
+[02:26:01]   -> table 12c_horizon_horse_race_hac.csv  (4 rows)
+[02:26:01]   horse race const        coef -1.51% (HAC t=-0.81, p=0.418)
+[02:26:01]   horse race R30_pos      coef +3.09% (HAC t=1.70, p=0.089)
+[02:26:01]   horse race R90_pos      coef +2.91% (HAC t=1.44, p=0.150)
+[02:26:01]   horse race R365_pos     coef +2.87% (HAC t=1.32, p=0.186)
+[02:26:01] SECTION 5 -- parameter robustness (36 pre-specified combinations)
+[02:26:01]   -> table 12_parameter_grid_20d.csv  (36 rows)
+[02:26:01]   Coinbase (30/90/365): spread=+8.32%, rho=0.117
+[02:26:01]   grid spread: min=+6.31% median=+7.93% max=+9.95%
+[02:26:01]   27/36 combos strictly monotone; 36/36 have positive 3-0 spread
+[02:26:01]   Coinbase spread percentile within grid: 67th
+[02:26:01] SECTION 6 -- pre-specified trend strategies
+[02:26:01]   -> table 13_strategy_cost_sensitivity.csv  (12 rows)
+[02:26:01]   -> table 14_strategy_performance_base.csv  (5 rows)
+[02:26:01]   BTC buy & hold         CAGR +57.01%  vol 0.68  Sharpe 0.84  MaxDD -83.80%  Calmar 0.68
+[02:26:01]   A_linear @ 5bps        CAGR +67.98%  vol 0.49  Sharpe 1.38  MaxDD -65.51%  Calmar 1.04
+[02:26:01]   B_threshold @ 5bps     CAGR +74.53%  vol 0.56  Sharpe 1.33  MaxDD -77.86%  Calmar 0.96
+[02:26:01]   C_strong @ 5bps        CAGR +51.69%  vol 0.41  Sharpe 1.27  MaxDD -57.23%  Calmar 0.90
+[02:26:01]   D_long_veto @ 5bps     CAGR +65.88%  vol 0.45  Sharpe 1.46  MaxDD -63.40%  Calmar 1.04
+[02:26:02]   -> table 15_strategy_lag_and_cash_sensitivity.csv  (16 rows)
+[02:26:02] SECTION 7 -- out-of-sample split
+[02:26:02]   -> table 16_oos_signal_split.csv  (2 rows)
+[02:26:02]   train (pre-2022): 3-0 = +14.17% (HAC t=2.15), rho=0.110
+[02:26:02]   OOS (2022+): 3-0 = +2.76% (HAC t=0.99), rho=0.074
+[02:26:03]   -> table 17_oos_strategy_split.csv  (10 rows)
+[02:26:03]   train-selected triple = (40/120/365) train spread +14.27%
+[02:26:03]   -> table 18_walk_forward_parameter_selection.csv  (2 rows)
+[02:26:03]   coinbase_30_90_365: train +14.17% -> OOS +2.76%
+[02:26:03]   train_selected: train +14.27% -> OOS +5.38%
+[02:26:03] SECTION 8 -- cross-asset
+[02:26:03]   -> table 19_cross_asset_own_trendscore.csv  (36 rows)
+[02:26:03]   -> table 20_cross_asset_btc_score_conditioning.csv  (24 rows)
+[02:26:03]   -> table 20b_cross_asset_era_split.csv  (6 rows)
+[02:26:03]   [era] BTC score -> BTC  train (pre-2022)  3-0 = +14.17% (t=2.15), 3-vs-rest = +6.84%
+[02:26:03]   [era] BTC score -> BTC  OOS (2022+)       3-0 = +2.76% (t=0.99), 3-vs-rest = +2.69%
+[02:26:03]   [era] BTC score -> ETH  train (pre-2022)  3-0 = +14.01% (t=1.10), 3-vs-rest = +17.41%
+[02:26:03]   [era] BTC score -> ETH  OOS (2022+)       3-0 = +2.38% (t=0.55), 3-vs-rest = +4.69%
+[02:26:03]   [era] BTC score -> SOL  train (pre-2022)  3-0 = +24.51% (t=2.75), 3-vs-rest = +28.33%
+[02:26:03]   [era] BTC score -> SOL  OOS (2022+)       3-0 = +6.41% (t=1.08), 3-vs-rest = +8.38%
+[02:26:03]   BTC own TrendScore -> BTC: 20D spread 3-0 = +8.32% (HAC t=2.82, n=3662)
+[02:26:03]   ETH own TrendScore -> ETH: 20D spread 3-0 = +7.69% (HAC t=1.65, n=3359)
+[02:26:03]   SOL own TrendScore -> SOL: 20D spread 3-0 = +6.27% (HAC t=0.89, n=1812)
+[02:26:03]   BTC TrendScore -> ETH: 20D spread 3-0 = +12.11% (HAC t=2.29, n=3662)
+[02:26:03]   BTC TrendScore -> SOL: 20D spread 3-0 = +18.30% (HAC t=2.59, n=2177)
+[02:26:03] SECTION 9 -- DVOL overlay
+[02:26:03]   DVOL-overlapping sample: 2021-03-24 -> 2026-08-16 (1972 days)
+[02:26:03]   -> table 21_dvol_threshold_grid.csv  (33 rows)
+[02:26:03]   B_threshold trend only    thr=nan    CAGR +28.69% Sharpe 0.77 MaxDD -45.30% Calmar 0.63 avgExp 0.53
+[02:26:03]   B_threshold trend + DVOL  thr=60.0   CAGR +27.29% Sharpe 0.83 MaxDD -37.63% Calmar 0.73 avgExp 0.49
+[02:26:03]   B_threshold trend + DVOL  thr=70.0   CAGR +27.99% Sharpe 0.81 MaxDD -40.91% Calmar 0.68 avgExp 0.51
+[02:26:03]   B_threshold trend + DVOL  thr=80.0   CAGR +27.70% Sharpe 0.77 MaxDD -43.87% Calmar 0.63 avgExp 0.53
+[02:26:03]   B_threshold trend + DVOL  thr=90.0   CAGR +28.28% Sharpe 0.76 MaxDD -45.29% Calmar 0.62 avgExp 0.53
+[02:26:03]   B_threshold trend + DVOL  thr=100.0  CAGR +28.70% Sharpe 0.77 MaxDD -45.30% Calmar 0.63 avgExp 0.53
+[02:26:03]   B_threshold trend + DVOL  thr=110.0  CAGR +28.69% Sharpe 0.77 MaxDD -45.30% Calmar 0.63 avgExp 0.53
+[02:26:03]   B_threshold trend + DVOL  thr=120.0  CAGR +28.69% Sharpe 0.77 MaxDD -45.30% Calmar 0.63 avgExp 0.53
+[02:26:03]   -> table 21b_dvol_binding_frequency.csv  (7 rows)
+[02:26:03]   DVOL distribution: min 32, median 56, p95 94, max 156
+[02:26:03]   DVOL > 90 on 8.5% of days -> the default brake is inactive 91.5% of the time
+[02:26:03]   -> table 22_dvol_crash_speed_episodes.csv  (5 rows)
+[02:26:03]   2021-04-14->2021-07-20 depth +53.14% slow (>90d): meanDVOL 98, mean mult 0.91, braked 67% of days
+[02:26:03]   2021-11-09->2022-11-21 depth +76.67% slow (>90d): meanDVOL 77, mean mult 0.99, braked 11% of days
+[02:26:03]   2024-03-14->2024-09-06 depth +26.23% slow (>90d): meanDVOL 58, mean mult 1.00, braked 0% of days
+[02:26:03]   2025-01-22->2025-04-08 depth +28.17% fast (<=90d): meanDVOL 53, mean mult 1.00, braked 0% of days
+[02:26:03]   2025-10-07->2026-06-30 depth +53.08% slow (>90d): meanDVOL 46, mean mult 1.00, braked 0% of days
+[02:26:03] SECTION 10 -- overlay decomposition
+[02:26:03]   -> table 23_decomposition_full_sample.csv  (9 rows)
+[02:26:04]   -> table 24_decomposition_dvol_sample.csv  (13 rows)
+[02:26:04]   1. BTC buy & hold            CAGR +2.77% Sharpe 0.05 MaxDD -76.67% Calmar 0.04 avgExp 1.00 turnover 0.2
+[02:26:04]   2. B_threshold trend         CAGR +28.69% Sharpe 0.77 MaxDD -45.30% Calmar 0.63 avgExp 0.53 turnover 16.3
+[02:26:04]   3. B_threshold trend+DVOL    CAGR +28.28% Sharpe 0.76 MaxDD -45.29% Calmar 0.62 avgExp 0.53 turnover 16.5
+[02:26:04]   4. B_threshold trend+DVOL+DD CAGR +21.04% Sharpe 0.63 MaxDD -39.11% Calmar 0.54 avgExp 0.45 turnover 13.6
+[02:26:04] SECTION 11 -- figures
+[02:26:04]   -> figure fig01_replication_20d.png
+[02:26:04]   -> figure fig02_multi_horizon_heatmap.png
+[02:26:04]   -> figure fig03_subperiods.png
+[02:26:04]   -> figure fig04_parameter_robustness.png
+[02:26:04]   -> figure fig05_equity_curves.png
+[02:26:04]   -> figure fig06_drawdowns.png
+[02:26:05]   -> figure fig07_timeline.png
+[02:26:05]   -> figure fig08_cross_asset.png
+[02:26:05]   -> figure fig09_dvol_panel.png
+[02:26:05]   -> figure fig10_decomposition.png
+[02:26:05] DONE

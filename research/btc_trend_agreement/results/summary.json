@@ -1,0 +1,67 @@
+{
+  "sample": {
+    "btc_start": "2015-07-20",
+    "btc_end": "2026-08-17",
+    "dvol_start": "2021-03-24"
+  },
+  "replication_20d": {
+    "0": -0.004387156107807387,
+    "1": 0.011716873292595248,
+    "2": 0.0355342080851213,
+    "3": 0.07879827657745422
+  },
+  "coinbase_20d": {
+    "0": -0.007,
+    "1": 0.013,
+    "2": 0.038,
+    "3": 0.077
+  },
+  "hac": {
+    "n": 3662,
+    "hac_lags": 20,
+    "score0_mean": -0.0043871561078078795,
+    "wald_F": 2.9556141299096663,
+    "wald_p": 0.031249244050791204,
+    "slope_per_score": 0.02960924710948986,
+    "slope_t": 2.9672559336615905,
+    "slope_p": 0.003004707309731202,
+    "score1_minus_score0": 0.01610402940040333,
+    "score1_minus_score0_t": 0.735313487085817,
+    "score1_minus_score0_p": 0.4621485961521873,
+    "score2_minus_score0": 0.03992136419292958,
+    "score2_minus_score0_t": 1.5098320734051147,
+    "score2_minus_score0_p": 0.13108627875161105,
+    "score3_minus_score0": 0.08318543268526252,
+    "score3_minus_score0_t": 2.820850593361629,
+    "score3_minus_score0_p": 0.004789650441589974
+  },
+  "bootstrap": {
+    "reps": 2000,
+    "block_days": 60,
+    "n": 3662,
+    "score0_mean_lo": -0.04782649251532286,
+    "score0_mean_boot": -0.0030761493406276713,
+    "score0_mean_hi": 0.037553689133913354,
+    "score1_mean_lo": -0.016355313902220475,
+    "score1_mean_boot": 0.012295591726315324,
+    "score1_mean_hi": 0.042105830528803206,
+    "score2_mean_lo": -0.0033102850548973437,
+    "score2_mean_boot": 0.03501163808612357,
+    "score2_mean_hi": 0.07654622597977151,
+    "score3_mean_lo": 0.030379697853058937,
+    "score3_mean_boot": 0.07786534885914634,
+    "score3_mean_hi": 0.12786708409962874,
+    "spread_3_0_lo": 0.02055006219683174,
+    "spread_3_0_boot": 0.080941498199774,
+    "spread_3_0_hi": 0.1447261892737437,
+    "p_spread_le_0": 0.0055,
+    "spearman_lo": -0.005772827706562448,
+    "spearman_boot": 0.11011601245366935,
+    "spearman_hi": 0.22151017191619582,
+    "p_rho_le_0": 0.0315,
+    "p_strictly_monotonic": 0.561
+  },
+  "non_overlapping_median_p": 0.0344944588922981,
+  "grid_positive_spread_frac": 1.0,
+  "grid_monotone_frac": 0.75
+}

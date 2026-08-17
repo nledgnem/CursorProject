@@ -1,6 +1,63 @@
-# Runbook: BTCDOM macro index (`btcdom_reconstructed.csv`)
+# Runbook: BTCDOM macro index
 
 Owner: macro/regime pipeline · Created 2026-07-22 after the silent-null incident below.
+
+> **2026-08-17 — SOURCE CHANGED. Most of this runbook is now history.**
+> The reconstruction (`btcdom_reconstructed.csv`) has been **replaced** by
+> Binance's official BTCDOM index ([ADR 004](../decisions/004-use-official-binance-btcdom-index.md)).
+>
+> | | old | new |
+> |---|---|---|
+> | Producer | `scripts/data_ingestion/btcdom_backfill.py` | `scripts/data_ingestion/btcdom_binance_index.py` |
+> | File | `btcdom_reconstructed.csv` | `btcdom_binance_index.csv` |
+> | Column | `reconstructed_index_value` | `btcdom_index` |
+> | Coverage | 2024-07 onward | **2021-06 onward** |
+> | Step 3 severity | fatal | **non-fatal** |
+>
+> **Why:** the reconstruction was the real index **lagged one day** (daily-change
+> correlation +0.76 at k=+1 vs +0.003 same-day), because it was built from lake
+> `fact_price`, whose `date` is stamped one day after the close it represents.
+> It also carried 110 flat/ffilled days out of 772. It passed every freshness
+> check the whole time.
+>
+> **Sections below on TARGET_END, the state DB, divisor logic and re-running the
+> backfill apply only to the OLD producer**, which is retained on disk purely for
+> rollback. To roll back: restore `BTCDOM_SOURCE_FILE` / `BTCDOM_VALUE_COLUMN` in
+> `msm_run.py` and re-point `SCRIPT_MACRO` in `run_live_pipeline.py`.
+>
+> **Diagnosing the new producer** is much shorter: run it and read the log.
+> ```bash
+> python scripts/data_ingestion/btcdom_binance_index.py
+> ```
+> It validates before writing (nulls, duplicates, ordering, plausible range) and
+> exits non-zero rather than writing a bad file.
+
+> **2026-08-17 — status change: this field no longer gates anything.**
+> `BTCDOM_Trend` was removed from the MRF gate ([ADR 003](../decisions/003-remove-btcdom-from-mrf-gate.md)).
+> The gate is now `funding_regime == "Q2: Weak"` alone. `btcd_index_decision`,
+> `sma_30`, `BTCDOM_Trend` and `btcdom_7d_ret` are still produced and are still
+> written to `msm_timeseries.csv` / `macro_features`, but they are **context
+> columns** now — nothing downstream makes a decision on them.
+>
+> Practical effect on this runbook: the urgency of everything below drops. A
+> stale or broken BTCDOM index no longer corrupts a trading decision; it only
+> blanks a display field. **Do not re-add `BTCDOM_Trend` to the gate without new
+> evidence** — the reason it was removed is that its premise inverted out of
+> sample, which repairing the data does not fix.
+>
+> **The guards below no longer halt the pipeline.** Missing / malformed / stale
+> BTCDOM now logs a warning, sets `btcdom_status`, and lets the run continue;
+> `run_gold_layer_audit` returns BTCDOM problems as advisory warnings. Every
+> decision-relevant check (`F_tk_apr`, `y`, temporal desync) still raises. See
+> ADR 003's second addendum.
+>
+> **How you will find out it is broken:** the daily Telegram status appends
+> `⚠️ BTCDOM context feed: stale:Nd` every day until it is fixed, and
+> `BTCDOM_Trend` reads `Unknown`. Sections below on diagnosing and re-running
+> still apply — the urgency is lower, but the repair steps are the same.
+>
+> To restore halt-on-stale, set `BTCDOM_IS_DECISION_INPUT = True` in
+> `msm_run.py` (which also flips `run_gold_layer_audit`'s `btcdom_is_critical`).
 
 ## What this file is
 
@@ -86,8 +143,22 @@ Verified: the Drive copy and the first commit of the CSV both end 2026-01-29.
 | Nullable trend | `src/macro_regime/btcdom_trend.py` | never — it *cannot* emit a direction from a null |
 | Bounded-tail rule | `data_quality_gate.py` (`MAX_TRAILING_INCOMPLETE_ROWS`, default 2) | interior nulls, or a null tail longer than the live window |
 
-All four are fatal. A stale macro index now halts the run rather than producing a
-confident wrong column.
+**Severity (updated 2026-08-17, ADR 003).** These were all fatal when BTCDOM
+gated a trade. Now that it is a context field, halting on it also stopped
+`Environment_APR` / `w_risk` / `funding_regime` from updating — the inputs that
+*do* drive the gate. So:
+
+| Guard | Severity now |
+|---|---|
+| Coverage staleness (`btcdom_backfill.py`) | still fatal — it is the producer's own contract |
+| Index staleness (`msm_run.py`) | **advisory** — logs a warning, sets `btcdom_status`, continues |
+| Nullable trend | unchanged — it cannot emit a direction from a null |
+| Bounded-tail rule (`data_quality_gate.py`) | **advisory** — returned as a warning, logged by the caller |
+
+A stale macro index now produces `Unknown` plus a daily Telegram nag, rather
+than a halted pipeline or a confident wrong column. Set
+`BTCDOM_IS_DECISION_INPUT = True` in `msm_run.py` to restore the fatal
+behaviour.
 
 ---
 

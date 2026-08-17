@@ -23,7 +23,7 @@ from src.macro_regime.gate_policy import (
     FRAGMENTATION_IDIOSYNCRATIC_TOXIC_CEILING,
     calculate_risk_weight,
 )
-from src.macro_regime.btcdom_trend import trend_label
+from src.macro_regime.btcdom_trend import format_regime_label
 
 DEFAULT_DB_PATH = macro_state_db_path()
 REPORTS_ROOT = REPO_ROOT / "reports" / "msm_funding_v0"
@@ -62,18 +62,16 @@ def _safe_float(v) -> float:
 
 
 def _regime_label(row: dict) -> str:
-    # Stable, human-readable label for comparisons + alerts.
-    funding = str(row.get("funding_regime", "Unknown"))
-    # trend_label, not str(): a SQL NULL read back from macro_features would
-    # otherwise render as the literal "None" in alerts and the dashboard.
-    btcd = trend_label(row.get("BTCDOM_Trend"))
-    gate = row.get("is_mrf_active", None)
-    try:
-        gate_on = bool(int(gate)) if isinstance(gate, (int, str)) and str(gate).isdigit() else bool(gate)
-    except Exception:
-        gate_on = False
-    gate_label = "GATE:ON" if gate_on else "GATE:OFF"
-    return f"{funding} | {btcd} | {gate_label}"
+    """Stable, human-readable label for comparisons + alerts.
+
+    Delegates to the canonical renderer. This mattered here more than anywhere:
+    the regime-change alert compares ``prev`` (read from SQLite, so a NULL
+    arrives as ``None``) against the new row (read from the CSV frame, so the
+    SAME NULL arrives as ``NaN``). The old local copy rendered those two
+    identical-in-meaning values as GATE:OFF and GATE:ON respectively, and fired
+    a "MACRO REGIME CHANGE DETECTED" alert on the difference. See ADR 003.
+    """
+    return format_regime_label(row)
 
 
 def _load_latest_row(conn: sqlite3.Connection) -> Optional[dict]:
@@ -127,6 +125,33 @@ ON CONFLICT(key) DO UPDATE SET value=excluded.value;
 
 def _utc_today_iso() -> str:
     return datetime.now(timezone.utc).date().isoformat()
+
+
+def _ensure_columns(conn: sqlite3.Connection, df: pd.DataFrame) -> list[str]:
+    """Add any Gold-layer column missing from macro_features. Idempotent.
+
+    `_upsert_dataframe` builds its INSERT column list from the dataframe, so a
+    newly added Gold-layer column (e.g. `btcdom_status`, ADR 003) would make
+    every upsert fail with "no such column" until someone migrated by hand.
+    SQLite's ALTER TABLE ADD COLUMN is cheap and append-only, so reconciling on
+    each run is safer than a one-off migration script nobody remembers to run.
+
+    Returns the column names added, for logging.
+    """
+    cur = conn.cursor()
+    existing = {row[1] for row in cur.execute("PRAGMA table_info(macro_features);")}
+    added = []
+    for col in df.columns:
+        name = str(col)
+        if name in existing:
+            continue
+        sql_type = _infer_sqlite_type_from_series(df[col])
+        cur.execute(f'ALTER TABLE macro_features ADD COLUMN "{name}" {sql_type};')
+        added.append(name)
+    if added:
+        conn.commit()
+        logger.info("macro_features: added missing column(s) %s", added)
+    return added
 
 
 def _ensure_unique_index_on_decision_date(conn: sqlite3.Connection) -> None:
@@ -261,6 +286,7 @@ def ingest_latest_master_csv(db_path: Path, master_csv: Path) -> None:
     with sqlite3.connect(db_path) as conn:
         prev = _load_latest_row(conn)
         _ensure_meta_table(conn)
+        _ensure_columns(conn, df)
         _ensure_unique_index_on_decision_date(conn)
         _upsert_dataframe(conn, df)
 
@@ -283,6 +309,19 @@ def ingest_latest_master_csv(db_path: Path, master_csv: Path) -> None:
             # Fire every day (once per UTC day), regardless of regime change.
             today_utc = _utc_today_iso()
             last_sent = _meta_get(conn, "telegram_daily_status_last_sent_utc_day")
+            # ADR 003: BTCDOM degrades instead of halting the pipeline, so its
+            # health has to be surfaced somewhere or it rots unseen -- which is
+            # how the 2026-02..07 incident lasted six months. The daily status
+            # already fires once per UTC day, so it doubles as the nag.
+            #
+            # Deliberately NOT added to `new_regime`: the label is compared
+            # against `prev` to decide whether to fire a change alert, and a
+            # status that ticks "stale:33d" -> "stale:34d" every night would
+            # fire a phantom regime change daily.
+            btcdom_status = new_row.get("btcdom_status")
+            if btcdom_status is not None and pd.isna(btcdom_status):
+                btcdom_status = None
+
             if last_sent != today_utc:
                 send_telegram_daily_status(
                     regime=new_regime,
@@ -291,6 +330,7 @@ def ingest_latest_master_csv(db_path: Path, master_csv: Path) -> None:
                     spread=spread,
                     gate_on=gate_on,
                     risk_weight=risk_weight,
+                    btcdom_status=btcdom_status,
                 )
                 _meta_set(conn, "telegram_daily_status_last_sent_utc_day", today_utc)
 

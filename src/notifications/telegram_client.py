@@ -6,6 +6,7 @@ import os
 import socket
 import subprocess
 from pathlib import Path
+from typing import Optional
 
 import requests
 
@@ -149,12 +150,29 @@ def send_telegram_daily_status(
     spread: float,
     gate_on: bool,
     risk_weight: float,
+    btcdom_status: Optional[str] = None,
 ) -> None:
+    """Once-per-UTC-day regime snapshot.
+
+    ``btcdom_status`` (ADR 003) is appended ONLY when the BTCDOM context feed is
+    unhealthy. BTCDOM no longer halts the pipeline, so this line is the thing
+    that stops a dark feed from going unnoticed -- but emitting it every day
+    when healthy would train the reader to ignore it.
+    """
     from datetime import datetime, timezone
 
     today_utc = datetime.now(timezone.utc).date().isoformat()
     gate_line = "⚡ GATE: ON" if gate_on else "🔒 GATE: OFF"
     risk_weight_line = f"Risk Weight: {risk_weight * 100:.0f}%"
+
+    degraded_line = ""
+    if btcdom_status is not None and str(btcdom_status).strip().lower() not in {"", "ok"}:
+        degraded_line = (
+            f"\n⚠️ BTCDOM context feed: {btcdom_status} "
+            f"(display-only since ADR 003 — gating is unaffected, "
+            f"but BTCDOM Trend will read 'Unknown' until this is fixed)\n"
+        )
+
     text_payload = (
         "DAILY MACRO REGIME STATUS\n\n"
         f"UTC Day: {today_utc}\n"
@@ -163,7 +181,8 @@ def send_telegram_daily_status(
         f"{risk_weight_line}\n"
         f"Regime: {regime}\n"
         f"Environment APR: {apr:.2f}%\n"
-        f"Fragmentation Spread: {spread:.6f}\n\n"
+        f"Fragmentation Spread: {spread:.6f}\n"
+        f"{degraded_line}\n"
         "Check the Streamlit dashboard for full details."
     )
     send_telegram_text(text_payload)
