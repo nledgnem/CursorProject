@@ -22,13 +22,23 @@ of everything else:
 
     dominance = BTC marketcap / total marketcap (stables + wrapped excluded)
 
-Validated against btcdom_reconstructed over the 575-day overlap:
-    corr(daily pct change) = +0.914
-    corr(levels)           = +0.892
+DATE OFFSET -- CORRECTED 2026-08-17
+-----------------------------------
+The original version of this module was "validated against
+btcdom_reconstructed" at corr(daily change) = +0.914. That validation was
+worthless: btcdom_reconstructed is built from the SAME lake tables and
+carries the SAME defect, so the two agreed with each other while both
+disagreed with reality.
 
-That is a close enough tracker to drive the same Rising/Falling gate the
-MSM already consumes, with the advantage that it shares a freshness fate
-with the rest of the lake.
+Measured against Binance's REAL BTCDOM index, the uncorrected series had:
+
+    corr at k=0  = +0.04     (same-day: nothing)
+    corr at k=+1 = +0.42     (88.1% sign agreement)
+
+i.e. it was yesterday's dominance stamped with today's date, because the
+lake's CoinGecko-sourced tables stamp each row one day after the UTC close
+it represents. compute() now re-stamps by LAKE_DATE_OFFSET_DAYS, and
+validate_against_binance_index() RAISES if the best alignment is not k=0.
 
 A basket-ratio construction (BTC vs equal-weight top-20 alts) was also
 tested and tracked worse (+0.658 daily / -0.547 levels), so dominance is
@@ -57,6 +67,9 @@ OUT_DIR = Path(__file__).resolve().parent
 MAX_STALENESS_DAYS = 3
 
 SMA_WINDOW = 30
+
+# Days the lake's CoinGecko-sourced fact tables are stamped LATE. See compute().
+LAKE_DATE_OFFSET_DAYS = 1
 
 # Wrapped/derivative tokens that double-count an underlying. The lake's
 # stablecoins.csv covers stables; these are the wrapped-asset equivalents,
@@ -99,6 +112,18 @@ def compute(lake: Path = LAKE) -> BtcdomResult:
     mc = pd.read_parquet(lake / "silver_fact_marketcap.parquet")
     mc["date"] = pd.to_datetime(mc["date"])
 
+    # LAKE DATE OFFSET -- see ADR 004 and the module docstring.
+    # The lake's CoinGecko-sourced fact tables stamp each row one day AFTER the
+    # UTC close it represents (CoinGecko market_chart returns 00:00 UTC
+    # snapshots, which are the PREVIOUS day's close). Verified against the real
+    # Binance BTCDOM index: uncorrected, this series' daily changes correlate
+    # +0.42 with the real index at k=+1 and only +0.04 at k=0 -- i.e. it was
+    # yesterday's dominance wearing today's date.
+    #
+    # Re-stamping to the date the data actually represents is the whole fix.
+    # Do NOT remove this without re-running validate_against_binance_index().
+    mc["date"] = mc["date"] - pd.Timedelta(days=LAKE_DATE_OFFSET_DAYS)
+
     as_of = mc["date"].max()
     staleness = (pd.Timestamp.utcnow().tz_localize(None) - as_of).days
     if staleness > MAX_STALENESS_DAYS:
@@ -139,8 +164,72 @@ def compute(lake: Path = LAKE) -> BtcdomResult:
     )
 
 
+def validate_against_binance_index(res: BtcdomResult, max_lag: int = 2) -> pd.Series:
+    """Lead/lag scan against Binance's REAL BTCDOM index. Raises on misalignment.
+
+    This is the check that would have caught the one-day offset, and the reason
+    the old `validate_against_dead_feed` did not: btcdom_reconstructed is built
+    from the SAME lake tables and carries the SAME offset, so the two agreed with
+    each other (+0.914) while both disagreed with reality. Validating against a
+    baseline that shares your bug confirms the bug.
+
+    Asserts that the best alignment is k=0. If the best correlation sits at a
+    non-zero lag, the series is stamped on the wrong dates and this raises rather
+    than returning a plausible number.
+    """
+    import requests
+
+    rows, cur = [], 0
+    while True:
+        batch = requests.get(
+            "https://fapi.binance.com/fapi/v1/indexPriceKlines",
+            params={"pair": "BTCDOMUSDT", "interval": "1d",
+                    "startTime": cur, "limit": 1000},
+            timeout=30,
+        ).json()
+        if not batch:
+            break
+        rows += batch
+        cur = batch[-1][0] + 86_400_000
+    idx = pd.Series(
+        [float(x[4]) for x in rows],
+        index=pd.to_datetime([x[0] for x in rows], unit="ms").normalize(),
+    ).sort_index()
+
+    a = res.series["dominance_pct"].pct_change()
+    scan = {}
+    for k in range(-max_lag, max_lag + 1):
+        b = idx.pct_change().shift(k)
+        j = a.dropna().index.intersection(b.dropna().index)
+        if len(j) > 100:
+            scan[k] = float(a.loc[j].corr(b.loc[j]))
+    if not scan:
+        raise RuntimeError("insufficient overlap with the Binance BTCDOM index to validate")
+
+    best = max(scan, key=lambda k: scan[k])
+    if best != 0:
+        raise RuntimeError(
+            f"BTCDOM date alignment is WRONG: best correlation is at lag {best:+d} "
+            f"({scan[best]:+.3f}) but k=0 gives {scan.get(0, float('nan')):+.3f}. "
+            f"The series is stamped {abs(best)} day(s) "
+            f"{'late' if best > 0 else 'early'}. Check LAKE_DATE_OFFSET_DAYS."
+        )
+    return pd.Series({
+        "corr_at_lag_0": scan[0],
+        "best_lag": best,
+        **{f"corr_at_lag_{k:+d}": v for k, v in scan.items()},
+    })
+
+
 def validate_against_dead_feed(res: BtcdomResult, lake: Path = LAKE) -> pd.Series:
-    """Correlation vs btcdom_reconstructed over the period it was still alive."""
+    """Correlation vs btcdom_reconstructed over the period it was still alive.
+
+    DEPRECATED as a correctness check. btcdom_reconstructed is built from the
+    same lake tables and carries the same one-day stamp offset, so a high
+    correlation here means "both are wrong in the same way", not "both are
+    right". Use validate_against_binance_index() instead. Retained only for
+    historical comparison.
+    """
     old = pd.read_csv(lake / "btcdom_reconstructed.csv")
     old["date"] = pd.to_datetime(old["date"])
     old = old.set_index("date")["reconstructed_index_value"]
