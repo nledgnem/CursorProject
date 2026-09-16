@@ -1,0 +1,498 @@
+{
+  "name": "track_a_trend_confirmation",
+  "version": "1.0",
+  "timestamp_utc": "2026-09-15T10:55:28+00:00",
+  "git_commit": "67730b43915b60654dc6f8d2ee039b95782cac64",
+  "git_dirty_files": 99,
+  "params": {
+    "K": 3,
+    "cost_bps": 10.0,
+    "thresh_grid": [
+      0.5,
+      0.75,
+      1.0,
+      1.25,
+      1.5,
+      1.75,
+      2.0,
+      2.25,
+      2.5,
+      2.75,
+      3.0
+    ],
+    "embargo_days": 35,
+    "systems": {
+      "GERHARD_SMA120": {
+        "kind": "sma",
+        "len": 120,
+        "neutral_flips": true
+      },
+      "LL3_k0.30": {
+        "kind": "ll",
+        "fast": 32,
+        "slow": 58,
+        "atr_len": 60,
+        "k": 0.3,
+        "neutral_flips": true
+      },
+      "LL2_k0.30": {
+        "kind": "ll",
+        "fast": 32,
+        "slow": 58,
+        "atr_len": 60,
+        "k": 0.3,
+        "neutral_flips": false
+      }
+    }
+  },
+  "universe": [
+    "BTC",
+    "ETH",
+    "SOL"
+  ],
+  "start": "2016-06-01",
+  "end": "latest",
+  "fees_bps": 5,
+  "slippage_bps": 5,
+  "data": {
+    "research\\quant_program\\cache\\coinbase\\daily\\BTC-USD.parquet": {
+      "sha256_16": "34e513bcc6881a97",
+      "bytes": 188340
+    },
+    "research\\quant_program\\cache\\coinbase\\daily\\ETH-USD.parquet": {
+      "sha256_16": "a3402aecc21e3774",
+      "bytes": 165947
+    },
+    "research\\quant_program\\cache\\coinbase\\daily\\SOL-USD.parquet": {
+      "sha256_16": "1658a53ac48921f0",
+      "bytes": 82652
+    },
+    "research\\quant_program\\cache\\binance\\funding\\BTCUSDT.parquet": {
+      "sha256_16": "eda9bc7bf30e2487",
+      "bytes": 141269
+    },
+    "research\\quant_program\\cache\\binance\\funding\\ETHUSDT.parquet": {
+      "sha256_16": "3ed62629f1a23797",
+      "bytes": 138648
+    },
+    "research\\quant_program\\cache\\binance\\funding\\SOLUSDT.parquet": {
+      "sha256_16": "73008896524cff46",
+      "bytes": 127902
+    },
+    "research\\quant_program\\cache\\binance\\premium_1d\\BTCUSDT.parquet": {
+      "sha256_16": "185d83b8bd8afe48",
+      "bytes": 117129
+    },
+    "research\\quant_program\\cache\\binance\\premium_1d\\ETHUSDT.parquet": {
+      "sha256_16": "44381265e2821d10",
+      "bytes": 116224
+    },
+    "research\\quant_program\\cache\\binance\\premium_1d\\SOLUSDT.parquet": {
+      "sha256_16": "a85285b08365d9ed",
+      "bytes": 101849
+    }
+  },
+  "results": {
+    "n_events": 457,
+    "outputs": [
+      "auc_by_system.csv",
+      "bootstrap_vs_M0.csv",
+      "conditional_by_system.csv",
+      "conditional_by_system_asset.csv",
+      "economics_by_bucket.csv",
+      "economics_summary.csv",
+      "events.csv",
+      "events.parquet",
+      "logit_oos.csv",
+      "rarity_aug2026_like.csv",
+      "regime_event_outcomes.csv",
+      "sensitivity_thresholds.csv",
+      "strategy_metrics.csv",
+      "walk_forward_oos_metrics.csv",
+      "walk_forward_picks.csv"
+    ]
+  },
+  "checks": [
+    {
+      "name": "dup_dates_BTC",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 duplicate rows on ['index']"
+    },
+    {
+      "name": "sorted_by_time",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 groups not time-sorted"
+    },
+    {
+      "name": "causal_no_lookahead",
+      "passed": true,
+      "severity": "error",
+      "detail": "6 probes ok"
+    },
+    {
+      "name": "signal_execution_lag",
+      "passed": true,
+      "severity": "error",
+      "detail": "|pos - signal.shift(1)| sum = 0"
+    },
+    {
+      "name": "abnormal_turnover",
+      "passed": true,
+      "severity": "warn",
+      "detail": "sparse strategy: trades on 2.4% of days"
+    },
+    {
+      "name": "signal_execution_lag",
+      "passed": true,
+      "severity": "error",
+      "detail": "|pos - signal.shift(1)| sum = 0"
+    },
+    {
+      "name": "abnormal_turnover",
+      "passed": true,
+      "severity": "warn",
+      "detail": "sparse strategy: trades on 2.4% of days"
+    },
+    {
+      "name": "dup_dates_BTC",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 duplicate rows on ['index']"
+    },
+    {
+      "name": "sorted_by_time",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 groups not time-sorted"
+    },
+    {
+      "name": "causal_no_lookahead",
+      "passed": true,
+      "severity": "error",
+      "detail": "6 probes ok"
+    },
+    {
+      "name": "signal_execution_lag",
+      "passed": true,
+      "severity": "error",
+      "detail": "|pos - signal.shift(1)| sum = 0"
+    },
+    {
+      "name": "abnormal_turnover",
+      "passed": true,
+      "severity": "warn",
+      "detail": "sparse strategy: trades on 1.1% of days"
+    },
+    {
+      "name": "signal_execution_lag",
+      "passed": true,
+      "severity": "error",
+      "detail": "|pos - signal.shift(1)| sum = 0"
+    },
+    {
+      "name": "abnormal_turnover",
+      "passed": true,
+      "severity": "warn",
+      "detail": "sparse strategy: trades on 2.3% of days"
+    },
+    {
+      "name": "dup_dates_BTC",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 duplicate rows on ['index']"
+    },
+    {
+      "name": "sorted_by_time",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 groups not time-sorted"
+    },
+    {
+      "name": "causal_no_lookahead",
+      "passed": true,
+      "severity": "error",
+      "detail": "6 probes ok"
+    },
+    {
+      "name": "signal_execution_lag",
+      "passed": true,
+      "severity": "error",
+      "detail": "|pos - signal.shift(1)| sum = 0"
+    },
+    {
+      "name": "abnormal_turnover",
+      "passed": true,
+      "severity": "warn",
+      "detail": "sparse strategy: trades on 0.6% of days"
+    },
+    {
+      "name": "signal_execution_lag",
+      "passed": true,
+      "severity": "error",
+      "detail": "|pos - signal.shift(1)| sum = 0"
+    },
+    {
+      "name": "abnormal_turnover",
+      "passed": true,
+      "severity": "warn",
+      "detail": "sparse strategy: trades on 0.6% of days"
+    },
+    {
+      "name": "dup_dates_ETH",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 duplicate rows on ['index']"
+    },
+    {
+      "name": "sorted_by_time",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 groups not time-sorted"
+    },
+    {
+      "name": "causal_no_lookahead",
+      "passed": true,
+      "severity": "error",
+      "detail": "6 probes ok"
+    },
+    {
+      "name": "signal_execution_lag",
+      "passed": true,
+      "severity": "error",
+      "detail": "|pos - signal.shift(1)| sum = 0"
+    },
+    {
+      "name": "abnormal_turnover",
+      "passed": true,
+      "severity": "warn",
+      "detail": "sparse strategy: trades on 2.9% of days"
+    },
+    {
+      "name": "signal_execution_lag",
+      "passed": true,
+      "severity": "error",
+      "detail": "|pos - signal.shift(1)| sum = 0"
+    },
+    {
+      "name": "abnormal_turnover",
+      "passed": true,
+      "severity": "warn",
+      "detail": "sparse strategy: trades on 2.9% of days"
+    },
+    {
+      "name": "dup_dates_ETH",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 duplicate rows on ['index']"
+    },
+    {
+      "name": "sorted_by_time",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 groups not time-sorted"
+    },
+    {
+      "name": "causal_no_lookahead",
+      "passed": true,
+      "severity": "error",
+      "detail": "6 probes ok"
+    },
+    {
+      "name": "signal_execution_lag",
+      "passed": true,
+      "severity": "error",
+      "detail": "|pos - signal.shift(1)| sum = 0"
+    },
+    {
+      "name": "abnormal_turnover",
+      "passed": true,
+      "severity": "warn",
+      "detail": "sparse strategy: trades on 1.0% of days"
+    },
+    {
+      "name": "signal_execution_lag",
+      "passed": true,
+      "severity": "error",
+      "detail": "|pos - signal.shift(1)| sum = 0"
+    },
+    {
+      "name": "abnormal_turnover",
+      "passed": true,
+      "severity": "warn",
+      "detail": "sparse strategy: trades on 2.0% of days"
+    },
+    {
+      "name": "dup_dates_ETH",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 duplicate rows on ['index']"
+    },
+    {
+      "name": "sorted_by_time",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 groups not time-sorted"
+    },
+    {
+      "name": "causal_no_lookahead",
+      "passed": true,
+      "severity": "error",
+      "detail": "6 probes ok"
+    },
+    {
+      "name": "signal_execution_lag",
+      "passed": true,
+      "severity": "error",
+      "detail": "|pos - signal.shift(1)| sum = 0"
+    },
+    {
+      "name": "abnormal_turnover",
+      "passed": true,
+      "severity": "warn",
+      "detail": "sparse strategy: trades on 0.7% of days"
+    },
+    {
+      "name": "signal_execution_lag",
+      "passed": true,
+      "severity": "error",
+      "detail": "|pos - signal.shift(1)| sum = 0"
+    },
+    {
+      "name": "abnormal_turnover",
+      "passed": true,
+      "severity": "warn",
+      "detail": "sparse strategy: trades on 0.7% of days"
+    },
+    {
+      "name": "dup_dates_SOL",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 duplicate rows on ['index']"
+    },
+    {
+      "name": "sorted_by_time",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 groups not time-sorted"
+    },
+    {
+      "name": "causal_no_lookahead",
+      "passed": true,
+      "severity": "error",
+      "detail": "6 probes ok"
+    },
+    {
+      "name": "signal_execution_lag",
+      "passed": true,
+      "severity": "error",
+      "detail": "|pos - signal.shift(1)| sum = 0"
+    },
+    {
+      "name": "abnormal_turnover",
+      "passed": true,
+      "severity": "warn",
+      "detail": "sparse strategy: trades on 3.7% of days"
+    },
+    {
+      "name": "signal_execution_lag",
+      "passed": true,
+      "severity": "error",
+      "detail": "|pos - signal.shift(1)| sum = 0"
+    },
+    {
+      "name": "abnormal_turnover",
+      "passed": true,
+      "severity": "warn",
+      "detail": "sparse strategy: trades on 3.7% of days"
+    },
+    {
+      "name": "dup_dates_SOL",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 duplicate rows on ['index']"
+    },
+    {
+      "name": "sorted_by_time",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 groups not time-sorted"
+    },
+    {
+      "name": "causal_no_lookahead",
+      "passed": true,
+      "severity": "error",
+      "detail": "6 probes ok"
+    },
+    {
+      "name": "signal_execution_lag",
+      "passed": true,
+      "severity": "error",
+      "detail": "|pos - signal.shift(1)| sum = 0"
+    },
+    {
+      "name": "abnormal_turnover",
+      "passed": true,
+      "severity": "warn",
+      "detail": "sparse strategy: trades on 1.1% of days"
+    },
+    {
+      "name": "signal_execution_lag",
+      "passed": true,
+      "severity": "error",
+      "detail": "|pos - signal.shift(1)| sum = 0"
+    },
+    {
+      "name": "abnormal_turnover",
+      "passed": true,
+      "severity": "warn",
+      "detail": "sparse strategy: trades on 2.2% of days"
+    },
+    {
+      "name": "dup_dates_SOL",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 duplicate rows on ['index']"
+    },
+    {
+      "name": "sorted_by_time",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 groups not time-sorted"
+    },
+    {
+      "name": "causal_no_lookahead",
+      "passed": true,
+      "severity": "error",
+      "detail": "6 probes ok"
+    },
+    {
+      "name": "signal_execution_lag",
+      "passed": true,
+      "severity": "error",
+      "detail": "|pos - signal.shift(1)| sum = 0"
+    },
+    {
+      "name": "abnormal_turnover",
+      "passed": true,
+      "severity": "warn",
+      "detail": "sparse strategy: trades on 0.8% of days"
+    },
+    {
+      "name": "signal_execution_lag",
+      "passed": true,
+      "severity": "error",
+      "detail": "|pos - signal.shift(1)| sum = 0"
+    },
+    {
+      "name": "abnormal_turnover",
+      "passed": true,
+      "severity": "warn",
+      "detail": "sparse strategy: trades on 0.8% of days"
+    }
+  ],
+  "notes": "",
+  "status": "ok",
+  "failed_error_checks": 0
+}

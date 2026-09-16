@@ -1,0 +1,23 @@
+-- F1_extreme_pos_funding_short: 1895 raw events
+-- F2_extreme_neg_funding_long: 4622 raw events
+-- F3_funding_despite_reversal_short: 5586 raw events
+-- F4_high_funding_ann_100pct_short: 5554 raw events
+-- P1_premium_z_high_short: 10314 raw events
+-- P2_premium_z_low_long: 14292 raw events
+-- L1_new_perp_listing_short: 589 raw events
+-- C1_funding_interval_shortened: 816 raw events
+-- Q1_long_liq_flush_OI_reset_long: 1724 raw events
+-- Q2_long_liq_OI_rebuild_short: 679 raw events
+-- Q3_short_liq_squeeze_OI_reset_short: 266 raw events
+-- Q4_short_liq_OI_rebuild_long: 2594 raw events
+-- U1_control_price_up_1sd_long: 9912 raw events
+-- U2_control_price_down_1sd_long: 10000 raw events
+-- O1_price_up_OI_up: 4942 raw events
+-- O2_price_up_OI_down: 88 raw events
+-- O3_price_down_OI_up: 189 raw events
+-- O4_price_down_OI_down: 4334 raw events
+-- X1_crowded_long_reversal: 82 raw events
+-- X2_short_squeeze_continuation: 524 raw events
+-- X3_capitulation_rebound: 534 raw events
+-- X4_funding_despite_reversal_OI: 108 raw events
+Track B done

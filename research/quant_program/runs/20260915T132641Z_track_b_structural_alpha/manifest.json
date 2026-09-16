@@ -1,0 +1,66 @@
+{
+  "name": "track_b_structural_alpha",
+  "version": "1.0",
+  "timestamp_utc": "2026-09-15T13:26:41+00:00",
+  "git_commit": "67730b43915b60654dc6f8d2ee039b95782cac64",
+  "git_dirty_files": 99,
+  "params": {
+    "oos_start": "2024-01-01",
+    "min_adv_usd": 5000000.0,
+    "min_listed_days": 30,
+    "cost_tiers": "majors 20bp RT; ADV>=100m 40bp; >=20m 60bp; else 100bp"
+  },
+  "universe": [
+    "Binance USDT perps (current + delisted)"
+  ],
+  "start": "2019-09-01",
+  "end": "latest",
+  "fees_bps": 5,
+  "slippage_bps": "tiered",
+  "data": {
+    "research\\quant_program\\cache\\universe_binance_perps.csv": {
+      "sha256_16": "456cf38897825c9b",
+      "bytes": 46472
+    }
+  },
+  "results": {
+    "n_signals": 25,
+    "n_events": 50530,
+    "has_coinglass": true
+  },
+  "checks": [
+    {
+      "name": "duplicate_keys",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 duplicate rows on ['ts', 'asset']"
+    },
+    {
+      "name": "datetime_dtype",
+      "passed": true,
+      "severity": "error",
+      "detail": "ts dtype=datetime64[ns]"
+    },
+    {
+      "name": "sorted_by_time",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 groups not time-sorted"
+    },
+    {
+      "name": "frozen_tail",
+      "passed": true,
+      "severity": "error",
+      "detail": "0 series with frozen tails: "
+    },
+    {
+      "name": "universe_changes",
+      "passed": false,
+      "severity": "warn",
+      "detail": "3 periods with universe size change >25%: 2019-12-27 00:00:00:2, 2020-01-18 00:00:00:3, 2020-02-05 00:00:00:4"
+    }
+  ],
+  "notes": "",
+  "status": "ok",
+  "failed_error_checks": 0
+}

@@ -1,0 +1,30 @@
+# Structural Alpha Watchlist — 2026-09-14
+
+*Research monitor only. No orders are generated. TRADE requires an explicit human decision.*
+
+| Asset | Signal | Dir | Strength | Horizon | Hist. net edge | OOS n | Regime | Capacity (1% ADV) | Main risk | AQS | Action |
+|---|---|---|---|---|---:|---:|---|---:|---|---:|---|
+| BRUSDT | F1_extreme_pos_funding_short | SHORT | {'funding_7d_ann': 0.3298, 'funding_xs_rank': 0.9675, 'funding_ts_z': 3.4166} | 5d | +0.68% | 629 | BTC bull, vol low | $92,913 | squeeze while short / funding flips; exchange funding caps | 49.2 | **IGNORE** |
+| CAPUSDT | F2_extreme_neg_funding_long | LONG | {'funding_7d_ann': -0.5608, 'funding_xs_rank': 0.0519, 'funding_ts_z': -2.5745} | 5d | +0.44% | 1465 | BTC bull, vol low | $90,085 | squeeze while short / funding flips; exchange funding caps | 61.0 | **IGNORE** |
+| HEMIUSDT | F2_extreme_neg_funding_long | LONG | {'funding_7d_ann': -1.5794, 'funding_xs_rank': 0.0195, 'funding_ts_z': -2.0886} | 5d | +0.44% | 1465 | BTC bull, vol low | $678,155 | squeeze while short / funding flips; exchange funding caps | 61.0 | **IGNORE** |
+| LABUSDT | F3_funding_despite_reversal_short | SHORT | {'funding_7d_ann': 0.2002, 'funding_xs_rank': 0.9026, 'funding_ts_z': 0.3148} | 5d | -1.17% | 1734 | BTC bull, vol low | $156,882 | squeeze while short / funding flips; exchange funding caps | 37.0 | **IGNORE** |
+| UAIUSDT | F3_funding_despite_reversal_short | SHORT | {'funding_7d_ann': 0.4002, 'funding_xs_rank': 0.974, 'funding_ts_z': -0.2819} | 5d | -1.17% | 1734 | BTC bull, vol low | $554,870 | squeeze while short / funding flips; exchange funding caps | 37.0 | **IGNORE** |
+| SKYAIUSDT | P1_premium_z_high_short | SHORT | {'prem_close': 0.0025, 'prem_z90': 3.4515} | 5d | -1.12% | 3416 | BTC bull, vol low | $87,675 | premium widens further in trend; index methodology | 33.0 | **IGNORE** |
+| VVVUSDT | P1_premium_z_high_short | SHORT | {'prem_close': 0.0015, 'prem_z90': 2.2866} | 5d | -1.12% | 3416 | BTC bull, vol low | $241,617 | premium widens further in trend; index methodology | 33.0 | **IGNORE** |
+| XRPUSDT | P1_premium_z_high_short | SHORT | {'prem_close': -0.0001, 'prem_z90': 2.1498} | 5d | -1.12% | 3416 | BTC bull, vol low | $9,753,820 | premium widens further in trend; index methodology | 33.0 | **IGNORE** |
+| CAPUSDT | P2_premium_z_low_long | LONG | {'prem_close': -0.0113, 'prem_z90': -3.6587} | 5d | -0.49% | 6637 | BTC bull, vol low | $90,085 | premium widens further in trend; index methodology | 33.0 | **IGNORE** |
+| FFUSDT | P2_premium_z_low_long | LONG | {'prem_close': -0.0011, 'prem_z90': -3.3336} | 5d | -0.49% | 6637 | BTC bull, vol low | $135,864 | premium widens further in trend; index methodology | 33.0 | **IGNORE** |
+| FILUSDT | Q4_short_liq_OI_rebuild_long | LONG | {'long_liq_z': 1.3322, 'short_liq_z': 4.0187, 'oi_chg_z': 1.0755} | 5d | +1.96% | 1088 | BTC bull, vol low | $688,049 | cascade continues (catching a falling knife); data revisions | 79.0 | **IGNORE** |
+| NEARUSDT | Q4_short_liq_OI_rebuild_long | LONG | {'long_liq_z': -0.6754, 'short_liq_z': 2.9964, 'oi_chg_z': 1.0474} | 5d | +1.96% | 1088 | BTC bull, vol low | $1,470,701 | cascade continues (catching a falling knife); data revisions | 79.0 | **IGNORE** |
+| BTCUSDT | O1_price_up_OI_up | LONG | {'ret_z': 1.0277, 'oi_chg_z': 1.1585} | 5d | +1.03% | 2291 | BTC bull, vol low | $103,689,276 | regime dependence; OI data splicing across venues | 66.6 | **IGNORE** |
+| INJUSDT | O1_price_up_OI_up | LONG | {'ret_z': 1.2628, 'oi_chg_z': 1.5182} | 5d | +1.03% | 2291 | BTC bull, vol low | $418,775 | regime dependence; OI data splicing across venues | 66.6 | **IGNORE** |
+| LITUSDT | O1_price_up_OI_up | LONG | {'ret_z': 1.1272, 'oi_chg_z': 1.4046} | 5d | +1.03% | 2291 | BTC bull, vol low | $806,066 | regime dependence; OI data splicing across venues | 66.6 | **IGNORE** |
+| NEARUSDT | O1_price_up_OI_up | LONG | {'ret_z': 1.507, 'oi_chg_z': 1.0474} | 5d | +1.03% | 2291 | BTC bull, vol low | $1,470,701 | regime dependence; OI data splicing across venues | 66.6 | **IGNORE** |
+| OPUSDT | O1_price_up_OI_up | LONG | {'ret_z': 1.6907, 'oi_chg_z': 1.3716} | 5d | +1.03% | 2291 | BTC bull, vol low | $271,702 | regime dependence; OI data splicing across venues | 66.6 | **IGNORE** |
+| SOLUSDT | O1_price_up_OI_up | LONG | {'ret_z': 1.0113, 'oi_chg_z': 1.0694} | 5d | +1.03% | 2291 | BTC bull, vol low | $20,197,488 | regime dependence; OI data splicing across venues | 66.6 | **IGNORE** |
+| UNIUSDT | O1_price_up_OI_up | LONG | {'ret_z': 1.0633, 'oi_chg_z': 1.0518} | 5d | +1.03% | 2291 | BTC bull, vol low | $1,913,647 | regime dependence; OI data splicing across venues | 66.6 | **IGNORE** |
+| XLMUSDT | O1_price_up_OI_up | LONG | {'ret_z': 2.7125, 'oi_chg_z': 2.3965} | 5d | +1.03% | 2291 | BTC bull, vol low | $483,003 | regime dependence; OI data splicing across venues | 66.6 | **IGNORE** |
+| XPLUSDT | O1_price_up_OI_up | LONG | {'ret_z': 1.3935, 'oi_chg_z': 1.0208} | 5d | +1.03% | 2291 | BTC bull, vol low | $387,335 | regime dependence; OI data splicing across venues | 66.6 | **IGNORE** |
+| XRPUSDT | O1_price_up_OI_up | LONG | {'ret_z': 2.1165, 'oi_chg_z': 2.3201} | 5d | +1.03% | 2291 | BTC bull, vol low | $9,753,820 | regime dependence; OI data splicing across venues | 66.6 | **IGNORE** |
+| ZECUSDT | O1_price_up_OI_up | LONG | {'ret_z': 1.1851, 'oi_chg_z': 1.5176} | 5d | +1.03% | 2291 | BTC bull, vol low | $13,442,328 | regime dependence; OI data splicing across venues | 66.6 | **IGNORE** |
+| BTWUSDT | O4_price_down_OI_down | LONG | {'ret_z': -2.508, 'oi_chg_z': -1.4106} | 5d | -0.53% | 2024 | BTC bull, vol low | $327,372 | regime dependence; OI data splicing across venues | 40.4 | **IGNORE** |

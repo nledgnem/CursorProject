@@ -1,0 +1,16 @@
+== BTC GERHARD_SMA120
+== BTC LL3_k0.30
+== BTC LL2_k0.30
+== ETH GERHARD_SMA120
+== ETH LL3_k0.30
+== ETH LL2_k0.30
+== SOL GERHARD_SMA120
+== SOL LL3_k0.30
+== SOL LL2_k0.30
+Track A done
+ok persistence
+ok economics
+ok sensitivity
+ok models_oos
+ok rarity
+ok auc_heat
