@@ -1,0 +1,9 @@
+timestamp_utc,name,version,git_commit,git_dirty_files,start,end,status,failed_error_checks,manifest
+2026-09-15T10:41:50+00:00,track_a_trend_confirmation,1.0,67730b4391,99,2016-06-01,latest,ok,0,research\quant_program\runs\20260915T104150Z_track_a_trend_confirmation\manifest.json
+2026-09-15T10:47:51+00:00,track_b_structural_alpha,1.0,67730b4391,99,2019-09-01,latest,error,0,research\quant_program\runs\20260915T104751Z_track_b_structural_alpha\manifest.json
+2026-09-15T10:50:42+00:00,track_b_structural_alpha,1.0,67730b4391,99,2019-09-01,latest,ok,0,research\quant_program\runs\20260915T105042Z_track_b_structural_alpha\manifest.json
+2026-09-15T10:55:28+00:00,track_a_trend_confirmation,1.0,67730b4391,99,2016-06-01,latest,ok,0,research\quant_program\runs\20260915T105528Z_track_a_trend_confirmation\manifest.json
+2026-09-15T10:58:08+00:00,track_b_structural_alpha,1.0,67730b4391,99,2019-09-01,latest,ok,0,research\quant_program\runs\20260915T105808Z_track_b_structural_alpha\manifest.json
+2026-09-15T13:11:24+00:00,track_b_structural_alpha,1.0,67730b4391,99,2019-09-01,latest,error,0,research\quant_program\runs\20260915T131124Z_track_b_structural_alpha\manifest.json
+2026-09-15T13:18:50+00:00,track_b_structural_alpha,1.0,67730b4391,99,2019-09-01,latest,ok,0,research\quant_program\runs\20260915T131850Z_track_b_structural_alpha\manifest.json
+2026-09-15T13:26:41+00:00,track_b_structural_alpha,1.0,67730b4391,99,2019-09-01,latest,ok,0,research\quant_program\runs\20260915T132641Z_track_b_structural_alpha\manifest.json

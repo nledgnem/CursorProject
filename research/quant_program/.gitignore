@@ -1,0 +1,6 @@
+# raw fetched data is reproducible from qlib/data.py fetchers; do not commit
+cache/
+results/**/*.parquet
+__pycache__/
+results/pdf/
+*.zip
