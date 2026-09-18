@@ -392,6 +392,15 @@ def main() -> None:
                     # Telegram itself failed; we've already logged the original export error.
                     logging.exception("Failed to send Telegram alert about Drive export failure.")
 
+            # Lake integrity (non-fatal, non-blocking): content freshness + asset identity,
+            # once per UTC day after the export so it describes what just landed on Drive.
+            try:
+                from src.exports.lake_integrity import run as run_lake_integrity
+
+                run_lake_integrity(repo_root=REPO_ROOT)
+            except Exception:
+                logging.exception("Lake integrity check failed (non-fatal).")
+
         def heartbeat_tick() -> None:
             nonlocal dashboard_proc, last_trigger_key, last_allowlist_check_date
 

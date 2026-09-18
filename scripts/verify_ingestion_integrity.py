@@ -8,6 +8,7 @@ surface; do not fork this script.
 Usage:
     python scripts/verify_ingestion_integrity.py --mode writer_race
     python scripts/verify_ingestion_integrity.py --mode asset_identity [--lake-dir DIR] [--since YYYY-MM-DD] [--offline]
+    python scripts/verify_ingestion_integrity.py --mode freshness [--lake-dir DIR] [--json-out PATH]
     python scripts/verify_ingestion_integrity.py --mode <future-mode>
 
 Exit codes:
@@ -18,6 +19,7 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import sys
@@ -524,26 +526,70 @@ def _signal_a5_snapshot_crosscheck(inp: dict) -> SignalResult:
     return SignalResult("A5", desc, "FAIL", f"{len(bad)} assets disagree on {last.date()}: {eg}")
 
 
-def _run_asset_identity_mode(args: argparse.Namespace) -> int:
+def _run_asset_identity_mode(args: argparse.Namespace) -> list[SignalResult]:
     lake = Path(args.lake_dir) if args.lake_dir else data_lake_root()
     since = date.fromisoformat(args.since) if args.since else _ASSET_IDENTITY_SINCE
     print(f"Lake: {lake}  since: {since}")
     inp = _identity_inputs(lake)
-    signals = [
+    return [
         _signal_a1_dim_asset_ids(inp),
         _signal_a2_slug_collisions(inp),
         _signal_a3_binance_prices(inp, since, args.offline),
         _signal_a4_mass_splices(inp, since),
         _signal_a5_snapshot_crosscheck(inp),
     ]
+
+
+def _report(mode: str, signals: list[SignalResult], json_out: Optional[str]) -> int:
+    """Print the table + verdict; optionally write machine-readable results. Exit 1 on any FAIL."""
     _print_signal_table(signals)
+    if json_out:
+        Path(json_out).write_text(json.dumps({
+            "mode": mode, "run_utc": pd.Timestamp.now(tz="UTC").isoformat(timespec="seconds"),
+            "signals": [{"name": s.name, "description": s.description, "status": s.status, "detail": s.detail}
+                        for s in signals]}, indent=1), encoding="utf-8")
     n_fail = sum(s.status == "FAIL" for s in signals)
     if n_fail:
-        print(f"OVERALL: FAIL --{n_fail}/{len(signals)} signals failed. Do not trust ticker-keyed history "
-              f"(fact_price/fact_marketcap, silver copies) until repaired.")
+        print(f"OVERALL: FAIL --{n_fail}/{len(signals)} signals failed.")
         return 1
     print("OVERALL: PASS" + (" (with INDETERMINATEs)" if any(s.status == "INDETERMINATE" for s in signals) else ""))
     return 0
+
+
+# ----------------------------------------------------------------------------------
+# Mode: freshness
+# ----------------------------------------------------------------------------------
+#
+# Content freshness (max date in the data, never file mtime: the nightly export re-uploads
+# unchanged files with a fresh timestamp). fact_markets_snapshot froze 2026-08-04..09-18 with no
+# alert because Step 0 failures were log-only. SLA = max allowed age in days of the newest row.
+
+_FRESHNESS_SLA_DAYS = {
+    "fact_price.parquet": 1,
+    "fact_marketcap.parquet": 1,
+    "fact_volume.parquet": 1,
+    "silver_fact_price.parquet": 1,
+    "silver_fact_marketcap.parquet": 1,
+    "silver_fact_funding.parquet": 2,
+    "fact_markets_snapshot.parquet": 2,
+}
+
+
+def _run_freshness_mode(args: argparse.Namespace) -> list[SignalResult]:
+    lake = Path(args.lake_dir) if args.lake_dir else data_lake_root()
+    today = date.today() if not args.asof else date.fromisoformat(args.asof)
+    signals = []
+    for i, (fname, sla) in enumerate(_FRESHNESS_SLA_DAYS.items(), start=1):
+        name, desc = f"F{i}", f"{fname.removesuffix('.parquet')} <= {sla}d old"
+        path = lake / fname
+        if not path.exists():
+            signals.append(SignalResult(name, desc, "FAIL", f"{path} missing"))
+            continue
+        last = pd.to_datetime(pd.read_parquet(path, columns=["date"])["date"]).max().date()
+        age = (today - last).days
+        status = "PASS" if age <= sla else "FAIL"
+        signals.append(SignalResult(name, desc, status, f"newest row {last} ({age}d old, SLA {sla}d)"))
+    return signals
 
 
 # ----------------------------------------------------------------------------------
@@ -552,7 +598,8 @@ def _run_asset_identity_mode(args: argparse.Namespace) -> int:
 
 _MODES = {
     "writer_race": lambda args: _run_writer_race_mode(),
-    "asset_identity": _run_asset_identity_mode,
+    "asset_identity": lambda args: _report("asset_identity", _run_asset_identity_mode(args), args.json_out),
+    "freshness": lambda args: _report("freshness", _run_freshness_mode(args), args.json_out),
 }
 
 
@@ -561,11 +608,13 @@ def main() -> int:
     p.add_argument("--mode", required=True, choices=sorted(_MODES.keys()),
                    help="Verification mode. Add new modes as new incident classes surface.")
     p.add_argument("--lake-dir", default=None,
-                   help="asset_identity: lake directory to check (default data_lake_root(); "
+                   help="asset_identity/freshness: lake directory to check (default data_lake_root(); "
                         "e.g. the Drive Desktop mirror 'G:/My Drive/Render Exports').")
     p.add_argument("--since", default=None,
                    help=f"asset_identity: first date checked by A3/A4 (default {_ASSET_IDENTITY_SINCE}).")
     p.add_argument("--offline", action="store_true", help="asset_identity: skip the Binance comparison (A3).")
+    p.add_argument("--asof", default=None, help="freshness: evaluate as of YYYY-MM-DD (default today).")
+    p.add_argument("--json-out", default=None, help="asset_identity/freshness: also write results as JSON here.")
     args = p.parse_args()
     return _MODES[args.mode](args)
 
