@@ -136,6 +136,16 @@ def main() -> int:
             )
             if not ok:
                 logger.warning("Step 0 (market snapshot) failed — continuing pipeline.")
+                # Non-fatal, but never silent: a log-only warning let fact_markets_snapshot
+                # freeze for 45 days (2026-08-05..09-18) while every other table stayed fresh.
+                try:
+                    from src.notifications.telegram_client import send_telegram_text
+                    send_telegram_text(
+                        "⚠️ Step 0 (fact_markets_snapshot) FAILED — pipeline continued, snapshot "
+                        "not updated today. Check Render logs for scripts/fetch_high_priority_data.py."
+                    )
+                except Exception:
+                    logger.exception("Could not send Step 0 failure alert.")
 
         # ------------------------------------------------------------------
         # Step 0.5 — Perp Listings Snapshot (Hyperliquid + Variational)
