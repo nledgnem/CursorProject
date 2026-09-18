@@ -124,3 +124,17 @@ def test_returns_do_not_bridge_a_quarantine_gap(lake):
     assert get_close_asof(px, "AAA", date(2026, 3, 8), max_age_days=None)[0] == date(2026, 3, 4)   # old behaviour
     rets = compute_alt_constituent_simple_returns(px, ["AAA", "BBB"], date(2026, 3, 8), date(2026, 3, 12))
     assert "AAA" not in rets and "BBB" in rets
+
+
+def test_acceptance_gate_sees_a_consistent_quarantine_and_keeps_the_incident_open(lake):
+    import scripts.verify_ingestion_integrity as v
+    x = {s.name: s for s in v._x_signals(lake)}
+    assert x["X1"].status == "PASS"                     # repo allowlist refresh is frozen
+    assert x["X3"].status == "PASS"                     # no March re-injection signature here
+    assert x["X4"].status == "PASS" and "0 reappeared" in x["X4"].detail
+    assert x["X5"].status == "INDETERMINATE"            # no decision log / frozen record -> not closable
+    # a quarantined row sneaking back into the fact table is caught
+    px = pd.read_parquet(lake / "fact_price.parquet")
+    back = pd.DataFrame({"asset_id": ["AAA"], "date": [Q_AAA[0].date()], "close": [1.0], "source": ["coingecko"]})
+    pd.concat([px, back]).to_parquet(lake / "fact_price.parquet", index=False)
+    assert {s.name: s for s in v._x_signals(lake)}["X4"].status == "FAIL"

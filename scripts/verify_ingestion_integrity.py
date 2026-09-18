@@ -9,6 +9,7 @@ Usage:
     python scripts/verify_ingestion_integrity.py --mode writer_race
     python scripts/verify_ingestion_integrity.py --mode asset_identity [--lake-dir DIR] [--since YYYY-MM-DD] [--offline]
     python scripts/verify_ingestion_integrity.py --mode freshness [--lake-dir DIR] [--json-out PATH]
+    python scripts/verify_ingestion_integrity.py --mode identity_acceptance [--lake-dir DIR]   # incident closing gate
     python scripts/verify_ingestion_integrity.py --mode <future-mode>
 
 Exit codes:
@@ -656,6 +657,82 @@ def _run_freshness_mode(args: argparse.Namespace) -> list[SignalResult]:
 
 
 # ----------------------------------------------------------------------------------
+# Mode: identity_acceptance
+# ----------------------------------------------------------------------------------
+#
+# Closing gate for the 2026-09-18 asset-identity incident: every asset_identity and freshness
+# signal plus X1-X5 below. Unlike the other modes an INDETERMINATE keeps the incident open --
+# acceptance needs positive evidence, not the absence of a failure.
+#   X1  allowlist refresh still frozen (until the guarded refresh is approved)
+#   X2  nightly lake-integrity monitor ran within 36h (Render marker file)
+#   X3  2026-03 corruption gone: no asset jumps >3x into 2026-03-04 and back out on 2026-03-31
+#   X4  quarantine consistent: quarantine_fact_identity.parquet exists and none of its keys are
+#       back in the fact tables
+#   X5  decision records kept: msm_decision_log.csv and a frozen pre-repair msm_timeseries exist
+
+def _x_signals(lake: Path) -> list[SignalResult]:
+    import yaml
+    out = []
+    iu = yaml.safe_load((_REPO_ROOT / "data_dictionary.yaml").read_text(encoding="utf-8"))[
+        "data_sources"]["coingecko"]["ingestion_universe"]
+    out.append(SignalResult("X1", "allowlist refresh frozen", "PASS" if iu.get("refresh_frozen") else "FAIL",
+                            f"refresh_frozen={iu.get('refresh_frozen')}"))
+    marker = Path("/data/.last_lake_integrity_utc_day")
+    if marker.exists():
+        age = (date.today() - date.fromisoformat(marker.read_text(encoding="utf-8").strip())).days
+        out.append(SignalResult("X2", "nightly integrity monitor running", "PASS" if age <= 1 else "FAIL",
+                                f"last run {age}d ago"))
+    else:
+        out.append(SignalResult("X2", "nightly integrity monitor running", "INDETERMINATE",
+                                f"{marker} not found (run on Render)"))
+    p = pd.read_parquet(lake / "fact_price.parquet", columns=["asset_id", "date", "close"])
+    m = pd.read_parquet(lake / "fact_marketcap.parquet", columns=["asset_id", "date", "marketcap"])
+    f = p.merge(m, on=["asset_id", "date"], how="outer")
+    f["date"] = pd.to_datetime(f["date"])
+    edges = pd.to_datetime(["2026-03-03", "2026-03-04", "2026-03-30", "2026-03-31"])
+    w = f[f["date"].isin(edges)]
+    hit = []
+    for col in ("close", "marketcap"):
+        wide = w.pivot_table(index="asset_id", columns="date", values=col).reindex(columns=edges)
+        r_in, r_out = np.log(wide[edges[1]] / wide[edges[0]]).abs(), np.log(wide[edges[3]] / wide[edges[2]]).abs()
+        hit += list(wide.index[(r_in > np.log(3)) & (r_out > np.log(3))])
+    out.append(SignalResult("X3", "2026-03 re-injection gone", "FAIL" if hit else "PASS",
+                            f"{len(set(hit))} assets with the signature: {sorted(set(hit))[:10]}"))
+    q = lake / "quarantine_fact_identity.parquet"
+    if not q.exists():
+        out.append(SignalResult("X4", "quarantine consistent", "INDETERMINATE", "no quarantine table (repair not applied)"))
+    else:
+        qk = pd.read_parquet(q, columns=["asset_id", "date", "table"])
+        qk["date"] = pd.to_datetime(qk["date"])
+        back = 0
+        for table, frame in (("fact_price", p), ("fact_marketcap", m)):
+            keys = pd.MultiIndex.from_frame(qk.loc[qk["table"] == table, ["asset_id", "date"]])
+            fr = frame.assign(date=pd.to_datetime(frame["date"]))
+            back += int(pd.MultiIndex.from_frame(fr[["asset_id", "date"]]).isin(keys).sum())
+        out.append(SignalResult("X4", "quarantine consistent", "FAIL" if back else "PASS",
+                                f"{len(qk)} quarantined rows; {back} reappeared in the fact tables"))
+    logs = [lake / "msm_decision_log.csv", *sorted(lake.glob("msm_timeseries.pre_identity_repair_*.csv"))]
+    have = [x.name for x in logs if x.exists()]
+    out.append(SignalResult("X5", "as-decided records preserved",
+                            "PASS" if len(have) >= 2 and "msm_decision_log.csv" in have else "INDETERMINATE",
+                            f"found: {have or 'none'}"))
+    return out
+
+
+def _run_identity_acceptance(args: argparse.Namespace) -> int:
+    lake = Path(args.lake_dir) if args.lake_dir else data_lake_root()
+    signals = _run_asset_identity_mode(args) + _run_freshness_mode(args) + _x_signals(lake)
+    _print_signal_table(signals)
+    if args.json_out:
+        Path(args.json_out).write_text(json.dumps({"mode": "identity_acceptance", "signals": [
+            {"name": s.name, "description": s.description, "status": s.status, "detail": s.detail} for s in signals]},
+            indent=1), encoding="utf-8")
+    open_items = [s.name for s in signals if s.status != "PASS"]
+    print("INCIDENT CLOSABLE: " + ("YES" if not open_items else f"NO -- not yet PASS: {open_items}"))
+    return 0 if not open_items else 1
+
+
+# ----------------------------------------------------------------------------------
 # Mode dispatch
 # ----------------------------------------------------------------------------------
 
@@ -663,6 +740,7 @@ _MODES = {
     "writer_race": lambda args: _run_writer_race_mode(),
     "asset_identity": lambda args: _report("asset_identity", _run_asset_identity_mode(args), args.json_out),
     "freshness": lambda args: _report("freshness", _run_freshness_mode(args), args.json_out),
+    "identity_acceptance": _run_identity_acceptance,
 }
 
 
