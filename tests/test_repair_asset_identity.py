@@ -58,7 +58,7 @@ def _manifest(tmp_path, lake):
 def _args(lake, man, **kw):
     return argparse.Namespace(lake_dir=str(lake), manifest_dir=str(man), classes=None,
                               skip_changed=kw.get("skip_changed", False), yes=kw.get("yes", True),
-                              include_dim=kw.get("include_dim", False))
+                              include_dim=kw.get("include_dim", False), rekey_snapshot=False)
 
 
 def test_mass_window_signature():

@@ -360,7 +360,9 @@ def cmd_dry_run(args) -> int:
     segs, repl, quar, cg_defects, noise = [], [], [], [], []
     calls = 0
 
-    def add_segment(uid, cg, cls, days, tables, evidence, apply_default, accept, ref):
+    def add_segment(uid, cg, cls, days, tables, evidence, apply_default, accept, ref, status="confirmed"):
+        # status: "confirmed" (evidence says another coin) or "manual_review" (identity uncertain:
+        # quarantined by policy -- missing, not a best guess -- until someone resolves it).
         sid = f"{uid}:{days[0].date()}:{days[-1].date()}:{tables}"
         n_rep = n_q = 0
         cols = FACT_TABLES if tables == "all" else {"fact_marketcap": "marketcap", "fact_volume": "volume"}
@@ -372,12 +374,14 @@ def cmd_dry_run(args) -> int:
                     repl.append({"seg_id": sid, "asset_id": uid, "date": d, "table": t, "value": float(v)})
                     n_rep += 1
                 else:
-                    quar.append({"seg_id": sid, "asset_id": uid, "date": d, "table": t, "reason": evidence})
+                    quar.append({"seg_id": sid, "asset_id": uid, "date": d, "table": t, "reason": evidence,
+                                 "status": status})
                     n_q += 1
         segs.append({"seg_id": sid, "asset_uid": uid, "coingecko_id": cg, "class": cls, "tables": tables,
                      "start": days[0].date(), "end": days[-1].date(), "n_days": len(days),
                      "n_rows_replace": n_rep, "n_rows_quarantine": n_q, "evidence": evidence,
-                     "apply_default": apply_default, "before_hash": _segment_hash(grouped, uid, days)})
+                     "apply_default": apply_default, "status": status,
+                     "before_hash": _segment_hash(grouped, uid, days)})
 
     for i, uid in enumerate(todo):
         cg = ids[uid]
@@ -426,7 +430,8 @@ def cmd_dry_run(args) -> int:
             brk = not _near(last_lake, r.loc[first_ref, "close"], 3.0)
             add_segment(uid, cg, "predates_coin", days, "all",
                         f"lake rows before CoinGecko history of {cg} starts ({first_ref.date()}); "
-                        f"hand-over break {'>3x' if brk else '<=3x'}", brk, {}, None)
+                        f"hand-over break {'>3x' if brk else '<=3x'}", True, {}, None,
+                        status="confirmed" if brk else "manual_review")
             # The old coin often continues past first_ref until the allowlist switched. Those rows
             # are identified by continuity with the quarantined old-coin series (not by disagreeing
             # with CoinGecko, whose history can itself be >3x off): lake within 1.5x of the last
@@ -443,7 +448,8 @@ def cmd_dry_run(args) -> int:
             if tail:
                 add_segment(uid, cg, "predates_coin_tail", tail, "all",
                             f"old coin continues past {first_ref.date()} (continuous with the quarantined "
-                            f"series, >3x from {cg})", brk, {}, None)
+                            f"series, >3x from {cg})", True, {}, None,
+                            status="confirmed" if brk else "manual_review")
         mc_wrong = ~px_wrong & in_mw & sig_mc
         # the lake agrees with Binance but CoinGecko's current history does not: evidence that a
         # re-fetch is not a safe repair source by itself (reported, never applied)
@@ -511,11 +517,26 @@ def cmd_dry_run(args) -> int:
         row = {"asset_uid": uid, "coingecko_id": ids[uid], "old_coin_from": start.date(), "n_days": len(pre),
                "pre_gap_vs_coingecko": gap_pre, "post_gap_vs_coingecko": gap_post}
         if pd.notna(gap_pre) and gap_pre > REBIND_MIN_GAP and pd.notna(gap_post) and gap_post <= 1.5:
+            # The old coin's own >3x moves (e.g. a pump) must not cut the run short: walk back from
+            # 01-27 while the lake stays >25x off the new coin, or the new coin has no history yet.
+            before = l.loc[:REBIND_DATE - pd.Timedelta(days=1)]
+            far = np.log(before / ref.reindex(before.index)).abs()
+            old_coin = (far.isna() | (far > np.log(REBIND_MIN_GAP))).values
+            k = len(before)
+            while k > 0 and old_coin[k - 1]:
+                k -= 1
+            pre = before.iloc[min(k, len(before) - len(pre)):]
+            pre = pre[~pre.index.isin(list(covered_days.get(uid, ())))]
             add_segment(uid, ids[uid], "rebinding_2026_01_28", list(pre.index), "all",
                         f"ticker re-bound {REBIND_DATE.date()}: before it {gap_pre:,.0f}x off {ids[uid]}, after it "
                         f"{gap_post:.2f}x; old coin quarantined", True, {}, None)
         else:
             rebind_review.append(row)
+            # Uncertain identity is missing data, not a best guess (decision 2026-09-18).
+            add_segment(uid, ids[uid], "rebinding_2026_01_28_ambiguous", list(pre.index), "all",
+                        f"ticker re-bound {REBIND_DATE.date()}; identity before it uncertain (gap vs {ids[uid]} "
+                        f"{gap_pre:,.2f}x before, {gap_post:,.2f}x after) -- manual review", True, {}, None,
+                        status="manual_review")
 
     # Pre-window history: Binance-evidenced wrong-coin runs cannot be re-fetched -> quarantine.
     for uid, rows in reg_by.items():
@@ -572,6 +593,10 @@ def cmd_dry_run(args) -> int:
         _write_dim_like(after, lake / f"{table}.parquet", path)
         summary["tables"][table] = {"rows": len(after), "note": note, "sha256_before": _file_sha256(lake / f"{table}.parquet"),
                                     "sha256_after": _file_sha256(path)}
+    snap = lake / "fact_markets_snapshot.parquet"
+    if snap.exists():
+        summary["tables"]["fact_markets_snapshot"] = {"rekey": _rekey_snapshot(snap),
+                                                      "sha256_before": _file_sha256(snap)}
     (out / "summary.json").write_text(json.dumps(summary, indent=1, default=str))
     print(json.dumps(summary, indent=1, default=str))
     return 0
@@ -599,6 +624,35 @@ def _write_dim_like(df: pd.DataFrame, template: Path, path: Path) -> None:
     tmp = path.with_suffix(".parquet.tmp")
     pq.write_table(pa.Table.from_pandas(df[schema.names], schema=schema, preserve_index=False), tmp)
     tmp.replace(path)
+
+
+def _rekey_snapshot(path: Path, out_path: Path | None = None) -> dict:
+    """Re-stamp fact_markets_snapshot.asset_id from coingecko_id via the registry (else 'CG:<id>').
+    The old stamps came from the placeholder dim_asset or the ticker, so real Bitcoin carried the
+    memecoin uid 'BITCOIN' and Toncoin became 'GRAM' when CoinGecko renamed its ticker -- one uid
+    meaning two assets. Deterministic, so apply recomputes it on the live file. Writes only if
+    out_path is given; returns stats."""
+    from src.data_lake.asset_registry import coingecko_to_uid, load_registry, snapshot_asset_id
+    table = pq.read_table(path)
+    df = table.select(["asset_id", "coingecko_id"]).to_pandas()
+    cg_to_uid = coingecko_to_uid(load_registry())
+    new_ids = df["coingecko_id"].map(lambda c: snapshot_asset_id(c, cg_to_uid))
+    changed = df["asset_id"] != new_ids
+    ex = df.assign(new=new_ids)[changed].drop_duplicates(["coingecko_id", "asset_id"])
+    stats = {"rows": int(len(df)), "rows_rekeyed": int(changed.sum()),
+             "coins_rekeyed": int(df.loc[changed, "coingecko_id"].nunique()),
+             "examples": {r.coingecko_id: f"{r.asset_id}->{r.new}" for r in ex[ex["coingecko_id"].isin(
+                 ["bitcoin", "the-open-network", "gram-2", "harrypotterobamasonic10in", "tokamak-network"])].itertuples()},
+             "uids_holding_two_coins_on_one_date_after": int(
+                 pd.DataFrame({"d": table.column("date").to_pandas(), "u": new_ids, "c": df["coingecko_id"]})
+                 .groupby(["d", "u"])["c"].nunique().gt(1).sum())}
+    if out_path is not None:
+        idx = table.schema.get_field_index("asset_id")
+        table = table.set_column(idx, table.schema.field("asset_id"), pa.array(new_ids.tolist(), type=pa.string()))
+        tmp = Path(out_path).with_suffix(".parquet.tmp")
+        pq.write_table(table, tmp)
+        tmp.replace(out_path)
+    return stats
 
 
 def _apply_to_frame(before: pd.DataFrame, table: str, col: str, repl: pd.DataFrame, quar: pd.DataFrame,
@@ -685,6 +739,10 @@ def cmd_apply(args) -> int:
             qdf = pd.concat([pd.read_parquet(qpath), qdf], ignore_index=True)
         qdf.assign(date=pd.to_datetime(qdf["date"]).dt.date).to_parquet(qpath, index=False)
         print(f"quarantine -> {qpath} ({len(qdf)} rows total)")
+    if args.rekey_snapshot:
+        snap = lake / "fact_markets_snapshot.parquet"
+        shutil.copy2(snap, backup / "fact_markets_snapshot.parquet")
+        print(f"  fact_markets_snapshot: {_rekey_snapshot(snap, out_path=snap)}")
     if args.include_dim:
         for t in ("dim_asset", "map_provider_asset"):
             shutil.copy2(lake / f"{t}.parquet", backup / f"{t}.parquet")
@@ -720,6 +778,8 @@ def main() -> int:
     a.add_argument("--classes", default=None, help="comma list of segment classes (default: apply_default)")
     a.add_argument("--skip-changed", action="store_true")
     a.add_argument("--yes", action="store_true")
+    a.add_argument("--rekey-snapshot", action="store_true",
+                   help="also re-stamp fact_markets_snapshot.asset_id from coingecko_id via the registry")
     a.add_argument("--include-dim", action="store_true",
                    help="also install candidate dim_asset / map_provider_asset (registry CoinGecko ids)")
     args = p.parse_args()
