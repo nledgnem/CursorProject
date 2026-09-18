@@ -358,6 +358,19 @@ def main() -> None:
             except Exception:
                 logging.exception("Panel generation failed (non-fatal).")
 
+            # As-decided MSM record (non-fatal): append today's decision to an append-only log in
+            # the lake before the export. msm_timeseries.csv is recomputed over 730 days every night,
+            # so its past rows are not what the system said at the time (incident 2026-09-18).
+            try:
+                sys.path.insert(0, str(REPO_ROOT / "scripts"))
+                from msm_decision_record import latest_timeseries, log_today
+                from repo_paths import data_lake_root
+
+                log_today(latest_timeseries(REPO_ROOT / "reports" / "msm_funding_v0"),
+                          data_lake_root() / "msm_decision_log.csv")
+            except Exception:
+                logging.exception("MSM decision log append failed (non-fatal).")
+
             # Nightly export hook (non-fatal): runs once per UTC day after successful pipeline.
             try:
                 from src.exports.nightly_export import run as run_nightly_export
