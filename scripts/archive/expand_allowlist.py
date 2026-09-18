@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Expand allowlist by fetching top coins from CoinGecko."""
 
+import os
 import sys
 import requests
 import time
@@ -82,8 +83,26 @@ def fetch_top_coins(n: int = 1000, min_mcap: int = 1000000) -> pd.DataFrame:
     return df
 
 
+def refresh_frozen_reason() -> "str | None":
+    """The freeze reason from data_dictionary.yaml, or None when the refresh is allowed.
+
+    The ingestion_universe block's refresh_frozen flag is the single source of truth; the
+    heartbeat reminder reads the same flag. ALLOWLIST_REFRESH_UNFROZEN=1 overrides it.
+    """
+    if os.environ.get("ALLOWLIST_REFRESH_UNFROZEN") == "1":
+        return None
+    import yaml
+    cfg = yaml.safe_load((Path(__file__).resolve().parents[2] / "data_dictionary.yaml").read_text(encoding="utf-8"))
+    iu = cfg.get("data_sources", {}).get("coingecko", {}).get("ingestion_universe") or {}
+    return str(iu.get("refresh_frozen_reason") or "refresh frozen") if iu.get("refresh_frozen") else None
+
+
 def expand_allowlist(output_path: Path, n: int = 1000, min_mcap: int = 1000000):
     """Expand allowlist with top coins from CoinGecko."""
+    frozen = refresh_frozen_reason()
+    if frozen:
+        raise SystemExit(f"[FROZEN] Allowlist refresh is frozen (data_dictionary.yaml ingestion_universe."
+                         f"refresh_frozen): {frozen.strip()}")
     # Fetch coins
     coins_df = fetch_top_coins(n=n, min_mcap=min_mcap)
     

@@ -109,6 +109,10 @@ def _check_and_alert_allowlist_refresh() -> None:
         if iu is None:
             # Block doesn't exist (yet) — nothing to remind about. Silent.
             return
+        if iu.get("refresh_frozen"):
+            # Refresh frozen (asset-identity incident 2026-09-18): nagging to run a
+            # refresh that must not run would be wrong. See refresh_frozen_reason.
+            return
         next_due = iu.get("next_refresh_due")
         last_refresh = iu.get("last_refresh")
         if next_due is None or last_refresh is None:

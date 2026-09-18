@@ -112,9 +112,20 @@ data_sources:
         is_unique asserted before write. Phase B writer-race defenses are
         active in both the builder and the loader.
       current_size: 977  # post-Phase-E top-1000 cut on 2026-05-05
-      refresh_cadence: quarterly_manual  # NOT dynamic_daily_rebuild
+      refresh_cadence: frozen  # was quarterly_manual; see refresh_frozen below
       last_refresh: 2026-05-05
-      next_refresh_due: 2026-08-05
+      next_refresh_due: null  # was 2026-08-05; null while frozen (silences the heartbeat reminder)
+      refresh_frozen: true
+      refresh_frozen_since: 2026-09-18
+      refresh_frozen_reason: >
+        [DECISION 2026-09-18] Asset-identity incident
+        (reports/incidents/2026-09-18_asset_identity/README.md). The builder binds each
+        symbol to the highest-market-cap CoinGecko coin with no Binance check, so a refresh
+        silently re-points tickers to other coins and splices their history (e.g. Toncoin's
+        CoinGecko ticker is now GRAM, so TON would re-bind to Tokamak Network). Frozen until
+        the refresh keys on data/asset_registry.csv (immutable asset_uid, effective-dated
+        coingecko_id / binance_symbol) with price validation. expand_allowlist.py refuses to
+        write while this flag is true.
       refresh_runbook: docs/runbooks/allowlist_refresh.md
       reminder_mechanism: >
         system_heartbeat.py fires a once-per-day Telegram alert after
