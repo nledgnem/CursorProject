@@ -52,6 +52,7 @@ FACT_TABLES = {"fact_price": "close", "fact_marketcap": "marketcap", "fact_volum
 REGISTRY_PATH = REPO_ROOT / "data" / "asset_registry.csv"
 ALLOWLIST_PATH = REPO_ROOT / "data" / "perp_allowlist.csv"
 PRE_CUT_ALLOWLIST_PATH = REPO_ROOT / "data" / "perp_allowlist.2716_pre_universe_cut.bak.csv"
+OVERRIDES_PATH = REPO_ROOT / "data" / "asset_registry_overrides.csv"
 RECOVERABLE_DAYS = 725          # CoinGecko Basic depth is 730d; fetch_price_history pads the start by 2 days
 MASS_WINDOW = (pd.Timestamp("2026-03-04"), pd.Timestamp("2026-03-30"))
 SHORT_SEGMENT_DAYS = 7
@@ -250,7 +251,22 @@ def cmd_registry(args) -> int:
         for bnd in bind.get(a.symbol.upper(), [None]):
             rows.append({**base, **(bnd or {"binance_symbol": None, "binance_multiplier": None, "valid_from": None,
                                             "valid_to": None, "evidence": "no Binance USDT perp validated"})})
-    reg = pd.DataFrame(rows).sort_values(["asset_uid", "valid_from"], na_position="first")
+    reg = pd.DataFrame(rows)
+    # Manual, evidence-backed decisions (data/asset_registry_overrides.csv): new uids for perps whose
+    # coin differs from the lake asset holding that ticker, and bindings price data alone could not
+    # confirm. Each needs >= 2 strong identity forms (Binance contract/announcement, CoinGecko
+    # contract, rebrand record, price); see data/asset_registry_conflict_resolutions.csv.
+    if OVERRIDES_PATH.exists():
+        ov = pd.read_csv(OVERRIDES_PATH, encoding="utf-8")
+        act = reg.drop_duplicates("asset_uid").set_index("asset_uid")["active"]
+        ov["active"] = ov["active"].where(ov["active"].notna(), ov["asset_uid"].map(act)).fillna(False).astype(bool)
+        ov = ov.assign(cg_valid_from=None, cg_valid_to=None)
+        bound_uids = set(ov["asset_uid"])
+        reg = reg[~(reg["asset_uid"].isin(bound_uids) & reg["binance_symbol"].isna())]   # drop 'no perp' placeholders
+        reg = pd.concat([reg, ov[reg.columns]], ignore_index=True).drop_duplicates(["asset_uid", "binance_symbol"])
+        resolved = set(ov["binance_symbol"])
+        conflicts = [c for c in conflicts if c["binance_symbol"] not in resolved]
+    reg = reg.sort_values(["asset_uid", "valid_from"], na_position="first")
     dup = reg.dropna(subset=["binance_symbol"]).groupby("binance_symbol")["asset_uid"].nunique()
     assert (dup <= 1).all(), f"a Binance symbol bound to several uids: {dup[dup > 1].to_dict()}"
     reg.to_csv(args.registry_out, index=False)

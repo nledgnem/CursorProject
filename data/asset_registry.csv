@@ -173,6 +173,7 @@ ARA,ara,False,,,,,,,no Binance USDT perp validated
 ARARA,araracoin,False,,,,,,,no Binance USDT perp validated
 ARB,arbitrum,True,,,ARBUSDT,1.0,2023-03-23,,"ticker match; vs CoinGecko arbitrum: 728 days, median gap 0.10%"
 ARC,ai-rig-complex,True,,,ARCUSDT,1.0,2025-01-17,,"ticker match; vs CoinGecko ai-rig-complex: 609 days, median gap 0.27%"
+ARCIUM,arcium,False,,,ARXUSDT,1.0,2026-06-23,,"Binance listing 'ARX (Arcium)', token-info contracts = CoinGecko arcium platforms; price; decision 2026-09-18; evidence in data/asset_registry_conflict_resolutions.csv"
 ARDR,ardor,True,,,,,,,no Binance USDT perp validated
 ARENA,the-arena,False,,,,,,,no Binance USDT perp validated
 ARG,argentine-football-association-fan-token,False,,,,,,,no Binance USDT perp validated
@@ -421,6 +422,7 @@ BTY,bityuan,True,,,,,,,no Binance USDT perp validated
 BUCK,bucket-protocol-buck-stablecoin,True,,,,,,,no Binance USDT perp validated
 BUCKY,bucky-2,False,,,,,,,no Binance USDT perp validated
 BUIDL,blackrock-usd-institutional-digital-liquidity-fund,True,,,,,,,no Binance USDT perp validated
+BUILD-ON-BNB,build-on-bnb,False,,,1000000BOBUSDT,1000000.0,2025-06-05,,Binance 2025-06-04 listing 'Build On BNB (BOB)' contract 0x51363F07 = CoinGecko build-on-bnb BSC contract; price; decision 2026-09-18; evidence in data/asset_registry_conflict_resolutions.csv
 BULLA,bulla-3,False,,,BULLAUSDT,1.0,2025-07-04,,"ticker match; vs CoinGecko bulla-3: 441 days, median gap 0.67%"
 BULLISH,bullish-degen,False,,,,,,,no Binance USDT perp validated
 BUNDLE,village,False,,,,,,,no Binance USDT perp validated
@@ -482,7 +484,7 @@ CFG,centrifuge-2,True,,,CFGUSDT,1.0,2026-03-16,,"ticker match; vs CoinGecko cent
 CFX,conflux-token,True,,,CFXUSDT,1.0,2023-02-19,,"ticker match; vs CoinGecko conflux-token: 728 days, median gap 0.09%"
 CGN,cygnus-2,False,,,,,,,no Binance USDT perp validated
 CGO,comtech-gold,False,,,,,,,no Binance USDT perp validated
-CGPT,chaingpt,True,,,,,,,no Binance USDT perp validated
+CGPT,chaingpt,True,,,CGPTUSDT,1.0,2024-12-20,,"Binance 2024-12-20 listing 'ChainGPT (CGPT)', 3 contracts = CoinGecko chaingpt; price 0.19% median gap; decision 2026-09-18; evidence in data/asset_registry_conflict_resolutions.csv"
 CGUSD,cygnus-finance-global-usd,True,,,,,,,no Binance USDT perp validated
 CHAIN,chain-games,False,,,,,,,no Binance USDT perp validated
 CHDD,chedda-3,False,,,,,,,no Binance USDT perp validated
@@ -857,6 +859,8 @@ FOXSY,foxsy-ai,False,,,,,,,no Binance USDT perp validated
 FOXY,foxy,False,,,,,,,no Binance USDT perp validated
 FPIS,frax-price-index-share,False,,,,,,,no Binance USDT perp validated
 FRAX,frax,True,,,,,,,no Binance USDT perp validated
+FRAX-SHARE,frax-share,False,,,FXSUSDT,1.0,2023-01-19,2026-01-05,"Frax Share traded as FXS until the 1 FXS = 1 FRAX rebrand (Binance notices 2025-12-26, 2026-01-15); decision 2026-09-18; evidence in data/asset_registry_conflict_resolutions.csv"
+FRAX-SHARE,frax-share,False,,,FRAXUSDT,1.0,2026-01-15,,Binance token-info FRAX contracts = 'Frax (prev. FXS)' = CoinGecko frax-share; rebrand notices; price; decision 2026-09-18; evidence in data/asset_registry_conflict_resolutions.csv
 FREYA,freya-by-virtuals,False,,,,,,,no Binance USDT perp validated
 FRIEND,friend-tech,False,,,,,,,no Binance USDT perp validated
 FROG,just-a-frog,True,,,,,,,no Binance USDT perp validated
@@ -2366,6 +2370,7 @@ TRADE,polytrade,False,,,,,,,no Binance USDT perp validated
 TRADOOR,tradoor,False,,,TRADOORUSDT,1.0,2025-09-19,,"ticker match; vs CoinGecko tradoor: 364 days, median gap 0.35%"
 TRB,tellor,True,,,TRBUSDT,1.0,2020-09-03,,"ticker match; vs CoinGecko tellor: 728 days, median gap 0.09%"
 TREE,tree-capital,True,,,,,,,no Binance USDT perp validated
+TREEHOUSE,treehouse,False,,,TREEUSDT,1.0,2025-07-29,,Binance listing/asset list 'Treehouse' contract 0x77146784 = CoinGecko treehouse; price; decision 2026-09-18; evidence in data/asset_registry_conflict_resolutions.csv
 TRIA,tria,True,,,TRIAUSDT,1.0,2026-02-06,,"ticker match; vs CoinGecko tria: 224 days, median gap 0.29%"
 TRIAS,trias-token,False,,,,,,,no Binance USDT perp validated
 TRIBE,tribe-2,False,,,,,,,no Binance USDT perp validated
@@ -2838,7 +2843,7 @@ ZRO,layerzero,True,,,ZROUSDT,1.0,2024-06-20,,"ticker match; vs CoinGecko layerze
 ZRX,0x,True,,,ZRXUSDT,1.0,2020-06-24,,"ticker match; vs CoinGecko 0x: 728 days, median gap 0.15%"
 ZYPTO,french-connection-finance,False,,,,,,,no Binance USDT perp validated
 修仙,xiuxian,False,,,,,,,no Binance USDT perp validated
-哈基米,hakimi,False,,,,,,,no Binance USDT perp validated
+哈基米,hakimi,False,,,哈基米USDT,1.0,2026-09-06,,Binance 2026-09-06 listing '哈基米 (Hajimi)'; index 70% Binance Alpha BSC 0x82ec31d6 = CoinGecko hakimi; price; decision 2026-09-18; evidence in data/asset_registry_conflict_resolutions.csv
 客服小何,customer-service-xiao-he,False,,,,,,,no Binance USDT perp validated
 币安人生,bianrensheng,True,,,币安人生USDT,1.0,2025-10-20,,"ticker match; vs CoinGecko bianrensheng: 333 days, median gap 0.18%"
 恶俗企鹅,vulgar-penguin,False,,,,,,,no Binance USDT perp validated
