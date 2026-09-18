@@ -125,7 +125,9 @@ def download_incremental_wide_format(
     Download new data and merge with existing wide format DataFrames.
     
     Returns:
-        Tuple of (merged_prices, merged_mcaps, merged_volumes)
+        ((merged_prices, merged_mcaps, merged_volumes), (new_prices, new_mcaps, new_volumes)).
+        The merged frames are the wide convenience files; only the new (downloaded this run)
+        frames may be converted into fact rows -- see main().
     """
     # Download new data (this will create new files, but we'll merge)
     print(f"  Downloading data from {start_date} to {end_date}...")
@@ -166,7 +168,14 @@ def download_incremental_wide_format(
     else:
         merged_volumes = new_volumes
     
-    return merged_prices, merged_mcaps, merged_volumes
+    return (merged_prices, merged_mcaps, merged_volumes), (new_prices, new_mcaps, new_volumes)
+
+
+def _rows_from(wide_df: pd.DataFrame, start_date: date) -> pd.DataFrame:
+    """Rows of a date-indexed wide frame on or after start_date (empty frames pass through)."""
+    if wide_df.empty:
+        return wide_df
+    return wide_df[wide_df.index >= pd.Timestamp(start_date)]
 
 
 def append_to_fact_table(
@@ -354,7 +363,7 @@ def main():
         print(f"  Loaded existing volumes: {len(existing_volumes)} days")
     
     # Download and merge wide format
-    merged_prices, merged_mcaps, merged_volumes = download_incremental_wide_format(
+    (merged_prices, merged_mcaps, merged_volumes), (fresh_prices, fresh_mcaps, fresh_volumes) = download_incremental_wide_format(
         allowlist_path=allowlist_path,
         start_date=start_date,
         end_date=end_date,
@@ -385,10 +394,14 @@ def main():
     existing_fact_mcap = pd.read_parquet(fact_mcap_path) if fact_mcap_path.exists() else pd.DataFrame()
     existing_fact_volume = pd.read_parquet(fact_volume_path) if fact_volume_path.exists() else pd.DataFrame()
     
-    # Only convert new data (filter wide format to new dates)
-    new_prices_wide = merged_prices[merged_prices.index >= pd.Timestamp(start_date)]
-    new_mcaps_wide = merged_mcaps[merged_mcaps.index >= pd.Timestamp(start_date)]
-    new_volumes_wide = merged_volumes[merged_volumes.index >= pd.Timestamp(start_date)]
+    # Only convert what was downloaded in THIS run. The merged frames prefer the existing wide
+    # values (combine_first), and on Render the existing wide files under data/curated are
+    # re-seeded from git on every deploy. Converting merged rows let a run starting 2026-03-04
+    # upsert the committed 599e5cb values (another coin for 72 assets, ETH/SOL/DOGE caps ~$2M)
+    # over 2026-03-04..30 in the fact tables -- asset-identity incident, 2026-09-18.
+    new_prices_wide = _rows_from(fresh_prices, start_date)
+    new_mcaps_wide = _rows_from(fresh_mcaps, start_date)
+    new_volumes_wide = _rows_from(fresh_volumes, start_date)
     
     # Track incremental update metrics
     rows_appended_per_table = {}

@@ -1,0 +1,8 @@
+asset_uid,coingecko_id,binance_symbol,binance_multiplier,valid_from,valid_to,active,evidence
+BUILD-ON-BNB,build-on-bnb,1000000BOBUSDT,1000000.0,2025-06-05,,False,Binance 2025-06-04 listing 'Build On BNB (BOB)' contract 0x51363F07 = CoinGecko build-on-bnb BSC contract; price; decision 2026-09-18; evidence in data/asset_registry_conflict_resolutions.csv
+ARCIUM,arcium,ARXUSDT,1.0,2026-06-23,,False,"Binance listing 'ARX (Arcium)', token-info contracts = CoinGecko arcium platforms; price; decision 2026-09-18; evidence in data/asset_registry_conflict_resolutions.csv"
+TREEHOUSE,treehouse,TREEUSDT,1.0,2025-07-29,,False,Binance listing/asset list 'Treehouse' contract 0x77146784 = CoinGecko treehouse; price; decision 2026-09-18; evidence in data/asset_registry_conflict_resolutions.csv
+FRAX-SHARE,frax-share,FXSUSDT,1.0,2023-01-19,2026-01-05,False,"Frax Share traded as FXS until the 1 FXS = 1 FRAX rebrand (Binance notices 2025-12-26, 2026-01-15); decision 2026-09-18; evidence in data/asset_registry_conflict_resolutions.csv"
+FRAX-SHARE,frax-share,FRAXUSDT,1.0,2026-01-15,,False,Binance token-info FRAX contracts = 'Frax (prev. FXS)' = CoinGecko frax-share; rebrand notices; price; decision 2026-09-18; evidence in data/asset_registry_conflict_resolutions.csv
+CGPT,chaingpt,CGPTUSDT,1.0,2024-12-20,,,"Binance 2024-12-20 listing 'ChainGPT (CGPT)', 3 contracts = CoinGecko chaingpt; price 0.19% median gap; decision 2026-09-18; evidence in data/asset_registry_conflict_resolutions.csv"
+哈基米,hakimi,哈基米USDT,1.0,2026-09-06,,,Binance 2026-09-06 listing '哈基米 (Hajimi)'; index 70% Binance Alpha BSC 0x82ec31d6 = CoinGecko hakimi; price; decision 2026-09-18; evidence in data/asset_registry_conflict_resolutions.csv

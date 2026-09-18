@@ -1,0 +1,2 @@
+binance_symbol,ticker_asset_uid,uid_coingecko_id,why_not_bound,proposed_coingecko_id,resolution
+PUMPBTCUSDT,PUMPBTC,pumpbtc,"ticker match: 285 overlapping days, median gap 294548491.1%",,0 of 1 candidates match the price

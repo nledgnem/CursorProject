@@ -1,0 +1,42 @@
+{
+ "mode": "asset_identity",
+ "run_utc": "2026-09-18T12:15:55+00:00",
+ "signals": [
+  {
+   "name": "A1",
+   "description": "dim_asset.coingecko_id = fetched id",
+   "status": "FAIL",
+   "detail": "714/851 allowlisted assets carry a different id, e.g. 0G:0g->zero-gravity, 2Z:2z->doublezero, A:a->vaulta, AB:ab->newton-project, ABT:abt->arcblock, ACH:ach->alchemy-pay, ACRED:acred->apollo-diversified-credit-securitize-fund, ACX:acx->across-protocol"
+  },
+  {
+   "name": "A2",
+   "description": "no unacknowledged slug collisions",
+   "status": "PASS",
+   "detail": "11 acknowledged by policy: ['ALLO', 'BITCOIN', 'BLEND', 'DYDX', 'METAL', 'NAVI', 'NUSD', 'TENSOR', 'USA', 'WINK', 'ZETA']"
+  },
+  {
+   "name": "A3",
+   "description": "lake close = Binance perp close",
+   "status": "FAIL",
+   "detail": "492 TRADING perps checked since 2024-05-10; wrong coin now: none; wrong-coin runs >=14d: 62 ['CAT:2026-03-04..2026-03-30', 'LUNC:2026-03-04..2026-03-30', 'SHIB:2026-03-04..2026-03-30', '4:2025-10-09..2026-01-29', 'ACE:2026-03-04..2026-03-30', 'ACT:2026-03-04..2026-03-30', 'AIN:2026-03-04..2026-03-30', 'ALLO:2025-11-12..2026-01-29', 'ARC:2025-01-18..2026-02-11', 'ARIA:2025-09-04..2026-01-27', 'AVA:2026-03-04..2026-03-30', 'AXS:2026-01-13..2026-01-26', 'BABY:2025-04-06..2026-01-28', 'BANK:2025-04-19..2025-05-13', 'BB:2026-03-04..2026-03-30']; perps not bound to their ticker's asset: 1 (0 new: [])"
+  },
+  {
+   "name": "A4",
+   "description": "no mass re-binding dates",
+   "status": "FAIL",
+   "detail": "dates with >=20 assets jumping 3x overnight -- close: 2026-01-28(67), 2026-03-04(64), 2026-03-31(55); marketcap: 2026-01-28(61), 2026-03-04(87), 2026-03-31(81)"
+  },
+  {
+   "name": "A5",
+   "description": "price+mcap = /coins/markets (by id)",
+   "status": "FAIL",
+   "detail": "fact_markets_snapshot stale: last date 2026-08-04 vs lake 2026-09-18 -- the independent market-cap reference is missing"
+  },
+  {
+   "name": "A6",
+   "description": "registry: one coin <-> one uid",
+   "status": "PASS",
+   "detail": "2846 uids, 2 declared aliases"
+  }
+ ]
+}

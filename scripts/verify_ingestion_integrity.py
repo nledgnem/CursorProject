@@ -7,6 +7,9 @@ surface; do not fork this script.
 
 Usage:
     python scripts/verify_ingestion_integrity.py --mode writer_race
+    python scripts/verify_ingestion_integrity.py --mode asset_identity [--lake-dir DIR] [--since YYYY-MM-DD] [--offline]
+    python scripts/verify_ingestion_integrity.py --mode freshness [--lake-dir DIR] [--json-out PATH]
+    python scripts/verify_ingestion_integrity.py --mode identity_acceptance [--lake-dir DIR]   # incident closing gate
     python scripts/verify_ingestion_integrity.py --mode <future-mode>
 
 Exit codes:
@@ -17,6 +20,7 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import sys
@@ -24,6 +28,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 
 # repo_paths sits at repo root; ensure it's importable when this script is run from anywhere.
@@ -339,16 +344,8 @@ def _signal_4_unaffected_unchanged(merge_date: date = date(2026, 5, 4)) -> Signa
     return SignalResult("4", "BTC/BNB/XRP regression check", "PASS", detail)
 
 
-def _run_writer_race_mode() -> int:
-    """Run all 4 signals for writer_race mode. Return exit code."""
-    signals = [
-        _signal_1_api_call_count(),
-        _signal_2_guard_silent(),
-        _signal_3_affected_correct(),
-        _signal_4_unaffected_unchanged(),
-    ]
-
-    # Markdown table to stdout
+def _print_signal_table(signals: list[SignalResult]) -> None:
+    """Markdown table to stdout, then full details for rows too long for the table."""
     print()
     print("| Signal | Description                          | Result        | Detail                                              |")
     print("|--------|--------------------------------------|---------------|-----------------------------------------------------|")
@@ -361,6 +358,17 @@ def _run_writer_race_mode() -> int:
     for s in signals:
         if len(s.detail) >= 120:
             print(f"### Signal {s.name} full detail:\n{s.detail}\n")
+
+
+def _run_writer_race_mode() -> int:
+    """Run all 4 signals for writer_race mode. Return exit code."""
+    signals = [
+        _signal_1_api_call_count(),
+        _signal_2_guard_silent(),
+        _signal_3_affected_correct(),
+        _signal_4_unaffected_unchanged(),
+    ]
+    _print_signal_table(signals)
 
     has_fail = any(s.status == "FAIL" for s in signals)
     has_indeterminate = any(s.status == "INDETERMINATE" for s in signals)
@@ -377,11 +385,362 @@ def _run_writer_race_mode() -> int:
 
 
 # ----------------------------------------------------------------------------------
+# Mode: asset_identity
+# ----------------------------------------------------------------------------------
+#
+# fact_price / fact_marketcap are keyed by ticker, and the coin behind a ticker is whatever
+# data/perp_allowlist.csv named at fetch time. The writer_race signals only look at a handful
+# of majors on the latest date, so they cannot see a ticker that holds another coin's history
+# (audit 2026-09-18: 2026-03-04..30 still carried the 599e5cb writer-race rows for 72 assets --
+# ETH/SOL/DOGE caps ~$2M -- and ~60 tickers were re-bound on 2026-01-28). Signals:
+#   A1  dim_asset.coingecko_id equals the id actually fetched (not the lower-cased ticker).
+#   A2  no ticker key spells another allowlisted coin's slug ('BITCOIN' vs real Bitcoin 'BTC').
+#   A3  each Binance USDT perp's lake close matches Binance (lake date d = Binance bar d-1):
+#       no currently-wrong coin, no wrong-coin run of >= 14 days since --since. Needs network.
+#   A4  no date since --since on which >= 20 assets jump 3x overnight in price or market cap.
+#   A5  on the latest fact_markets_snapshot date, lake price and market cap agree with
+#       /coins/markets for the *fetched coingecko_id*; snapshot must be <= 3 days old.
+#   A6  registry invariant: one coin <-> one uid (declared aliases aside); one uid per Binance symbol.
+#   A2 accepts collisions acknowledged in configs/asset_identity_policy.yaml (ids are never re-pointed).
+
+_ASSET_IDENTITY_SINCE = date(2024, 5, 10)   # start of the window the writer-race refetch rewrote
+
+
+def _identity_inputs(lake: Path) -> dict:
+    p = pd.read_parquet(lake / "fact_price.parquet", columns=["asset_id", "date", "close"])
+    m = pd.read_parquet(lake / "fact_marketcap.parquet", columns=["asset_id", "date", "marketcap"])
+    fact = p.merge(m, on=["asset_id", "date"], how="left")
+    fact["date"] = pd.to_datetime(fact["date"])
+    reg_path = _REPO_ROOT / "data" / "asset_registry.csv"
+    conf_path = _REPO_ROOT / "data" / "asset_registry_conflicts.csv"
+    return {
+        "fact": fact,
+        "registry": pd.read_csv(reg_path) if reg_path.exists() else None,
+        "registry_conflicts": list(pd.read_csv(conf_path)["binance_symbol"]) if conf_path.exists() else [],
+        "dim_asset": pd.read_parquet(lake / "dim_asset.parquet", columns=["asset_id", "coingecko_id"]),
+        "dim_instrument": pd.read_parquet(lake / "dim_instrument.parquet",
+                                          columns=["instrument_symbol", "venue", "instrument_type"]),
+        "allowlist": pd.read_csv(_REPO_ROOT / "data" / "perp_allowlist.csv"),
+        "snapshot_path": lake / "fact_markets_snapshot.parquet",
+    }
+
+
+def _signal_a1_dim_asset_ids(inp: dict) -> SignalResult:
+    from src.data_lake.asset_identity import placeholder_coingecko_ids
+    bad = placeholder_coingecko_ids(inp["dim_asset"], inp["allowlist"])
+    n = int(inp["dim_asset"]["asset_id"].isin(inp["allowlist"]["symbol"].str.upper()).sum())
+    desc = "dim_asset.coingecko_id = fetched id"
+    if bad.empty:
+        return SignalResult("A1", desc, "PASS", f"{n} allowlisted assets, all ids match the allowlist")
+    eg = ", ".join(f"{r.asset_id}:{r.dim_coingecko_id}->{r.fetched_coingecko_id}" for r in bad.head(8).itertuples())
+    return SignalResult("A1", desc, "FAIL", f"{len(bad)}/{n} allowlisted assets carry a different id, e.g. {eg}")
+
+
+def _identity_frame(inp: dict) -> pd.DataFrame:
+    """uid -> coingecko_id: the registry (active + retired tickers) when present, else the allowlist."""
+    if inp.get("registry") is not None:
+        return inp["registry"].drop_duplicates("asset_uid").rename(columns={"asset_uid": "symbol"})[
+            ["symbol", "coingecko_id"]].dropna()
+    return inp["allowlist"]
+
+
+def _signal_a2_slug_collisions(inp: dict) -> SignalResult:
+    """Collisions are allowed only when acknowledged in configs/asset_identity_policy.yaml (the uid
+    keeps its historical meaning -- ids are never re-pointed); any new one fails."""
+    from src.data_lake.asset_identity import slug_ticker_collisions
+    from src.data_lake.asset_registry import load_policy
+    hits = slug_ticker_collisions(inp["fact"]["asset_id"].unique(), _identity_frame(inp))
+    ack = load_policy()["acknowledged_slug_collisions"]
+    desc = "no unacknowledged slug collisions"
+    ok = hits.apply(lambda r: r.asset_id in ack and ack[r.asset_id].get("holds") == r.holds_coingecko_id, axis=1)         if len(hits) else pd.Series(dtype=bool)
+    new = hits[~ok] if len(hits) else hits
+    acked = sorted(hits.loc[ok, "asset_id"]) if len(hits) else []
+    if new.empty:
+        return SignalResult("A2", desc, "PASS", f"{len(acked)} acknowledged by policy: {acked}")
+    eg = ", ".join(f"{r.asset_id} holds {r.holds_coingecko_id}, spells {r.collides_with_coingecko_id} "
+                   f"(uid {r.collides_with_ticker})" for r in new.itertuples())
+    return SignalResult("A2", desc, "FAIL", f"not in configs/asset_identity_policy.yaml: {eg}")
+
+
+def _signal_a6_registry_invariant(inp: dict) -> SignalResult:
+    """One asset_uid = one economic asset: no coin held by two uids unless declared an alias, no
+    Binance symbol bound to two uids, aliases point at registry uids."""
+    from src.data_lake.asset_registry import coingecko_to_uid, load_policy
+    desc = "registry: one coin <-> one uid"
+    reg = inp.get("registry")
+    if reg is None:
+        return SignalResult("A6", desc, "INDETERMINATE", "data/asset_registry.csv not found")
+    problems = []
+    try:
+        coingecko_to_uid(reg)
+    except ValueError as e:
+        problems.append(str(e))
+    b = reg.dropna(subset=["binance_symbol"]).groupby("binance_symbol")["asset_uid"].nunique()
+    if (b > 1).any():
+        problems.append(f"Binance symbols bound to several uids: {list(b[b > 1].index)}")
+    uids = set(reg["asset_uid"])
+    bad_alias = [a for a, v in load_policy()["aliases"].items() if a not in uids or v.get("alias_of") not in uids]
+    if bad_alias:
+        problems.append(f"aliases not in the registry: {bad_alias}")
+    if problems:
+        return SignalResult("A6", desc, "FAIL", "; ".join(problems))
+    return SignalResult("A6", desc, "PASS", f"{reg['asset_uid'].nunique()} uids, "
+                                            f"{len(load_policy()['aliases'])} declared aliases")
+
+
+def _binance_daily_closes(symbol: str, start: date) -> Optional[pd.Series]:
+    import requests
+    rows, st = [], int(pd.Timestamp(start, tz="UTC").timestamp() * 1000)
+    while True:
+        r = requests.get("https://fapi.binance.com/fapi/v1/klines",
+                         params={"symbol": symbol, "interval": "1d", "startTime": st, "limit": 1000}, timeout=30)
+        if r.status_code != 200:
+            return None
+        k = r.json()
+        rows += k
+        if len(k) < 1000:
+            break
+        st = k[-1][0] + 86_400_000
+    if not rows:
+        return None
+    s = pd.Series([float(x[4]) for x in rows], index=pd.to_datetime([x[0] for x in rows], unit="ms"))
+    return s
+
+
+def _signal_a3_binance_prices(inp: dict, since: date, offline: bool) -> SignalResult:
+    import time
+    from src.data_lake.asset_identity import binance_base_to_asset, price_identity
+    desc = "lake close = Binance perp close"
+    if offline:
+        return SignalResult("A3", desc, "INDETERMINATE", "--offline: Binance comparison skipped")
+    import requests
+    try:
+        info = requests.get("https://fapi.binance.com/fapi/v1/exchangeInfo", timeout=30).json()["symbols"]
+    except Exception as e:  # network unavailable -> never a FAIL on its own
+        return SignalResult("A3", desc, "INDETERMINATE", f"Binance unreachable: {e}")
+    trading = {s["symbol"]: s["baseAsset"] for s in info
+               if s["quoteAsset"] == "USDT" and s["contractType"] == "PERPETUAL" and s["status"] == "TRADING"}
+    fact = inp["fact"]
+    fact = fact[fact["date"] >= pd.Timestamp(since)]
+    closes = {a: g.set_index("date")["close"] for a, g in fact.groupby("asset_id")}
+    # Which lake asset a perp belongs to: the registry's effective-dated binding when it exists
+    # (Toncoin trades as GRAMUSDT; 1000000BOBUSDT is not the lake's BOB), else the ticker.
+    reg = inp.get("registry")
+    if reg is not None:
+        bound = reg.dropna(subset=["binance_symbol"])
+        pairs = {r.binance_symbol: (r.asset_uid, float(r.binance_multiplier)) for r in bound.itertuples()}
+    else:
+        pairs = {sym: binance_base_to_asset(base) for sym, base in trading.items()}
+    wrong, spliced, checked = [], [], 0
+    for sym in sorted(set(trading) & set(pairs)):
+        asset, mult = pairs[sym]
+        if asset not in closes:
+            continue
+        b = _binance_daily_closes(sym, since)
+        time.sleep(0.15)
+        if b is None:
+            continue
+        r = price_identity(closes[asset], b, multiplier=mult)
+        checked += 1
+        if r["status"] == "CURRENT_WRONG_COIN":
+            wrong.append(f"{asset}({sym})")
+        elif r["status"] == "SPLICED_HISTORY":
+            spliced.append(f"{asset}:{r['bad_runs'][0][0]}..{r['bad_runs'][-1][1]}")
+    detail = f"{checked} TRADING perps checked since {since}; wrong coin now: {wrong or 'none'}; " \
+             f"wrong-coin runs >=14d: {len(spliced)} {spliced[:15]}"
+    if reg is not None:
+        # A TRADING perp whose ticker is a lake asset but which the registry does not bind to it is a
+        # different coin; known ones are listed in asset_registry_conflicts.csv, new ones fail.
+        unbound = sorted(s for s in trading if s not in pairs and binance_base_to_asset(trading[s])[0] in closes)
+        new = [u for u in unbound if u not in set(inp.get("registry_conflicts", []))]
+        detail += f"; perps not bound to their ticker's asset: {len(unbound)} ({len(new)} new: {new[:10]})"
+        wrong += new
+    return SignalResult("A3", desc, "FAIL" if (wrong or spliced) else "PASS", detail)
+
+
+def _signal_a4_mass_splices(inp: dict, since: date) -> SignalResult:
+    from src.data_lake.asset_identity import market_wide_splice_dates
+    fact = inp["fact"][inp["fact"]["date"] >= pd.Timestamp(since)]
+    hits = {c: market_wide_splice_dates(fact, c) for c in ("close", "marketcap")}
+    desc = "no mass re-binding dates"
+    parts = [f"{c}: " + ", ".join(f"{d.date()}({n})" for d, n in h.items()) for c, h in hits.items() if len(h)]
+    if not parts:
+        return SignalResult("A4", desc, "PASS", f"no date since {since} with >=20 assets jumping 3x overnight")
+    return SignalResult("A4", desc, "FAIL", "dates with >=20 assets jumping 3x overnight -- " + "; ".join(parts))
+
+
+def _signal_a5_snapshot_crosscheck(inp: dict) -> SignalResult:
+    from src.data_lake.asset_identity import mcap_vs_snapshot
+    desc = "price+mcap = /coins/markets (by id)"
+    snap = pd.read_parquet(inp["snapshot_path"], columns=["date", "coingecko_id", "current_price_usd", "market_cap_usd"])
+    snap["date"] = pd.to_datetime(snap["date"])
+    last = snap["date"].max()
+    lake_last = inp["fact"]["date"].max()
+    if (lake_last - last).days > 3:
+        return SignalResult("A5", desc, "FAIL",
+                            f"fact_markets_snapshot stale: last date {last.date()} vs lake {lake_last.date()} "
+                            f"-- the independent market-cap reference is missing")
+    lake_day = inp["fact"][inp["fact"]["date"] == last]
+    bad = mcap_vs_snapshot(lake_day, snap[snap["date"] == last], inp["allowlist"])
+    if bad.empty:
+        return SignalResult("A5", desc, "PASS", f"{len(lake_day)} assets on {last.date()} agree within 5%/10%")
+    eg = ", ".join(f"{r.asset_id}(px {np.exp(r.price_log_diff):.3g}x, mcap {np.exp(r.mcap_log_diff):.3g}x)"
+                   for r in bad.head(10).itertuples())
+    return SignalResult("A5", desc, "FAIL", f"{len(bad)} assets disagree on {last.date()}: {eg}")
+
+
+def _run_asset_identity_mode(args: argparse.Namespace) -> list[SignalResult]:
+    lake = Path(args.lake_dir) if args.lake_dir else data_lake_root()
+    since = date.fromisoformat(args.since) if args.since else _ASSET_IDENTITY_SINCE
+    print(f"Lake: {lake}  since: {since}")
+    inp = _identity_inputs(lake)
+    return [
+        _signal_a1_dim_asset_ids(inp),
+        _signal_a2_slug_collisions(inp),
+        _signal_a3_binance_prices(inp, since, args.offline),
+        _signal_a4_mass_splices(inp, since),
+        _signal_a5_snapshot_crosscheck(inp),
+        _signal_a6_registry_invariant(inp),
+    ]
+
+
+def _report(mode: str, signals: list[SignalResult], json_out: Optional[str]) -> int:
+    """Print the table + verdict; optionally write machine-readable results. Exit 1 on any FAIL."""
+    _print_signal_table(signals)
+    if json_out:
+        Path(json_out).write_text(json.dumps({
+            "mode": mode, "run_utc": pd.Timestamp.now(tz="UTC").isoformat(timespec="seconds"),
+            "signals": [{"name": s.name, "description": s.description, "status": s.status, "detail": s.detail}
+                        for s in signals]}, indent=1), encoding="utf-8")
+    n_fail = sum(s.status == "FAIL" for s in signals)
+    if n_fail:
+        print(f"OVERALL: FAIL --{n_fail}/{len(signals)} signals failed.")
+        return 1
+    print("OVERALL: PASS" + (" (with INDETERMINATEs)" if any(s.status == "INDETERMINATE" for s in signals) else ""))
+    return 0
+
+
+# ----------------------------------------------------------------------------------
+# Mode: freshness
+# ----------------------------------------------------------------------------------
+#
+# Content freshness (max date in the data, never file mtime: the nightly export re-uploads
+# unchanged files with a fresh timestamp). fact_markets_snapshot froze 2026-08-04..09-18 with no
+# alert because Step 0 failures were log-only. SLA = max allowed age in days of the newest row.
+
+_FRESHNESS_SLA_DAYS = {
+    "fact_price.parquet": 1,
+    "fact_marketcap.parquet": 1,
+    "fact_volume.parquet": 1,
+    "silver_fact_price.parquet": 1,
+    "silver_fact_marketcap.parquet": 1,
+    "silver_fact_funding.parquet": 2,
+    "fact_markets_snapshot.parquet": 2,
+}
+
+
+def _run_freshness_mode(args: argparse.Namespace) -> list[SignalResult]:
+    lake = Path(args.lake_dir) if args.lake_dir else data_lake_root()
+    today = date.today() if not args.asof else date.fromisoformat(args.asof)
+    signals = []
+    for i, (fname, sla) in enumerate(_FRESHNESS_SLA_DAYS.items(), start=1):
+        name, desc = f"F{i}", f"{fname.removesuffix('.parquet')} <= {sla}d old"
+        path = lake / fname
+        if not path.exists():
+            signals.append(SignalResult(name, desc, "FAIL", f"{path} missing"))
+            continue
+        last = pd.to_datetime(pd.read_parquet(path, columns=["date"])["date"]).max().date()
+        age = (today - last).days
+        status = "PASS" if age <= sla else "FAIL"
+        signals.append(SignalResult(name, desc, status, f"newest row {last} ({age}d old, SLA {sla}d)"))
+    return signals
+
+
+# ----------------------------------------------------------------------------------
+# Mode: identity_acceptance
+# ----------------------------------------------------------------------------------
+#
+# Closing gate for the 2026-09-18 asset-identity incident: every asset_identity and freshness
+# signal plus X1-X5 below. Unlike the other modes an INDETERMINATE keeps the incident open --
+# acceptance needs positive evidence, not the absence of a failure.
+#   X1  allowlist refresh still frozen (until the guarded refresh is approved)
+#   X2  nightly lake-integrity monitor ran within 36h (Render marker file)
+#   X3  2026-03 corruption gone: no asset jumps >3x into 2026-03-04 and back out on 2026-03-31
+#   X4  quarantine consistent: quarantine_fact_identity.parquet exists and none of its keys are
+#       back in the fact tables
+#   X5  decision records kept: msm_decision_log.csv and a frozen pre-repair msm_timeseries exist
+
+def _x_signals(lake: Path) -> list[SignalResult]:
+    import yaml
+    out = []
+    iu = yaml.safe_load((_REPO_ROOT / "data_dictionary.yaml").read_text(encoding="utf-8"))[
+        "data_sources"]["coingecko"]["ingestion_universe"]
+    out.append(SignalResult("X1", "allowlist refresh frozen", "PASS" if iu.get("refresh_frozen") else "FAIL",
+                            f"refresh_frozen={iu.get('refresh_frozen')}"))
+    marker = Path("/data/.last_lake_integrity_utc_day")
+    if marker.exists():
+        age = (date.today() - date.fromisoformat(marker.read_text(encoding="utf-8").strip())).days
+        out.append(SignalResult("X2", "nightly integrity monitor running", "PASS" if age <= 1 else "FAIL",
+                                f"last run {age}d ago"))
+    else:
+        out.append(SignalResult("X2", "nightly integrity monitor running", "INDETERMINATE",
+                                f"{marker} not found (run on Render)"))
+    p = pd.read_parquet(lake / "fact_price.parquet", columns=["asset_id", "date", "close"])
+    m = pd.read_parquet(lake / "fact_marketcap.parquet", columns=["asset_id", "date", "marketcap"])
+    f = p.merge(m, on=["asset_id", "date"], how="outer")
+    f["date"] = pd.to_datetime(f["date"])
+    edges = pd.to_datetime(["2026-03-03", "2026-03-04", "2026-03-30", "2026-03-31"])
+    w = f[f["date"].isin(edges)]
+    hit = []
+    for col in ("close", "marketcap"):
+        wide = w.pivot_table(index="asset_id", columns="date", values=col).reindex(columns=edges)
+        r_in, r_out = np.log(wide[edges[1]] / wide[edges[0]]).abs(), np.log(wide[edges[3]] / wide[edges[2]]).abs()
+        hit += list(wide.index[(r_in > np.log(3)) & (r_out > np.log(3))])
+    out.append(SignalResult("X3", "2026-03 re-injection gone", "FAIL" if hit else "PASS",
+                            f"{len(set(hit))} assets with the signature: {sorted(set(hit))[:10]}"))
+    q = lake / "quarantine_fact_identity.parquet"
+    if not q.exists():
+        out.append(SignalResult("X4", "quarantine consistent", "INDETERMINATE", "no quarantine table (repair not applied)"))
+    else:
+        qk = pd.read_parquet(q, columns=["asset_id", "date", "table"])
+        qk["date"] = pd.to_datetime(qk["date"])
+        back = 0
+        for table, frame in (("fact_price", p), ("fact_marketcap", m)):
+            keys = pd.MultiIndex.from_frame(qk.loc[qk["table"] == table, ["asset_id", "date"]])
+            fr = frame.assign(date=pd.to_datetime(frame["date"]))
+            back += int(pd.MultiIndex.from_frame(fr[["asset_id", "date"]]).isin(keys).sum())
+        out.append(SignalResult("X4", "quarantine consistent", "FAIL" if back else "PASS",
+                                f"{len(qk)} quarantined rows; {back} reappeared in the fact tables"))
+    logs = [lake / "msm_decision_log.csv", *sorted(lake.glob("msm_timeseries.pre_identity_repair_*.csv"))]
+    have = [x.name for x in logs if x.exists()]
+    out.append(SignalResult("X5", "as-decided records preserved",
+                            "PASS" if len(have) >= 2 and "msm_decision_log.csv" in have else "INDETERMINATE",
+                            f"found: {have or 'none'}"))
+    return out
+
+
+def _run_identity_acceptance(args: argparse.Namespace) -> int:
+    lake = Path(args.lake_dir) if args.lake_dir else data_lake_root()
+    signals = _run_asset_identity_mode(args) + _run_freshness_mode(args) + _x_signals(lake)
+    _print_signal_table(signals)
+    if args.json_out:
+        Path(args.json_out).write_text(json.dumps({"mode": "identity_acceptance", "signals": [
+            {"name": s.name, "description": s.description, "status": s.status, "detail": s.detail} for s in signals]},
+            indent=1), encoding="utf-8")
+    open_items = [s.name for s in signals if s.status != "PASS"]
+    print("INCIDENT CLOSABLE: " + ("YES" if not open_items else f"NO -- not yet PASS: {open_items}"))
+    return 0 if not open_items else 1
+
+
+# ----------------------------------------------------------------------------------
 # Mode dispatch
 # ----------------------------------------------------------------------------------
 
 _MODES = {
-    "writer_race": _run_writer_race_mode,
+    "writer_race": lambda args: _run_writer_race_mode(),
+    "asset_identity": lambda args: _report("asset_identity", _run_asset_identity_mode(args), args.json_out),
+    "freshness": lambda args: _report("freshness", _run_freshness_mode(args), args.json_out),
+    "identity_acceptance": _run_identity_acceptance,
 }
 
 
@@ -389,8 +748,16 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--mode", required=True, choices=sorted(_MODES.keys()),
                    help="Verification mode. Add new modes as new incident classes surface.")
+    p.add_argument("--lake-dir", default=None,
+                   help="asset_identity/freshness: lake directory to check (default data_lake_root(); "
+                        "e.g. the Drive Desktop mirror 'G:/My Drive/Render Exports').")
+    p.add_argument("--since", default=None,
+                   help=f"asset_identity: first date checked by A3/A4 (default {_ASSET_IDENTITY_SINCE}).")
+    p.add_argument("--offline", action="store_true", help="asset_identity: skip the Binance comparison (A3).")
+    p.add_argument("--asof", default=None, help="freshness: evaluate as of YYYY-MM-DD (default today).")
+    p.add_argument("--json-out", default=None, help="asset_identity/freshness: also write results as JSON here.")
     args = p.parse_args()
-    return _MODES[args.mode]()
+    return _MODES[args.mode](args)
 
 
 if __name__ == "__main__":

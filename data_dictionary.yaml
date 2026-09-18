@@ -95,10 +95,17 @@ data_sources:
       2,717 rows have coingecko_id == lowercase(symbol). Zero rows carry real
       CoinGecko slugs. Daily ingestion does NOT use this column, so dormant;
       any analysis joining via dim_asset.coingecko_id is silently wrong.
-      The fact_price.asset_id column definition below ("Canonical CoinGecko
-      slug ... Matches dim_asset.coingecko_id") is documentation drift -- still
-      OPEN as of 2026-05-05 (not bundled into writer-race remediation).
-      See DATA_LAKE_CONTEXT.md section 13.
+      The fact_price.asset_id column definition drift was corrected 2026-09-18.
+      Still a placeholder in the live lake as of 2026-09-18 (only 137 of 851
+      allowlisted assets carry the id actually fetched; 69 carry a real id of a
+      DIFFERENT coin, e.g. 'bitcoin' on the BITCOIN memecoin row). Replacement:
+      data/asset_registry.csv. See DATA_LAKE_CONTEXT.md section 13.
+
+      [2026-09-18] Asset-identity incident: ticker-keyed fact tables hold other
+      coins' rows in dated windows (2026-03-04..30 re-injected from the stale
+      git wide files for 72 assets; ~60 tickers re-bound 2026-01-28; older
+      splices). Full list, root causes and repair:
+      reports/incidents/2026-09-18_asset_identity/README.md.
 
     ingestion_universe:
       type: sticky_allowlist_csv
@@ -112,9 +119,20 @@ data_sources:
         is_unique asserted before write. Phase B writer-race defenses are
         active in both the builder and the loader.
       current_size: 977  # post-Phase-E top-1000 cut on 2026-05-05
-      refresh_cadence: quarterly_manual  # NOT dynamic_daily_rebuild
+      refresh_cadence: frozen  # was quarterly_manual; see refresh_frozen below
       last_refresh: 2026-05-05
-      next_refresh_due: 2026-08-05
+      next_refresh_due: null  # was 2026-08-05; null while frozen (silences the heartbeat reminder)
+      refresh_frozen: true
+      refresh_frozen_since: 2026-09-18
+      refresh_frozen_reason: >
+        [DECISION 2026-09-18] Asset-identity incident
+        (reports/incidents/2026-09-18_asset_identity/README.md). The builder binds each
+        symbol to the highest-market-cap CoinGecko coin with no Binance check, so a refresh
+        silently re-points tickers to other coins and splices their history (e.g. Toncoin's
+        CoinGecko ticker is now GRAM, so TON would re-bind to Tokamak Network). Frozen until
+        the refresh keys on data/asset_registry.csv (immutable asset_uid, effective-dated
+        coingecko_id / binance_symbol) with price validation. expand_allowlist.py refuses to
+        write while this flag is true.
       refresh_runbook: docs/runbooks/allowlist_refresh.md
       reminder_mechanism: >
         system_heartbeat.py fires a once-per-day Telegram alert after
@@ -226,7 +244,7 @@ fact_price:
   columns:
     - name: asset_id
       type: string
-      definition: "Canonical CoinGecko slug (e.g. 'bitcoin', 'ethereum', 'aria-ai'). Matches dim_asset.coingecko_id."
+      definition: "Asset key: an UPPER-CASE ticker string (e.g. 'BTC', 'ETH', 'ARIA'), NOT a CoinGecko slug. Treat as the immutable internal asset_uid; its CoinGecko id and Binance symbol are effective-dated attributes in data/asset_registry.csv. Traps: 'BITCOIN' is a memecoin (real Bitcoin is 'BTC'); dim_asset.coingecko_id is a placeholder (lower-cased ticker) -- never join on it. Wrong-coin history windows are listed in reports/incidents/2026-09-18_asset_identity/README.md."
     - name: date
       type: date
       unit: UTC_calendar_day
@@ -255,7 +273,7 @@ fact_marketcap:
   columns:
     - name: asset_id
       type: string
-      definition: "Canonical CoinGecko slug."
+      definition: "Same key as fact_price.asset_id (upper-case ticker / asset_uid, not a CoinGecko slug)."
     - name: date
       type: date
       unit: UTC_calendar_day
@@ -287,7 +305,7 @@ fact_volume:
   columns:
     - name: asset_id
       type: string
-      definition: "Canonical CoinGecko slug."
+      definition: "Same key as fact_price.asset_id (upper-case ticker / asset_uid, not a CoinGecko slug)."
     - name: date
       type: date
       unit: UTC_calendar_day
@@ -592,7 +610,11 @@ fact_markets_snapshot:
   description: >
     Daily per-coin market metadata from CoinGecko /coins/markets (~2500 coins per
     snapshot). Append-only with dedup on (asset_id, date). Started accumulating
-    ~2026-01.
+    ~2026-01. KEY: join on coingecko_id. asset_id is the registry uid for coins in
+    data/asset_registry.csv, else 'CG:<coingecko_id>' (branch fix/lake-asset-identity;
+    before it asset_id came from the placeholder dim_asset / the ticker: real Bitcoin was
+    'BITCOIN' -- a memecoin's uid -- and Toncoin became 'GRAM'; historical rows are re-keyed
+    by repair_asset_identity.py apply --rekey-snapshot). Stale 2026-08-04..09-18 (FDV > Int64).
   path: data/curated/data_lake/fact_markets_snapshot.parquet
   source: coingecko
   frequency: daily
@@ -1031,7 +1053,7 @@ silver_fact_price:
   columns:
     - name: asset_id
       type: string
-      definition: "Canonical CoinGecko slug (matches dim_asset.coingecko_id)."
+      definition: "Same key as fact_price.asset_id (upper-case ticker / asset_uid, not a CoinGecko slug)."
     - name: date
       type: date
       unit: UTC_calendar_day
@@ -1051,6 +1073,13 @@ silver_fact_price:
     - name: is_winsorized
       type: bool
       definition: "True when the date was flagged by the anomaly detector (Absolute Nuke / Standard Slingshot / Fat Slingshot)."
+    - name: is_identity_quarantined
+      type: bool
+      definition: >
+        True where the fact row for (asset_id, date) was moved to quarantine_fact_identity.parquet
+        because it belonged to another coin (asset-identity repair). The value is NaN and is never
+        forward-filled; distinguishes "another coin's data removed" from an ordinary gap (False).
+        Added 2026-09-18; see reports/incidents/2026-09-18_asset_identity/README.md.
     - name: is_ffilled
       type: bool
       definition: |
@@ -1100,6 +1129,13 @@ silver_fact_marketcap:
     - name: is_winsorized
       type: bool
       definition: "True on Supply-Slingshot-affected dates."
+    - name: is_identity_quarantined
+      type: bool
+      definition: >
+        True where the fact row for (asset_id, date) was moved to quarantine_fact_identity.parquet
+        because it belonged to another coin (asset-identity repair). The value is NaN and is never
+        forward-filled; distinguishes "another coin's data removed" from an ordinary gap (False).
+        Added 2026-09-18; see reports/incidents/2026-09-18_asset_identity/README.md.
   known_consumers:
     - "MSM universe selection (select_top_n_alts)"
     - "Apathy Bleed Gate 3 (OI/mcap) candidate scoring"
@@ -1606,6 +1642,26 @@ msm_timeseries:
     The PiT audit trail (per-week run receipts, baskets, sensor snapshots)
     lives under reports/msm_funding_v0/ on the Render disk only -- NOT mirrored
     to Drive. Decision pending on whether to selectively mirror.
+
+quarantine_fact_identity:
+  path: data/curated/data_lake/quarantine_fact_identity.parquet
+  status: CREATED_BY_REPAIR   # appears when scripts/repair_asset_identity.py apply runs
+  description: >
+    Rows moved out of fact_price / fact_marketcap / fact_volume because they belong to another
+    coin (asset-identity incident 2026-09-18). Columns: asset_id, date, table, value, seg_id,
+    reason, status (confirmed | manual_review), quarantined_utc. Raw evidence, kept for review;
+    not an analytical table. silver_* mark these dates is_identity_quarantined=True.
+
+msm_decision_log:
+  path: data/curated/data_lake/msm_decision_log.csv
+  status: ALIVE-DAILY   # from the deploy of branch fix/lake-asset-identity
+  description: >
+    Append-only as-decided MSM record: the latest decision row is appended once per UTC day by
+    system_heartbeat (scripts/msm_decision_record.py log-today); a logged decision_date is never
+    rewritten. Use this -- not msm_timeseries.csv, which is recomputed over 730 days nightly -- for
+    what the system said at the time. Fixed columns: logged_utc, decision_date, funding_regime,
+    is_mrf_active, funding_pct_rank, F_tk, basket_members, BTCDOM_Trend, Environment_APR, basket_hash,
+    n_valid, coverage, Fragmentation_Spread, Z_Score_90d, w_risk, btcdom_status.
 
 btcdom_reconstructed:
   path: data/curated/data_lake/btcdom_reconstructed.csv

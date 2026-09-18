@@ -18,7 +18,7 @@ Assumption Ledger (cross-sectional volatility drag fix)
 
 import polars as pl
 from typing import List, Tuple, Optional, Dict, Union
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import logging
 import numpy as np
 
@@ -40,10 +40,14 @@ def _max_price_date(prices: pl.DataFrame) -> Optional[date]:
     return value
 
 
+MAX_PRICE_AGE_DAYS = 3
+
+
 def get_close_asof(
     prices: pl.DataFrame,
     asset_id: str,
     asof_date: date,
+    max_age_days: Optional[int] = MAX_PRICE_AGE_DAYS,
 ) -> Optional[Tuple[date, float]]:
     """
     Get latest available close price for an asset on or before asof_date.
@@ -52,6 +56,10 @@ def get_close_asof(
         prices: Price dataframe (asset_id, date, close)
         asset_id: Asset identifier
         asof_date: Point-in-time date
+        max_age_days: The close must be at most this many days before asof_date, else None.
+            Unbounded, a gap (e.g. rows quarantined as another coin's in the asset-identity
+            incident, 2026-09-18) would be bridged with a pre-gap price and the week's return
+            computed across it. None disables the bound.
     
     Returns:
         Tuple of (date_used, close_price) or None if no data available
@@ -65,6 +73,9 @@ def get_close_asof(
     asof_prices = asset_prices.filter(
         pl.col("date") <= pl.date(asof_date.year, asof_date.month, asof_date.day)
     )
+    if max_age_days is not None:
+        oldest = asof_date - timedelta(days=max_age_days)
+        asof_prices = asof_prices.filter(pl.col("date") >= pl.date(oldest.year, oldest.month, oldest.day))
     
     if len(asof_prices) == 0:
         return None

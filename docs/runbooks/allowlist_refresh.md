@@ -1,5 +1,15 @@
 # CoinGecko Allowlist Quarterly Refresh
 
+> **FROZEN since 2026-09-18 — do not run this procedure.** `[DECISION 2026-09-18]` The builder binds
+> each symbol to the highest-market-cap CoinGecko coin with no Binance check, so a refresh silently
+> re-points tickers to different coins and splices their history (asset-identity incident,
+> `reports/incidents/2026-09-18_asset_identity/README.md`). Toncoin is the live example: its CoinGecko
+> ticker is now GRAM, so a refresh would re-bind `TON` to Tokamak Network. `expand_allowlist.py`
+> refuses to write while `data_dictionary.yaml` → `ingestion_universe.refresh_frozen` is true, and the
+> heartbeat reminder is silenced by the same flag. The refresh returns once it keys on
+> `data/asset_registry.csv` (immutable `asset_uid`, effective-dated `coingecko_id` / `binance_symbol`,
+> price-validated). Emergency override only: `ALLOWLIST_REFRESH_UNFROZEN=1`.
+
 The CoinGecko ingestion universe (`data/perp_allowlist.csv`) is a **static**
 top-1,000-by-mcap snapshot. It is refreshed **quarterly** to track market drift.
 
@@ -7,7 +17,7 @@ top-1,000-by-mcap snapshot. It is refreshed **quarterly** to track market drift.
 |---|---|
 | **Refresh cadence** | Quarterly (~90 days) |
 | **Last refresh** | 2026-05-05 (snapshot of top 1,000 by mcap) |
-| **Next refresh due** | 2026-08-05 |
+| **Next refresh due** | none — FROZEN 2026-09-18 (was 2026-08-05) |
 | **Why quarterly** | Reproducibility-friendly. Backtests re-run within a quarter use the same universe; mid-quarter drift is small relative to top-1,000 membership stability. See `docs/DATA_LAKE_CONTEXT.md` §4 "Ingestion universe" for the static-vs-dynamic rationale. |
 
 The system heartbeat (`system_heartbeat.py`) fires a once-per-day Telegram

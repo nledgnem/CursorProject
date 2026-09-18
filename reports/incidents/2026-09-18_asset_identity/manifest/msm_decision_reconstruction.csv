@@ -1,0 +1,736 @@
+decision_date,field,AS_DECIDED,PRE_REPAIR_RECOMPUTE,RECOMPUTED_ON_CORRECTED_DATA,as_decided_source,corrected_differs_from_pre_repair
+2024-09-23,funding_regime,,,,not recorded (no decision-time record exists),False
+2024-09-23,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2024-09-23,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2024-09-23,F_tk,,5.495126666666666e-05,5.999675000000001e-05,not recorded (no decision-time record exists),True
+2024-09-23,basket_members,,"SOL,XRP,DOGE,TON,TRX,ADA,AVAX,LINK,BCH,DOT,LTC,NEAR,UNI,SUI,KAS,FET,APT,ICP,TAO,XMR,POL,XLM,ETC,IMX,STX,AAVE,RENDER,FIL,ARB,INJ","SOL,XRP,DOGE,TON,TRX,ADA,AVAX,LINK,BCH,DOT,LTC,NEAR,UNI,SUI,KAS,FET,APT,ICP,TAO,XMR,POL,XLM,ETC,IMX,STX,AAVE,RENDER,FIL,ARB,INJ",not recorded (no decision-time record exists),False
+2024-09-23,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2024-09-23,Environment_APR,,8.707986545896658,8.639716968085109,not recorded (no decision-time record exists),True
+2024-09-30,funding_regime,,,,not recorded (no decision-time record exists),False
+2024-09-30,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2024-09-30,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2024-09-30,F_tk,,7.085542857142857e-05,7.085542857142859e-05,not recorded (no decision-time record exists),True
+2024-09-30,basket_members,,"SOL,XRP,DOGE,TON,ADA,TRX,AVAX,LINK,BCH,DOT,NEAR,UNI,LTC,SUI,ICP,FET,TAO,APT,KAS,POL,ETC,XLM,STX,IMX,XMR,RENDER,WIF,AAVE,FIL,OP","SOL,XRP,DOGE,TON,ADA,TRX,AVAX,LINK,BCH,DOT,NEAR,UNI,LTC,SUI,ICP,FET,TAO,APT,KAS,POL,ETC,XLM,STX,IMX,XMR,RENDER,WIF,AAVE,FIL,OP",not recorded (no decision-time record exists),False
+2024-09-30,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2024-09-30,Environment_APR,,9.212511342249302,9.212511342249302,not recorded (no decision-time record exists),False
+2024-10-07,funding_regime,,,,not recorded (no decision-time record exists),False
+2024-10-07,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2024-10-07,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2024-10-07,F_tk,,8.080380952380952e-06,8.080380952380954e-06,not recorded (no decision-time record exists),True
+2024-10-07,basket_members,,"SOL,XRP,DOGE,TON,TRX,ADA,AVAX,LINK,BCH,DOT,NEAR,UNI,SUI,LTC,TAO,APT,ICP,FET,KAS,POL,ETC,XLM,STX,XMR,WIF,IMX,AAVE,FIL,RENDER,OP","SOL,XRP,DOGE,TON,TRX,ADA,AVAX,LINK,BCH,DOT,NEAR,UNI,SUI,LTC,TAO,APT,ICP,FET,KAS,POL,ETC,XLM,STX,XMR,WIF,IMX,AAVE,FIL,RENDER,OP",not recorded (no decision-time record exists),False
+2024-10-07,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2024-10-07,Environment_APR,,7.368619707820199,7.368619707820199,not recorded (no decision-time record exists),False
+2024-10-14,funding_regime,,,,not recorded (no decision-time record exists),False
+2024-10-14,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2024-10-14,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2024-10-14,F_tk,,5.791566666666667e-05,5.791566666666668e-05,not recorded (no decision-time record exists),True
+2024-10-14,basket_members,,"SOL,XRP,DOGE,TRX,TON,ADA,AVAX,LINK,SUI,BCH,DOT,UNI,NEAR,APT,LTC,TAO,ICP,FET,KAS,POL,ETC,XMR,XLM,WIF,STX,IMX,AAVE,OP,RENDER,FIL","SOL,XRP,DOGE,TRX,TON,ADA,AVAX,LINK,SUI,BCH,DOT,UNI,NEAR,APT,LTC,TAO,ICP,FET,KAS,POL,ETC,XMR,XLM,WIF,STX,IMX,AAVE,OP,RENDER,FIL",not recorded (no decision-time record exists),False
+2024-10-14,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2024-10-14,Environment_APR,,8.659954151785717,8.659954151785717,not recorded (no decision-time record exists),False
+2024-10-21,funding_regime,,,,not recorded (no decision-time record exists),False
+2024-10-21,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2024-10-21,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2024-10-21,F_tk,,7.109000000000001e-05,7.109000000000001e-05,not recorded (no decision-time record exists),False
+2024-10-21,basket_members,,"SOL,XRP,DOGE,TON,TRX,ADA,AVAX,LINK,BCH,DOT,NEAR,SUI,UNI,LTC,APT,TAO,ICP,FET,KAS,XMR,ETC,POL,XLM,STX,WIF,IMX,AAVE,FIL,OP,ARB","SOL,XRP,DOGE,TON,TRX,ADA,AVAX,LINK,BCH,DOT,NEAR,SUI,UNI,LTC,APT,TAO,ICP,FET,KAS,XMR,ETC,POL,XLM,STX,WIF,IMX,AAVE,FIL,OP,ARB",not recorded (no decision-time record exists),False
+2024-10-21,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2024-10-21,Environment_APR,,9.516247410714287,9.516247410714287,not recorded (no decision-time record exists),False
+2024-10-28,funding_regime,,,,not recorded (no decision-time record exists),False
+2024-10-28,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2024-10-28,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2024-10-28,F_tk,,5.500076190476191e-05,5.500076190476191e-05,not recorded (no decision-time record exists),False
+2024-10-28,basket_members,,"SOL,XRP,DOGE,TRX,TON,ADA,AVAX,BCH,LINK,DOT,UNI,LTC,NEAR,SUI,APT,TAO,ICP,FET,KAS,XMR,XLM,ETC,STX,POL,WIF,AAVE,IMX,FIL,ARB,OP","SOL,XRP,DOGE,TRX,TON,ADA,AVAX,BCH,LINK,DOT,UNI,LTC,NEAR,SUI,APT,TAO,ICP,FET,KAS,XMR,XLM,ETC,STX,POL,WIF,AAVE,IMX,FIL,ARB,OP",not recorded (no decision-time record exists),False
+2024-10-28,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2024-10-28,Environment_APR,,8.883859703099345,8.883859703099345,not recorded (no decision-time record exists),False
+2024-11-04,funding_regime,,,,not recorded (no decision-time record exists),False
+2024-11-04,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2024-11-04,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2024-11-04,F_tk,,5.607238095238096e-05,5.607238095238096e-05,not recorded (no decision-time record exists),False
+2024-11-04,basket_members,,"SOL,XRP,DOGE,TRX,TON,ADA,AVAX,BCH,LINK,SUI,DOT,LTC,NEAR,APT,UNI,ICP,TAO,FET,XMR,KAS,XLM,ETC,POL,STX,WIF,FIL,AAVE,ARB,IMX,TIA","SOL,XRP,DOGE,TRX,TON,ADA,AVAX,BCH,LINK,SUI,DOT,LTC,NEAR,APT,UNI,ICP,TAO,FET,XMR,KAS,XLM,ETC,POL,STX,WIF,FIL,AAVE,ARB,IMX,TIA",not recorded (no decision-time record exists),False
+2024-11-04,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2024-11-04,Environment_APR,,9.235007587562054,9.235007587562054,not recorded (no decision-time record exists),False
+2024-11-11,funding_regime,,,,not recorded (no decision-time record exists),False
+2024-11-11,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2024-11-11,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2024-11-11,F_tk,,8.405233333333334e-05,8.405233333333335e-05,not recorded (no decision-time record exists),True
+2024-11-11,basket_members,,"SOL,DOGE,XRP,ADA,TRX,TON,AVAX,LINK,BCH,SUI,DOT,LTC,NEAR,APT,UNI,ICP,TAO,KAS,FET,ETC,XLM,POL,XMR,AAVE,WIF,STX,FIL,ARB,INJ,TIA","SOL,DOGE,XRP,ADA,TRX,TON,AVAX,LINK,BCH,SUI,DOT,LTC,NEAR,APT,UNI,ICP,TAO,KAS,FET,ETC,XLM,POL,XMR,AAVE,WIF,STX,FIL,ARB,INJ,TIA",not recorded (no decision-time record exists),False
+2024-11-11,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2024-11-11,Environment_APR,,11.426180210834133,11.426180210834133,not recorded (no decision-time record exists),False
+2024-11-18,funding_regime,,,,not recorded (no decision-time record exists),False
+2024-11-18,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2024-11-18,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2024-11-18,F_tk,,0.0001772286190476,0.0001772286190476,not recorded (no decision-time record exists),False
+2024-11-18,basket_members,,"SOL,XRP,DOGE,ADA,TRX,AVAX,TON,SUI,LINK,BCH,DOT,NEAR,LTC,APT,XLM,UNI,ICP,ETC,KAS,OM,TAO,WIF,HBAR,FET,POL,XMR,RENDER,STX,ARB,FIL","SOL,XRP,DOGE,ADA,TRX,AVAX,TON,SUI,LINK,BCH,DOT,NEAR,LTC,APT,XLM,UNI,ICP,ETC,KAS,OM,TAO,WIF,HBAR,FET,POL,XMR,RENDER,STX,ARB,FIL",not recorded (no decision-time record exists),False
+2024-11-18,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2024-11-18,Environment_APR,,16.85921446354858,16.85921446354858,not recorded (no decision-time record exists),False
+2024-11-25,funding_regime,,,,not recorded (no decision-time record exists),False
+2024-11-25,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2024-11-25,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2024-11-25,F_tk,,0.0001475189047619,0.0001475189047619,not recorded (no decision-time record exists),False
+2024-11-25,basket_members,,"SOL,XRP,DOGE,ADA,TRX,AVAX,XLM,TON,DOT,LINK,BCH,SUI,NEAR,LTC,APT,UNI,HBAR,ICP,POL,ETC,RENDER,FET,TAO,KAS,VET,ARB,FIL,ATOM,TIA,OM","SOL,XRP,DOGE,ADA,TRX,AVAX,XLM,TON,DOT,LINK,BCH,SUI,NEAR,LTC,APT,UNI,HBAR,ICP,POL,ETC,RENDER,FET,TAO,KAS,VET,ARB,FIL,ATOM,TIA,OM",not recorded (no decision-time record exists),False
+2024-11-25,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2024-11-25,Environment_APR,,18.42578745361781,18.42578745361781,not recorded (no decision-time record exists),False
+2024-12-02,funding_regime,,,,not recorded (no decision-time record exists),False
+2024-12-02,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2024-12-02,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2024-12-02,F_tk,,0.0002126232380952,0.0002126232380952,not recorded (no decision-time record exists),False
+2024-12-02,basket_members,,"XRP,SOL,DOGE,ADA,AVAX,TRX,TON,XLM,DOT,LINK,BCH,SUI,LTC,NEAR,HBAR,UNI,APT,ICP,ETC,POL,FET,TAO,RENDER,KAS,FIL,ALGO,ARB,VET,STX,TIA","XRP,SOL,DOGE,ADA,AVAX,TRX,TON,XLM,DOT,LINK,BCH,SUI,LTC,NEAR,HBAR,UNI,APT,ICP,ETC,POL,FET,TAO,RENDER,KAS,FIL,ALGO,ARB,VET,STX,TIA",not recorded (no decision-time record exists),False
+2024-12-02,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2024-12-02,Environment_APR,,20.4377089621616,20.4377089621616,not recorded (no decision-time record exists),False
+2024-12-09,funding_regime,,,,not recorded (no decision-time record exists),False
+2024-12-09,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2024-12-09,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2024-12-09,F_tk,,0.0003934361904761,0.0003934361904761,not recorded (no decision-time record exists),False
+2024-12-09,basket_members,,"XRP,SOL,DOGE,ADA,TRX,AVAX,TON,LINK,DOT,XLM,HBAR,SUI,BCH,UNI,LTC,NEAR,APT,ICP,POL,ETC,VET,FET,RENDER,TAO,FIL,KAS,ARB,AAVE,ALGO,XMR","XRP,SOL,DOGE,ADA,TRX,AVAX,TON,LINK,DOT,XLM,HBAR,SUI,BCH,UNI,LTC,NEAR,APT,ICP,POL,ETC,VET,FET,RENDER,TAO,FIL,KAS,ARB,AAVE,ALGO,XMR",not recorded (no decision-time record exists),False
+2024-12-09,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2024-12-09,Environment_APR,,38.97872849786256,38.97872849786256,not recorded (no decision-time record exists),False
+2024-12-16,funding_regime,,,,not recorded (no decision-time record exists),False
+2024-12-16,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2024-12-16,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2024-12-16,F_tk,,8.14067142857143e-05,8.14067142857143e-05,not recorded (no decision-time record exists),False
+2024-12-16,basket_members,,"XRP,SOL,DOGE,ADA,TRX,AVAX,LINK,TON,SUI,DOT,XLM,HBAR,BCH,UNI,LTC,NEAR,APT,ICP,AAVE,POL,ETC,RENDER,VET,FET,TAO,ARB,FIL,XMR,KAS,STX","XRP,SOL,DOGE,ADA,TRX,AVAX,LINK,TON,SUI,DOT,XLM,HBAR,BCH,UNI,LTC,NEAR,APT,ICP,AAVE,POL,ETC,RENDER,VET,FET,TAO,ARB,FIL,XMR,KAS,STX",not recorded (no decision-time record exists),False
+2024-12-16,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2024-12-16,Environment_APR,,9.23638554787946,9.23638554787946,not recorded (no decision-time record exists),False
+2024-12-23,funding_regime,,,,not recorded (no decision-time record exists),False
+2024-12-23,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2024-12-23,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2024-12-23,F_tk,,1.635266666666667e-05,1.635266666666667e-05,not recorded (no decision-time record exists),False
+2024-12-23,basket_members,,"XRP,SOL,DOGE,ADA,TRX,AVAX,LINK,TON,SUI,XLM,DOT,HBAR,BCH,UNI,LTC,NEAR,APT,AAVE,ICP,POL,ETC,VET,RENDER,XMR,OM,TAO,FET,ARB,ENA,FIL","XRP,SOL,DOGE,ADA,TRX,AVAX,LINK,TON,SUI,XLM,DOT,HBAR,BCH,UNI,LTC,NEAR,APT,AAVE,ICP,POL,ETC,VET,RENDER,XMR,OM,TAO,FET,ARB,ENA,FIL",not recorded (no decision-time record exists),False
+2024-12-23,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2024-12-23,Environment_APR,,8.330644172995948,8.330644172995948,not recorded (no decision-time record exists),False
+2024-12-30,funding_regime,,,,not recorded (no decision-time record exists),False
+2024-12-30,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2024-12-30,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2024-12-30,F_tk,,8.099614285714286e-05,8.099614285714287e-05,not recorded (no decision-time record exists),True
+2024-12-30,basket_members,,"XRP,SOL,DOGE,ADA,TRX,AVAX,TON,LINK,SUI,HBAR,DOT,XLM,BCH,UNI,LTC,NEAR,AAVE,APT,ICP,POL,ETC,VET,VIRTUAL,XMR,RENDER,OM,TAO,FET,ARB,FIL","XRP,SOL,DOGE,ADA,TRX,AVAX,TON,LINK,SUI,HBAR,DOT,XLM,BCH,UNI,LTC,NEAR,AAVE,APT,ICP,POL,ETC,VET,VIRTUAL,XMR,RENDER,OM,TAO,FET,ARB,FIL",not recorded (no decision-time record exists),False
+2024-12-30,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2024-12-30,Environment_APR,,8.354652321051203,8.354652321051203,not recorded (no decision-time record exists),False
+2025-01-06,funding_regime,,,,not recorded (no decision-time record exists),False
+2025-01-06,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2025-01-06,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2025-01-06,F_tk,,8.732490476190477e-05,8.732490476190477e-05,not recorded (no decision-time record exists),False
+2025-01-06,basket_members,,"XRP,SOL,DOGE,ADA,TRX,AVAX,SUI,LINK,TON,XLM,DOT,HBAR,BCH,UNI,LTC,NEAR,ICP,APT,AAVE,TAO,POL,RENDER,ETC,FET,VET,VIRTUAL,ARB,ENA,OM,FIL","XRP,SOL,DOGE,ADA,TRX,AVAX,SUI,LINK,TON,XLM,DOT,HBAR,BCH,UNI,LTC,NEAR,ICP,APT,AAVE,TAO,POL,RENDER,ETC,FET,VET,VIRTUAL,ARB,ENA,OM,FIL",not recorded (no decision-time record exists),False
+2025-01-06,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-01-06,Environment_APR,,8.979473228309201,8.979473228309201,not recorded (no decision-time record exists),False
+2025-01-13,funding_regime,,,,not recorded (no decision-time record exists),False
+2025-01-13,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2025-01-13,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2025-01-13,F_tk,,4.511647619047619e-05,4.511647619047619e-05,not recorded (no decision-time record exists),False
+2025-01-13,basket_members,,"XRP,SOL,DOGE,ADA,TRX,AVAX,SUI,TON,XLM,LINK,HBAR,DOT,BCH,UNI,LTC,NEAR,APT,ICP,AAVE,ETC,POL,XMR,RENDER,OM,VET,TAO,FET,FIL,ARB,ALGO","XRP,SOL,DOGE,ADA,TRX,AVAX,SUI,TON,XLM,LINK,HBAR,DOT,BCH,UNI,LTC,NEAR,APT,ICP,AAVE,ETC,POL,XMR,RENDER,OM,VET,TAO,FET,FIL,ARB,ALGO",not recorded (no decision-time record exists),False
+2025-01-13,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-01-13,Environment_APR,,7.893126200247901,7.893126200247901,not recorded (no decision-time record exists),False
+2025-01-20,funding_regime,,,,not recorded (no decision-time record exists),False
+2025-01-20,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2025-01-20,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2025-01-20,F_tk,,3.596476190476191e-05,3.596476190476191e-05,not recorded (no decision-time record exists),False
+2025-01-20,basket_members,,"XRP,SOL,DOGE,ADA,TRX,LINK,AVAX,SUI,XLM,HBAR,TON,DOT,LTC,BCH,TRUMP,UNI,NEAR,APT,ICP,AAVE,ONDO,ETC,XMR,POL,VET,TAO,OM,RENDER,ALGO,KAS","XRP,SOL,DOGE,ADA,TRX,LINK,AVAX,SUI,XLM,HBAR,TON,DOT,LTC,BCH,TRUMP,UNI,NEAR,APT,ICP,AAVE,ONDO,ETC,XMR,POL,VET,TAO,OM,RENDER,ALGO,KAS",not recorded (no decision-time record exists),False
+2025-01-20,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-01-20,Environment_APR,,8.513784018613611,8.513784018613611,not recorded (no decision-time record exists),False
+2025-01-27,funding_regime,,,,not recorded (no decision-time record exists),False
+2025-01-27,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2025-01-27,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2025-01-27,F_tk,,6.678876190476191e-05,6.678876190476191e-05,not recorded (no decision-time record exists),False
+2025-01-27,basket_members,,"XRP,SOL,DOGE,ADA,TRX,LINK,AVAX,XLM,HBAR,TON,SUI,DOT,LTC,BCH,UNI,NEAR,TRUMP,AAVE,OM,APT,ONDO,ICP,XMR,ETC,POL,VET,TAO,RENDER,KAS,ALGO","XRP,SOL,DOGE,ADA,TRX,LINK,AVAX,XLM,HBAR,TON,SUI,DOT,LTC,BCH,UNI,NEAR,TRUMP,AAVE,OM,APT,ONDO,ICP,XMR,ETC,POL,VET,TAO,RENDER,KAS,ALGO",not recorded (no decision-time record exists),False
+2025-01-27,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-01-27,Environment_APR,,8.534153412229617,8.534153412229617,not recorded (no decision-time record exists),False
+2025-02-03,funding_regime,,,,not recorded (no decision-time record exists),False
+2025-02-03,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2025-02-03,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2025-02-03,F_tk,,4.25422380952381e-05,4.25422380952381e-05,not recorded (no decision-time record exists),False
+2025-02-03,basket_members,,"XRP,SOL,DOGE,ADA,TRX,LINK,AVAX,XLM,SUI,TON,HBAR,LTC,DOT,BCH,UNI,OM,NEAR,TRUMP,XMR,ONDO,AAVE,ICP,APT,ETC,VET,KAS,TAO,POL,ALGO,RENDER","XRP,SOL,DOGE,ADA,TRX,LINK,AVAX,XLM,SUI,TON,HBAR,LTC,DOT,BCH,UNI,OM,NEAR,TRUMP,XMR,ONDO,AAVE,ICP,APT,ETC,VET,KAS,TAO,POL,ALGO,RENDER",not recorded (no decision-time record exists),False
+2025-02-03,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-02-03,Environment_APR,,7.093033212024476,7.093033212024476,not recorded (no decision-time record exists),False
+2025-02-10,funding_regime,,,,not recorded (no decision-time record exists),False
+2025-02-10,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2025-02-10,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2025-02-10,F_tk,,-2.5141285714285715e-05,-2.5141285714285715e-05,not recorded (no decision-time record exists),False
+2025-02-10,basket_members,,"XRP,SOL,DOGE,ADA,TRX,LINK,AVAX,XLM,TON,SUI,HBAR,LTC,DOT,BCH,OM,UNI,ONDO,XMR,NEAR,AAVE,APT,ICP,TRUMP,ETC,TAO,POL,VET,ALGO,KAS,RENDER","XRP,SOL,DOGE,ADA,TRX,LINK,AVAX,XLM,TON,SUI,HBAR,LTC,DOT,BCH,OM,UNI,ONDO,XMR,NEAR,AAVE,APT,ICP,TRUMP,ETC,TAO,POL,VET,ALGO,KAS,RENDER",not recorded (no decision-time record exists),False
+2025-02-10,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-02-10,Environment_APR,,4.539143663443832,4.539143663443832,not recorded (no decision-time record exists),False
+2025-02-17,funding_regime,,,,not recorded (no decision-time record exists),False
+2025-02-17,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2025-02-17,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2025-02-17,F_tk,,3.246333333333334e-06,3.246333333333336e-06,not recorded (no decision-time record exists),True
+2025-02-17,basket_members,,"XRP,SOL,DOGE,ADA,TRX,LINK,XLM,AVAX,SUI,LTC,TON,HBAR,DOT,OM,BCH,UNI,XMR,NEAR,ONDO,AAVE,TRUMP,APT,ICP,ETC,TAO,POL,KAS,VET,ALGO,RENDER","XRP,SOL,DOGE,ADA,TRX,LINK,XLM,AVAX,SUI,LTC,TON,HBAR,DOT,OM,BCH,UNI,XMR,NEAR,ONDO,AAVE,TRUMP,APT,ICP,ETC,TAO,POL,KAS,VET,ALGO,RENDER",not recorded (no decision-time record exists),False
+2025-02-17,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-02-17,Environment_APR,,5.256655339518088,5.256655339518088,not recorded (no decision-time record exists),False
+2025-02-24,funding_regime,,,,not recorded (no decision-time record exists),False
+2025-02-24,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2025-02-24,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2025-02-24,F_tk,,-1.2646380952380952e-05,-1.3791238095238098e-05,not recorded (no decision-time record exists),True
+2025-02-24,basket_members,,"XRP,SOL,DOGE,ADA,TRX,LINK,SUI,AVAX,XLM,LTC,TON,HBAR,OM,DOT,BCH,UNI,XMR,NEAR,AAVE,TAO,APT,ONDO,ICP,TRUMP,ETC,VET,KAS,POL,ALGO,FIL","XRP,SOL,DOGE,ADA,TRX,LINK,SUI,AVAX,XLM,LTC,TON,HBAR,OM,DOT,BCH,UNI,XMR,NEAR,AAVE,TAO,APT,ONDO,ICP,TRUMP,ETC,S,VET,KAS,POL,ALGO",not recorded (no decision-time record exists),True
+2025-02-24,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-02-24,Environment_APR,,6.056013893150917,6.056013893150917,not recorded (no decision-time record exists),False
+2025-03-03,funding_regime,,,,not recorded (no decision-time record exists),False
+2025-03-03,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2025-03-03,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2025-03-03,F_tk,,2.3214476190476192e-05,2.323519047619048e-05,not recorded (no decision-time record exists),True
+2025-03-03,basket_members,,"XRP,SOL,ADA,DOGE,TRX,HBAR,LINK,XLM,AVAX,SUI,LTC,TON,DOT,OM,BCH,UNI,XMR,NEAR,APT,ONDO,ICP,TRUMP,AAVE,ETC,TAO,VET,POL,ALGO,KAS,RENDER","XRP,SOL,ADA,DOGE,TRX,HBAR,LINK,XLM,AVAX,SUI,LTC,TON,DOT,OM,BCH,UNI,XMR,NEAR,APT,ONDO,ICP,TRUMP,AAVE,ETC,TAO,VET,POL,ALGO,S,KAS",not recorded (no decision-time record exists),True
+2025-03-03,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-03-03,Environment_APR,,6.111154413127414,6.111154413127414,not recorded (no decision-time record exists),False
+2025-03-10,funding_regime,,,,not recorded (no decision-time record exists),False
+2025-03-10,is_mrf_active,,,,not recorded (no decision-time record exists),False
+2025-03-10,funding_pct_rank,,,,not recorded (no decision-time record exists),False
+2025-03-10,F_tk,,-3.558352380952381e-05,-3.5583523809523806e-05,not recorded (no decision-time record exists),True
+2025-03-10,basket_members,,"XRP,SOL,ADA,DOGE,TRX,LINK,HBAR,XLM,AVAX,SUI,LTC,BCH,TON,DOT,OM,XMR,UNI,APT,NEAR,ETC,AAVE,ONDO,ICP,ENA,TRUMP,VET,TAO,POL,FIL,ALGO","XRP,SOL,ADA,DOGE,TRX,LINK,HBAR,XLM,AVAX,SUI,LTC,BCH,TON,DOT,OM,XMR,UNI,APT,NEAR,ETC,AAVE,ONDO,ICP,ENA,TRUMP,VET,TAO,POL,FIL,ALGO",not recorded (no decision-time record exists),False
+2025-03-10,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-03-10,Environment_APR,,1.5167300223686422,1.5167300223686422,not recorded (no decision-time record exists),False
+2025-03-17,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2025-03-17,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-03-17,funding_pct_rank,,0.1153846153846153,0.1153846153846153,not recorded (no decision-time record exists),False
+2025-03-17,F_tk,,-1.8444238095238094e-05,-1.8444238095238094e-05,not recorded (no decision-time record exists),False
+2025-03-17,basket_members,,"XRP,SOL,ADA,DOGE,TRX,TON,LINK,XLM,HBAR,AVAX,SUI,LTC,OM,BCH,DOT,XMR,UNI,APT,NEAR,ICP,ETC,ONDO,AAVE,TRUMP,VET,TAO,ATOM,KAS,ENA,FIL","XRP,SOL,ADA,DOGE,TRX,TON,LINK,XLM,HBAR,AVAX,SUI,LTC,OM,BCH,DOT,XMR,UNI,APT,NEAR,ICP,ETC,ONDO,AAVE,TRUMP,VET,TAO,ATOM,KAS,ENA,FIL",not recorded (no decision-time record exists),False
+2025-03-17,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-03-17,Environment_APR,,4.257258145863231,4.257258145863231,not recorded (no decision-time record exists),False
+2025-03-24,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2025-03-24,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-03-24,funding_pct_rank,,0.074074074074074,0.074074074074074,not recorded (no decision-time record exists),False
+2025-03-24,F_tk,,-2.8347333333333336e-05,-2.8347333333333336e-05,not recorded (no decision-time record exists),False
+2025-03-24,basket_members,,"XRP,SOL,DOGE,ADA,TRX,LINK,TON,XLM,AVAX,HBAR,SUI,LTC,DOT,BCH,OM,UNI,XMR,APT,NEAR,ICP,AAVE,ETC,ONDO,TRUMP,TAO,VET,ATOM,KAS,FIL,ENA","XRP,SOL,DOGE,ADA,TRX,LINK,TON,XLM,AVAX,HBAR,SUI,LTC,DOT,BCH,OM,UNI,XMR,APT,NEAR,ICP,AAVE,ETC,ONDO,TRUMP,TAO,VET,ATOM,KAS,FIL,ENA",not recorded (no decision-time record exists),False
+2025-03-24,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-03-24,Environment_APR,,5.3471287482841845,5.3471287482841845,not recorded (no decision-time record exists),False
+2025-03-31,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2025-03-31,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-03-31,funding_pct_rank,,0.2142857142857142,0.2142857142857142,not recorded (no decision-time record exists),False
+2025-03-31,F_tk,,-1.0437761904761904e-05,-1.0437761904761904e-05,not recorded (no decision-time record exists),False
+2025-03-31,basket_members,,"XRP,SOL,DOGE,ADA,TRX,TON,LINK,XLM,AVAX,SUI,HBAR,LTC,OM,DOT,BCH,XMR,UNI,APT,NEAR,ICP,ETC,ONDO,AAVE,TRUMP,VET,ENA,TAO,ATOM,TIA,FIL","XRP,SOL,DOGE,ADA,TRX,TON,LINK,XLM,AVAX,SUI,HBAR,LTC,OM,DOT,BCH,XMR,UNI,APT,NEAR,ICP,ETC,ONDO,AAVE,TRUMP,VET,ENA,TAO,ATOM,TIA,FIL",not recorded (no decision-time record exists),False
+2025-03-31,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-03-31,Environment_APR,,4.237394905450201,4.237394905450201,not recorded (no decision-time record exists),False
+2025-04-07,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2025-04-07,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-04-07,funding_pct_rank,,0.2413793103448276,0.2413793103448276,not recorded (no decision-time record exists),False
+2025-04-07,F_tk,,-8.931761904761905e-06,-8.931761904761905e-06,not recorded (no decision-time record exists),False
+2025-04-07,basket_members,,"XRP,SOL,DOGE,TRX,ADA,TON,LINK,XLM,AVAX,SUI,HBAR,DOT,OM,BCH,LTC,XMR,UNI,APT,NEAR,ONDO,ICP,ETC,ATOM,AAVE,VET,TRUMP,TAO,ENA,FIL,KAS","XRP,SOL,DOGE,TRX,ADA,TON,LINK,XLM,AVAX,SUI,HBAR,DOT,OM,BCH,LTC,XMR,UNI,APT,NEAR,ONDO,ICP,ETC,ATOM,AAVE,VET,TRUMP,TAO,ENA,FIL,KAS",not recorded (no decision-time record exists),False
+2025-04-07,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-04-07,Environment_APR,,4.054035745549126,4.054035745549126,not recorded (no decision-time record exists),False
+2025-04-14,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2025-04-14,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2025-04-14,funding_pct_rank,,0.3,0.3,not recorded (no decision-time record exists),False
+2025-04-14,F_tk,,3.874142857142856e-06,3.874142857142855e-06,not recorded (no decision-time record exists),True
+2025-04-14,basket_members,,"XRP,SOL,DOGE,TRX,ADA,AVAX,LINK,XLM,SUI,TON,HBAR,BCH,LTC,DOT,XMR,UNI,APT,ONDO,NEAR,ICP,ETC,AAVE,TAO,VET,RENDER,KAS,ATOM,ENA,TRUMP,FIL","XRP,SOL,DOGE,TRX,ADA,AVAX,LINK,XLM,SUI,TON,HBAR,BCH,LTC,DOT,XMR,UNI,APT,ONDO,NEAR,ICP,ETC,AAVE,TAO,VET,RENDER,KAS,ATOM,ENA,TRUMP,FIL",not recorded (no decision-time record exists),False
+2025-04-14,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-04-14,Environment_APR,,5.267006013885712,5.267006013885712,not recorded (no decision-time record exists),False
+2025-04-21,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2025-04-21,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2025-04-21,funding_pct_rank,,0.2580645161290322,0.2580645161290322,not recorded (no decision-time record exists),False
+2025-04-21,F_tk,,-1.349714285714284e-06,-1.349714285714286e-06,not recorded (no decision-time record exists),True
+2025-04-21,basket_members,,"XRP,SOL,TRX,DOGE,ADA,LINK,AVAX,TON,XLM,HBAR,SUI,BCH,DOT,LTC,XMR,UNI,APT,TAO,NEAR,ONDO,ETC,ICP,RENDER,AAVE,VET,KAS,ATOM,FIL,POL,ALGO","XRP,SOL,TRX,DOGE,ADA,LINK,AVAX,TON,XLM,HBAR,SUI,BCH,DOT,LTC,XMR,UNI,APT,TAO,NEAR,ONDO,ETC,ICP,RENDER,AAVE,VET,KAS,ATOM,FIL,POL,ALGO",not recorded (no decision-time record exists),False
+2025-04-21,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-04-21,Environment_APR,,4.547359543176974,4.547359543176974,not recorded (no decision-time record exists),False
+2025-04-28,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2025-04-28,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2025-04-28,funding_pct_rank,,0.4375,0.4375,not recorded (no decision-time record exists),False
+2025-04-28,F_tk,,2.479938095238096e-05,2.479938095238096e-05,not recorded (no decision-time record exists),False
+2025-04-28,basket_members,,"XRP,SOL,DOGE,ADA,TRX,SUI,LINK,AVAX,XLM,TON,HBAR,BCH,LTC,DOT,XMR,APT,UNI,TAO,NEAR,ONDO,TRUMP,ICP,AAVE,KAS,ETC,VET,RENDER,POL,ATOM,ENA","XRP,SOL,DOGE,ADA,TRX,SUI,LINK,AVAX,XLM,TON,HBAR,BCH,LTC,DOT,XMR,APT,UNI,TAO,NEAR,ONDO,TRUMP,ICP,AAVE,KAS,ETC,VET,RENDER,POL,ATOM,ENA",not recorded (no decision-time record exists),False
+2025-04-28,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-04-28,Environment_APR,,6.825660657396623,6.825660657396623,not recorded (no decision-time record exists),False
+2025-05-05,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2025-05-05,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2025-05-05,funding_pct_rank,,0.4545454545454545,0.4545454545454545,not recorded (no decision-time record exists),False
+2025-05-05,F_tk,,2.749971428571429e-05,2.749971428571429e-05,not recorded (no decision-time record exists),False
+2025-05-05,basket_members,,"XRP,SOL,DOGE,ADA,TRX,SUI,LINK,AVAX,XLM,TON,HBAR,BCH,LTC,DOT,XMR,APT,UNI,TAO,NEAR,ONDO,AAVE,ICP,ETC,KAS,RENDER,TRUMP,VET,POL,ATOM,FIL","XRP,SOL,DOGE,ADA,TRX,SUI,LINK,AVAX,XLM,TON,HBAR,BCH,LTC,DOT,XMR,APT,UNI,TAO,NEAR,ONDO,AAVE,ICP,ETC,KAS,RENDER,TRUMP,VET,POL,ATOM,FIL",not recorded (no decision-time record exists),False
+2025-05-05,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-05-05,Environment_APR,,5.331931624131677,5.331931624131677,not recorded (no decision-time record exists),False
+2025-05-12,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2025-05-12,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-05-12,funding_pct_rank,,0.5588235294117647,0.5588235294117647,not recorded (no decision-time record exists),False
+2025-05-12,F_tk,,5.005628571428572e-05,5.005628571428572e-05,not recorded (no decision-time record exists),False
+2025-05-12,basket_members,,"XRP,SOL,DOGE,ADA,TRX,SUI,LINK,AVAX,XLM,HBAR,TON,BCH,DOT,LTC,XMR,UNI,TAO,NEAR,APT,AAVE,ONDO,ICP,KAS,ETC,TRUMP,RENDER,VET,ATOM,ENA,POL","XRP,SOL,DOGE,ADA,TRX,SUI,LINK,AVAX,XLM,HBAR,TON,BCH,DOT,LTC,XMR,UNI,TAO,NEAR,APT,AAVE,ONDO,ICP,KAS,ETC,TRUMP,RENDER,VET,ATOM,ENA,POL",not recorded (no decision-time record exists),False
+2025-05-12,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2025-05-12,Environment_APR,,6.4918499802349405,6.4918499802349405,not recorded (no decision-time record exists),False
+2025-05-19,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2025-05-19,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2025-05-19,funding_pct_rank,,0.4571428571428571,0.4571428571428571,not recorded (no decision-time record exists),False
+2025-05-19,F_tk,,3.353147619047619e-05,3.353147619047619e-05,not recorded (no decision-time record exists),False
+2025-05-19,basket_members,,"XRP,SOL,DOGE,ADA,TRX,SUI,LINK,AVAX,XLM,HBAR,BCH,TON,LTC,DOT,XMR,TAO,UNI,AAVE,NEAR,APT,ONDO,KAS,ETC,ICP,TRUMP,VET,RENDER,ENA,ATOM,POL","XRP,SOL,DOGE,ADA,TRX,SUI,LINK,AVAX,XLM,HBAR,BCH,TON,LTC,DOT,XMR,TAO,UNI,AAVE,NEAR,APT,ONDO,KAS,ETC,ICP,TRUMP,VET,RENDER,ENA,ATOM,POL",not recorded (no decision-time record exists),False
+2025-05-19,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2025-05-19,Environment_APR,,6.862151272606988,6.862151272606988,not recorded (no decision-time record exists),False
+2025-05-26,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2025-05-26,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-05-26,funding_pct_rank,,0.5555555555555556,0.5555555555555556,not recorded (no decision-time record exists),False
+2025-05-26,F_tk,,4.746828571428572e-05,4.746828571428571e-05,not recorded (no decision-time record exists),True
+2025-05-26,basket_members,,"XRP,SOL,DOGE,ADA,TRX,SUI,LINK,AVAX,XLM,BCH,HBAR,XMR,TON,LTC,DOT,AAVE,TAO,UNI,NEAR,APT,ONDO,ICP,KAS,ETC,TRUMP,RENDER,VET,FET,ENA,WLD","XRP,SOL,DOGE,ADA,TRX,SUI,LINK,AVAX,XLM,BCH,HBAR,XMR,TON,LTC,DOT,AAVE,TAO,UNI,NEAR,APT,ONDO,ICP,KAS,ETC,TRUMP,RENDER,VET,FET,ENA,WLD",not recorded (no decision-time record exists),False
+2025-05-26,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-05-26,Environment_APR,,6.783173962496939,6.783173962496939,not recorded (no decision-time record exists),False
+2025-06-02,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2025-06-02,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2025-06-02,funding_pct_rank,,0.3243243243243243,0.3243243243243243,not recorded (no decision-time record exists),False
+2025-06-02,F_tk,,1.3928666666666668e-05,1.3928666666666666e-05,not recorded (no decision-time record exists),True
+2025-06-02,basket_members,,"XRP,SOL,DOGE,TRX,ADA,HYPE,SUI,LINK,AVAX,XLM,BCH,TON,HBAR,LTC,XMR,DOT,UNI,AAVE,TAO,APT,NEAR,ONDO,ICP,ETC,KAS,TRUMP,VET,RENDER,FET,ATOM","XRP,SOL,DOGE,TRX,ADA,HYPE,SUI,LINK,AVAX,XLM,BCH,TON,HBAR,LTC,XMR,DOT,UNI,AAVE,TAO,APT,NEAR,ONDO,ICP,ETC,KAS,TRUMP,VET,RENDER,FET,ATOM",not recorded (no decision-time record exists),False
+2025-06-02,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-06-02,Environment_APR,,3.744824739190439,3.744824739190439,not recorded (no decision-time record exists),False
+2025-06-09,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2025-06-09,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2025-06-09,funding_pct_rank,,0.3684210526315789,0.3684210526315789,not recorded (no decision-time record exists),False
+2025-06-09,F_tk,,1.944547619047619e-05,1.944547619047619e-05,not recorded (no decision-time record exists),False
+2025-06-09,basket_members,,"XRP,SOL,DOGE,TRX,ADA,HYPE,SUI,LINK,AVAX,XLM,BCH,TON,HBAR,LTC,DOT,XMR,AAVE,UNI,TAO,APT,ICP,NEAR,ONDO,ETC,KAS,TRUMP,VET,RENDER,FET,ATOM","XRP,SOL,DOGE,TRX,ADA,HYPE,SUI,LINK,AVAX,XLM,BCH,TON,HBAR,LTC,DOT,XMR,AAVE,UNI,TAO,APT,ICP,NEAR,ONDO,ETC,KAS,TRUMP,VET,RENDER,FET,ATOM",not recorded (no decision-time record exists),False
+2025-06-09,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-06-09,Environment_APR,,4.44086166303718,4.44086166303718,not recorded (no decision-time record exists),False
+2025-06-16,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2025-06-16,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2025-06-16,funding_pct_rank,,0.4615384615384615,0.4615384615384615,not recorded (no decision-time record exists),False
+2025-06-16,F_tk,,3.315071428571429e-05,3.315071428571429e-05,not recorded (no decision-time record exists),False
+2025-06-16,basket_members,,"XRP,SOL,DOGE,TRX,ADA,HYPE,SUI,BCH,LINK,XLM,AVAX,TON,LTC,HBAR,XMR,DOT,UNI,AAVE,TAO,ICP,APT,NEAR,ETC,ONDO,TRUMP,KAS,VET,ATOM,ENA,FET","XRP,SOL,DOGE,TRX,ADA,HYPE,SUI,BCH,LINK,XLM,AVAX,TON,LTC,HBAR,XMR,DOT,UNI,AAVE,TAO,ICP,APT,NEAR,ETC,ONDO,TRUMP,KAS,VET,ATOM,ENA,FET",not recorded (no decision-time record exists),False
+2025-06-16,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-06-16,Environment_APR,,5.232603276057055,5.232603276057055,not recorded (no decision-time record exists),False
+2025-06-23,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2025-06-23,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2025-06-23,funding_pct_rank,,0.275,0.275,not recorded (no decision-time record exists),False
+2025-06-23,F_tk,,5.845904761904762e-06,5.845904761904762e-06,not recorded (no decision-time record exists),False
+2025-06-23,basket_members,,"XRP,SOL,TRX,DOGE,ADA,HYPE,BCH,SUI,LINK,XLM,AVAX,TON,LTC,HBAR,XMR,DOT,UNI,AAVE,TAO,APT,ICP,NEAR,ETC,ONDO,TRUMP,ATOM,KAS,VET,POL,FET","XRP,SOL,TRX,DOGE,ADA,HYPE,BCH,SUI,LINK,XLM,AVAX,TON,LTC,HBAR,XMR,DOT,UNI,AAVE,TAO,APT,ICP,NEAR,ETC,ONDO,TRUMP,ATOM,KAS,VET,POL,FET",not recorded (no decision-time record exists),False
+2025-06-23,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-06-23,Environment_APR,,4.421924044511875,4.421924044511875,not recorded (no decision-time record exists),False
+2025-06-30,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2025-06-30,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2025-06-30,funding_pct_rank,,0.4634146341463415,0.4634146341463415,not recorded (no decision-time record exists),False
+2025-06-30,F_tk,,2.765495238095238e-05,2.765495238095238e-05,not recorded (no decision-time record exists),False
+2025-06-30,basket_members,,"XRP,SOL,TRX,DOGE,ADA,HYPE,BCH,SUI,LINK,AVAX,XLM,TON,LTC,HBAR,XMR,DOT,UNI,AAVE,APT,TAO,NEAR,ICP,ETC,ONDO,KAS,ATOM,VET,FET,TRUMP,ARB","XRP,SOL,TRX,DOGE,ADA,HYPE,BCH,SUI,LINK,AVAX,XLM,TON,LTC,HBAR,XMR,DOT,UNI,AAVE,APT,TAO,NEAR,ICP,ETC,ONDO,KAS,ATOM,VET,FET,TRUMP,ARB",not recorded (no decision-time record exists),False
+2025-06-30,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-06-30,Environment_APR,,5.471133409061933,5.471133409061933,not recorded (no decision-time record exists),False
+2025-07-07,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2025-07-07,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2025-07-07,funding_pct_rank,,0.3095238095238095,0.3095238095238095,not recorded (no decision-time record exists),False
+2025-07-07,F_tk,,8.34861904761905e-06,8.34861904761905e-06,not recorded (no decision-time record exists),False
+2025-07-07,basket_members,,"XRP,SOL,TRX,DOGE,ADA,HYPE,SUI,BCH,LINK,AVAX,XLM,TON,HBAR,LTC,XMR,DOT,UNI,AAVE,TAO,APT,NEAR,ICP,ETC,ONDO,KAS,ATOM,VET,FET,TRUMP,RENDER","XRP,SOL,TRX,DOGE,ADA,HYPE,SUI,BCH,LINK,AVAX,XLM,TON,HBAR,LTC,XMR,DOT,UNI,AAVE,TAO,APT,NEAR,ICP,ETC,ONDO,KAS,ATOM,VET,FET,TRUMP,RENDER",not recorded (no decision-time record exists),False
+2025-07-07,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-07-07,Environment_APR,,4.550417606571496,4.550417606571496,not recorded (no decision-time record exists),False
+2025-07-14,funding_regime,,Q4: High,Q4: High,not recorded (no decision-time record exists),False
+2025-07-14,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-07-14,funding_pct_rank,,0.7674418604651163,0.7674418604651163,not recorded (no decision-time record exists),False
+2025-07-14,F_tk,,6.944219047619047e-05,6.944219047619047e-05,not recorded (no decision-time record exists),False
+2025-07-14,basket_members,,"XRP,SOL,DOGE,TRX,ADA,HYPE,XLM,SUI,LINK,HBAR,BCH,AVAX,TON,LTC,XMR,DOT,UNI,AAVE,TAO,APT,NEAR,ICP,ONDO,ETC,ALGO,KAS,ENA,ATOM,VET,POL","XRP,SOL,DOGE,TRX,ADA,HYPE,XLM,SUI,LINK,HBAR,BCH,AVAX,TON,LTC,XMR,DOT,UNI,AAVE,TAO,APT,NEAR,ICP,ONDO,ETC,ALGO,KAS,ENA,ATOM,VET,POL",not recorded (no decision-time record exists),False
+2025-07-14,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2025-07-14,Environment_APR,,7.02732756259667,7.02732756259667,not recorded (no decision-time record exists),False
+2025-07-21,funding_regime,,Q4: High,Q4: High,not recorded (no decision-time record exists),False
+2025-07-21,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-07-21,funding_pct_rank,,0.9090909090909092,0.9090909090909092,not recorded (no decision-time record exists),False
+2025-07-21,F_tk,,0.0001025724285714,0.0001025724285714,not recorded (no decision-time record exists),False
+2025-07-21,basket_members,,"XRP,SOL,DOGE,ADA,TRX,HYPE,XLM,SUI,LINK,HBAR,BCH,AVAX,LTC,TON,DOT,UNI,XMR,AAVE,TAO,ETC,NEAR,APT,ONDO,ICP,ENA,KAS,ALGO,ARB,VET,ATOM","XRP,SOL,DOGE,ADA,TRX,HYPE,XLM,SUI,LINK,HBAR,BCH,AVAX,LTC,TON,DOT,UNI,XMR,AAVE,TAO,ETC,NEAR,APT,ONDO,ICP,ENA,KAS,ALGO,ARB,VET,ATOM",not recorded (no decision-time record exists),False
+2025-07-21,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2025-07-21,Environment_APR,,7.747393464836885,7.747393464836885,not recorded (no decision-time record exists),False
+2025-07-28,funding_regime,,Q4: High,Q4: High,not recorded (no decision-time record exists),False
+2025-07-28,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-07-28,funding_pct_rank,,0.8666666666666667,0.8666666666666667,not recorded (no decision-time record exists),False
+2025-07-28,F_tk,,8.452514285714286e-05,8.452514285714287e-05,not recorded (no decision-time record exists),True
+2025-07-28,basket_members,,"XRP,SOL,DOGE,TRX,ADA,SUI,HYPE,XLM,LINK,HBAR,BCH,AVAX,LTC,TON,UNI,DOT,XMR,AAVE,ENA,TAO,NEAR,ETC,ONDO,APT,ICP,KAS,PENGU,ALGO,ARB,VET","XRP,SOL,DOGE,TRX,ADA,SUI,HYPE,XLM,LINK,HBAR,BCH,AVAX,LTC,TON,UNI,DOT,XMR,AAVE,ENA,TAO,NEAR,ETC,ONDO,APT,ICP,KAS,PENGU,ALGO,ARB,VET",not recorded (no decision-time record exists),False
+2025-07-28,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2025-07-28,Environment_APR,,7.612371371298194,7.612371371298194,not recorded (no decision-time record exists),False
+2025-08-04,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2025-08-04,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2025-08-04,funding_pct_rank,,0.3260869565217391,0.3260869565217391,not recorded (no decision-time record exists),False
+2025-08-04,F_tk,,1.4982619047619049e-05,1.4982619047619049e-05,not recorded (no decision-time record exists),False
+2025-08-04,basket_members,,"XRP,SOL,TRX,DOGE,ADA,HYPE,XLM,SUI,LINK,BCH,HBAR,AVAX,TON,LTC,XMR,UNI,DOT,AAVE,ENA,TAO,ETC,NEAR,ONDO,APT,ICP,KAS,PENGU,ALGO,VET,ATOM","XRP,SOL,TRX,DOGE,ADA,HYPE,XLM,SUI,LINK,BCH,HBAR,AVAX,TON,LTC,XMR,UNI,DOT,AAVE,ENA,TAO,ETC,NEAR,ONDO,APT,ICP,KAS,PENGU,ALGO,VET,ATOM",not recorded (no decision-time record exists),False
+2025-08-04,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2025-08-04,Environment_APR,,5.781037906441488,5.781037906441488,not recorded (no decision-time record exists),False
+2025-08-11,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2025-08-11,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-08-11,funding_pct_rank,,0.7021276595744681,0.7021276595744681,not recorded (no decision-time record exists),False
+2025-08-11,F_tk,,6.117642857142857e-05,6.117642857142857e-05,not recorded (no decision-time record exists),False
+2025-08-11,basket_members,,"XRP,SOL,DOGE,TRX,ADA,HYPE,LINK,XLM,SUI,BCH,HBAR,AVAX,LTC,TON,UNI,DOT,ENA,XMR,AAVE,TAO,ETC,NEAR,ONDO,APT,ICP,PENGU,KAS,ARB,ALGO,POL","XRP,SOL,DOGE,TRX,ADA,HYPE,LINK,XLM,SUI,BCH,HBAR,AVAX,LTC,TON,UNI,DOT,ENA,XMR,AAVE,TAO,ETC,NEAR,ONDO,APT,ICP,PENGU,KAS,ARB,ALGO,POL",not recorded (no decision-time record exists),False
+2025-08-11,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2025-08-11,Environment_APR,,7.023219802260427,7.023219802260427,not recorded (no decision-time record exists),False
+2025-08-18,funding_regime,,Q4: High,Q4: High,not recorded (no decision-time record exists),False
+2025-08-18,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-08-18,funding_pct_rank,,0.7916666666666666,0.7916666666666666,not recorded (no decision-time record exists),False
+2025-08-18,F_tk,,7.601580952380953e-05,7.601580952380953e-05,not recorded (no decision-time record exists),False
+2025-08-18,basket_members,,"XRP,SOL,DOGE,ADA,TRX,LINK,HYPE,XLM,SUI,BCH,HBAR,AVAX,LTC,TON,UNI,DOT,XMR,ENA,AAVE,TAO,ETC,NEAR,APT,ONDO,ICP,ARB,KAS,ALGO,POL,ATOM","XRP,SOL,DOGE,ADA,TRX,LINK,HYPE,XLM,SUI,BCH,HBAR,AVAX,LTC,TON,UNI,DOT,XMR,ENA,AAVE,TAO,ETC,NEAR,APT,ONDO,ICP,ARB,KAS,ALGO,POL,ATOM",not recorded (no decision-time record exists),False
+2025-08-18,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2025-08-18,Environment_APR,,6.544876317467606,6.544876317467606,not recorded (no decision-time record exists),False
+2025-08-25,funding_regime,,Q4: High,Q4: High,not recorded (no decision-time record exists),False
+2025-08-25,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-08-25,funding_pct_rank,,0.7755102040816326,0.7755102040816326,not recorded (no decision-time record exists),False
+2025-08-25,F_tk,,7.260580952380952e-05,7.260580952380952e-05,not recorded (no decision-time record exists),False
+2025-08-25,basket_members,,"XRP,SOL,DOGE,TRX,ADA,LINK,HYPE,SUI,XLM,BCH,AVAX,HBAR,LTC,TON,UNI,DOT,AAVE,XMR,ENA,ETC,TAO,NEAR,APT,ARB,ONDO,ICP,KAS,ALGO,POL,VET","XRP,SOL,DOGE,TRX,ADA,LINK,HYPE,SUI,XLM,BCH,AVAX,HBAR,LTC,TON,UNI,DOT,AAVE,XMR,ENA,ETC,TAO,NEAR,APT,ARB,ONDO,ICP,KAS,ALGO,POL,VET",not recorded (no decision-time record exists),False
+2025-08-25,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2025-08-25,Environment_APR,,6.239023782819818,6.239023782819818,not recorded (no decision-time record exists),False
+2025-09-01,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2025-09-01,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-09-01,funding_pct_rank,,0.18,0.18,not recorded (no decision-time record exists),False
+2025-09-01,F_tk,,-1.4880952380952226e-07,-1.488095238095227e-07,not recorded (no decision-time record exists),True
+2025-09-01,basket_members,,"XRP,SOL,TRX,DOGE,ADA,LINK,HYPE,SUI,XLM,BCH,AVAX,HBAR,LTC,TON,WLFI,UNI,DOT,XMR,AAVE,ENA,ETC,TAO,NEAR,APT,POL,ONDO,ARB,ICP,IP,KAS","XRP,SOL,TRX,DOGE,ADA,LINK,HYPE,SUI,XLM,BCH,AVAX,HBAR,LTC,TON,WLFI,UNI,DOT,XMR,AAVE,ENA,ETC,TAO,NEAR,APT,POL,ONDO,ARB,ICP,IP,KAS",not recorded (no decision-time record exists),False
+2025-09-01,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2025-09-01,Environment_APR,,5.711375455529413,5.711375455529413,not recorded (no decision-time record exists),False
+2025-09-08,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2025-09-08,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-09-08,funding_pct_rank,,0.1568627450980392,0.1568627450980392,not recorded (no decision-time record exists),False
+2025-09-08,F_tk,,-5.301380952380952e-06,-5.301380952380952e-06,not recorded (no decision-time record exists),False
+2025-09-08,basket_members,,"XRP,SOL,DOGE,TRX,ADA,LINK,HYPE,SUI,BCH,XLM,AVAX,HBAR,LTC,TON,WLFI,DOT,UNI,ENA,XMR,AAVE,M,ETC,TAO,NEAR,APT,POL,ONDO,IP,ARB,ICP","XRP,SOL,DOGE,TRX,ADA,LINK,HYPE,SUI,BCH,XLM,AVAX,HBAR,LTC,TON,WLFI,DOT,UNI,ENA,XMR,AAVE,M,ETC,TAO,NEAR,APT,POL,ONDO,IP,ARB,ICP",not recorded (no decision-time record exists),False
+2025-09-08,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2025-09-08,Environment_APR,,6.562683820859753,6.562683820859753,not recorded (no decision-time record exists),False
+2025-09-15,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2025-09-15,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-09-15,funding_pct_rank,,0.6538461538461539,0.6346153846153846,not recorded (no decision-time record exists),True
+2025-09-15,F_tk,,5.616485714285715e-05,5.6164857142857145e-05,not recorded (no decision-time record exists),True
+2025-09-15,basket_members,,"XRP,SOL,DOGE,TRX,ADA,LINK,HYPE,SUI,AVAX,XLM,BCH,HBAR,LTC,TON,DOT,WLFI,UNI,XMR,ENA,AAVE,M,NEAR,TAO,ONDO,ETC,APT,WLD,IP,POL,PUMP","XRP,SOL,DOGE,TRX,ADA,LINK,HYPE,SUI,AVAX,XLM,BCH,HBAR,LTC,TON,DOT,WLFI,UNI,XMR,ENA,AAVE,M,NEAR,TAO,ONDO,ETC,APT,WLD,IP,POL,PUMP",not recorded (no decision-time record exists),False
+2025-09-15,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2025-09-15,Environment_APR,,7.379192393837161,7.379192393837161,not recorded (no decision-time record exists),False
+2025-09-22,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2025-09-22,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-09-22,funding_pct_rank,,0.5192307692307693,0.5192307692307693,not recorded (no decision-time record exists),False
+2025-09-22,F_tk,,3.894519047619048e-05,3.894519047619048e-05,not recorded (no decision-time record exists),False
+2025-09-22,basket_members,,"XRP,SOL,DOGE,TRX,ADA,LINK,AVAX,HYPE,SUI,XLM,BCH,HBAR,LTC,TON,WLFI,DOT,UNI,XMR,AAVE,ENA,IP,M,NEAR,APT,TAO,ONDO,ETC,WLD,ARB,POL","XRP,SOL,DOGE,TRX,ADA,LINK,AVAX,HYPE,SUI,XLM,BCH,HBAR,LTC,TON,WLFI,DOT,UNI,XMR,AAVE,ENA,IP,M,NEAR,APT,TAO,ONDO,ETC,WLD,ARB,POL",not recorded (no decision-time record exists),False
+2025-09-22,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-09-22,Environment_APR,,6.98124998941025,6.98124998941025,not recorded (no decision-time record exists),False
+2025-09-29,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2025-09-29,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-09-29,funding_pct_rank,,0.7115384615384616,0.7115384615384616,not recorded (no decision-time record exists),False
+2025-09-29,F_tk,,6.642457142857143e-05,6.642457142857143e-05,not recorded (no decision-time record exists),False
+2025-09-29,basket_members,,"XRP,SOL,DOGE,TRX,ADA,LINK,HYPE,AVAX,XLM,SUI,BCH,HBAR,LTC,TON,DOT,WLFI,XMR,UNI,AAVE,ENA,M,NEAR,ASTER,MYX,APT,TAO,IP,ONDO,ETC,WLD","XRP,SOL,DOGE,TRX,ADA,LINK,HYPE,AVAX,XLM,SUI,BCH,HBAR,LTC,TON,DOT,WLFI,XMR,UNI,AAVE,ENA,M,NEAR,ASTER,MYX,APT,TAO,IP,ONDO,ETC,WLD",not recorded (no decision-time record exists),False
+2025-09-29,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-09-29,Environment_APR,,6.088389268690297,6.088389268690297,not recorded (no decision-time record exists),False
+2025-10-06,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2025-10-06,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2025-10-06,funding_pct_rank,,0.4807692307692308,0.4807692307692308,not recorded (no decision-time record exists),False
+2025-10-06,F_tk,,3.5601380952380955e-05,3.5601380952380955e-05,not recorded (no decision-time record exists),False
+2025-10-06,basket_members,,"XRP,SOL,DOGE,TRX,ADA,LINK,HYPE,SUI,XLM,AVAX,BCH,HBAR,LTC,TON,DOT,XMR,WLFI,UNI,AAVE,ENA,APT,NEAR,M,ASTER,TAO,IP,ETC,ONDO,ZEC,WLD","XRP,SOL,DOGE,TRX,ADA,LINK,HYPE,SUI,XLM,AVAX,BCH,HBAR,LTC,TON,DOT,XMR,WLFI,UNI,AAVE,ENA,APT,NEAR,M,ASTER,TAO,IP,ETC,ONDO,ZEC,WLD",not recorded (no decision-time record exists),False
+2025-10-06,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-10-06,Environment_APR,,6.96464597812512,6.96464597812512,not recorded (no decision-time record exists),False
+2025-10-13,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2025-10-13,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-10-13,funding_pct_rank,,0.0192307692307692,0.0192307692307692,not recorded (no decision-time record exists),False
+2025-10-13,F_tk,,-0.0001135207142857,-0.0001135207142857,not recorded (no decision-time record exists),False
+2025-10-13,basket_members,,"XRP,SOL,DOGE,TRX,ADA,LINK,XLM,BCH,HYPE,SUI,AVAX,HBAR,LTC,TON,XMR,DOT,ZEC,UNI,WLFI,AAVE,TAO,M,NEAR,ENA,APT,ONDO,ETC,ASTER,WLD,POL","XRP,SOL,DOGE,TRX,ADA,LINK,XLM,BCH,HYPE,SUI,AVAX,HBAR,LTC,TON,XMR,DOT,ZEC,UNI,WLFI,AAVE,TAO,M,NEAR,ENA,APT,ONDO,ETC,ASTER,WLD,POL",not recorded (no decision-time record exists),False
+2025-10-13,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-10-13,Environment_APR,,3.090934131901791,3.090934131901791,not recorded (no decision-time record exists),False
+2025-10-20,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2025-10-20,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-10-20,funding_pct_rank,,0.0384615384615384,0.0384615384615384,not recorded (no decision-time record exists),False
+2025-10-20,F_tk,,-5.1356047619047615e-05,-5.135604761904762e-05,not recorded (no decision-time record exists),True
+2025-10-20,basket_members,,"XRP,SOL,TRX,DOGE,ADA,LINK,XLM,HYPE,BCH,SUI,AVAX,HBAR,LTC,XMR,TON,DOT,TAO,ZEC,UNI,WLFI,ENA,AAVE,M,NEAR,ETC,ASTER,ONDO,APT,POL,WLD","XRP,SOL,TRX,DOGE,ADA,LINK,XLM,HYPE,BCH,SUI,AVAX,HBAR,LTC,XMR,TON,DOT,TAO,ZEC,UNI,WLFI,ENA,AAVE,M,NEAR,ETC,ASTER,ONDO,APT,POL,WLD",not recorded (no decision-time record exists),False
+2025-10-20,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-10-20,Environment_APR,,3.891752646670965,3.891752646670965,not recorded (no decision-time record exists),False
+2025-10-27,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2025-10-27,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-10-27,funding_pct_rank,,0.2115384615384615,0.2115384615384615,not recorded (no decision-time record exists),False
+2025-10-27,F_tk,,-1.7365714285714278e-06,-1.736571428571432e-06,not recorded (no decision-time record exists),True
+2025-10-27,basket_members,,"XRP,SOL,DOGE,TRX,ADA,LINK,HYPE,BCH,XLM,SUI,AVAX,HBAR,LTC,XMR,TON,ZEC,DOT,WLFI,UNI,TAO,M,AAVE,ENA,NEAR,APT,ETC,ONDO,ASTER,WLD,POL","XRP,SOL,DOGE,TRX,ADA,LINK,HYPE,BCH,XLM,SUI,AVAX,HBAR,LTC,XMR,TON,ZEC,DOT,WLFI,UNI,TAO,M,AAVE,ENA,NEAR,APT,ETC,ONDO,ASTER,WLD,POL",not recorded (no decision-time record exists),False
+2025-10-27,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-10-27,Environment_APR,,5.239540088672537,5.239540088672537,not recorded (no decision-time record exists),False
+2025-11-03,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2025-11-03,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-11-03,funding_pct_rank,,0.0384615384615384,0.0384615384615384,not recorded (no decision-time record exists),False
+2025-11-03,F_tk,,-6.137295238095238e-05,-6.137295238095239e-05,not recorded (no decision-time record exists),True
+2025-11-03,basket_members,,"XRP,SOL,DOGE,TRX,ADA,LINK,HYPE,BCH,XLM,SUI,HBAR,AVAX,LTC,ZEC,XMR,TON,TAO,DOT,M,WLFI,UNI,AAVE,NEAR,ENA,ETC,ASTER,APT,ICP,ONDO,POL","XRP,SOL,DOGE,TRX,ADA,LINK,HYPE,BCH,XLM,SUI,HBAR,AVAX,LTC,ZEC,XMR,TON,TAO,DOT,M,WLFI,UNI,AAVE,NEAR,ENA,ETC,ASTER,APT,ICP,ONDO,POL",not recorded (no decision-time record exists),False
+2025-11-03,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-11-03,Environment_APR,,3.255466082182422,3.255466082182422,not recorded (no decision-time record exists),False
+2025-11-10,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2025-11-10,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-11-10,funding_pct_rank,,0.0384615384615384,0.0384615384615384,not recorded (no decision-time record exists),False
+2025-11-10,F_tk,,-9.40697619047619e-05,-9.406976190476192e-05,not recorded (no decision-time record exists),True
+2025-11-10,basket_members,,"XRP,SOL,TRX,DOGE,ADA,HYPE,LINK,ZEC,BCH,XLM,LTC,SUI,XMR,AVAX,HBAR,DOT,TON,CC,UNI,ICP,M,NEAR,TAO,WLFI,AAVE,ETC,ENA,APT,ASTER,ONDO","XRP,SOL,TRX,DOGE,ADA,HYPE,LINK,ZEC,BCH,XLM,LTC,SUI,XMR,AVAX,HBAR,DOT,TON,CC,UNI,ICP,M,NEAR,TAO,WLFI,AAVE,ETC,ENA,APT,ASTER,ONDO",not recorded (no decision-time record exists),False
+2025-11-10,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-11-10,Environment_APR,,4.730043084987086,4.730043084987086,not recorded (no decision-time record exists),False
+2025-11-17,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2025-11-17,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-11-17,funding_pct_rank,,0.0961538461538461,0.0961538461538461,not recorded (no decision-time record exists),False
+2025-11-17,F_tk,,-4.028114285714286e-05,-4.028114285714286e-05,not recorded (no decision-time record exists),False
+2025-11-17,basket_members,,"XRP,SOL,TRX,DOGE,ADA,ZEC,HYPE,BCH,LINK,XLM,XMR,LTC,AVAX,HBAR,SUI,DOT,TON,UNI,CC,WLFI,M,TAO,NEAR,AAVE,ICP,ASTER,ETC,APT,ENA,PUMP","XRP,SOL,TRX,DOGE,ADA,ZEC,HYPE,BCH,LINK,XLM,XMR,LTC,AVAX,HBAR,SUI,DOT,TON,UNI,CC,WLFI,M,TAO,NEAR,AAVE,ICP,ASTER,ETC,APT,ENA,PUMP",not recorded (no decision-time record exists),False
+2025-11-17,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-11-17,Environment_APR,,4.068513769664627,4.068513769664627,not recorded (no decision-time record exists),False
+2025-11-24,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2025-11-24,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-11-24,funding_pct_rank,,0.1346153846153846,0.1346153846153846,not recorded (no decision-time record exists),False
+2025-11-24,F_tk,,-3.0469000000000003e-05,-3.0469e-05,not recorded (no decision-time record exists),True
+2025-11-24,basket_members,,"XRP,SOL,TRX,DOGE,ADA,BCH,ZEC,LINK,HYPE,XLM,XMR,LTC,HBAR,AVAX,SUI,WLFI,UNI,DOT,TON,M,TAO,CC,AAVE,NEAR,ASTER,ICP,ETC,ENA,APT,ONDO","XRP,SOL,TRX,DOGE,ADA,BCH,ZEC,LINK,HYPE,XLM,XMR,LTC,HBAR,AVAX,SUI,WLFI,UNI,DOT,TON,M,TAO,CC,AAVE,NEAR,ASTER,ICP,ETC,ENA,APT,ONDO",not recorded (no decision-time record exists),False
+2025-11-24,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2025-11-24,Environment_APR,,4.049136628234183,4.049136628234183,not recorded (no decision-time record exists),False
+2025-12-01,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2025-12-01,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-12-01,funding_pct_rank,,0.0961538461538461,0.0961538461538461,not recorded (no decision-time record exists),False
+2025-12-01,F_tk,,-5.024857142857144e-05,-5.024857142857144e-05,not recorded (no decision-time record exists),False
+2025-12-01,basket_members,,"XRP,SOL,TRX,DOGE,ADA,BCH,LINK,HYPE,XMR,XLM,ZEC,LTC,HBAR,AVAX,SUI,WLFI,TON,UNI,DOT,CC,TAO,AAVE,M,NEAR,ASTER,ETC,ICP,ENA,PUMP,ONDO","XRP,SOL,TRX,DOGE,ADA,BCH,LINK,HYPE,XMR,XLM,ZEC,LTC,HBAR,AVAX,SUI,WLFI,TON,UNI,DOT,CC,TAO,AAVE,M,NEAR,ASTER,ETC,ICP,ENA,PUMP,ONDO",not recorded (no decision-time record exists),False
+2025-12-01,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-12-01,Environment_APR,,3.820465908014436,3.820465908014436,not recorded (no decision-time record exists),False
+2025-12-08,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2025-12-08,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2025-12-08,funding_pct_rank,,0.2692307692307692,0.2692307692307692,not recorded (no decision-time record exists),False
+2025-12-08,F_tk,,-1.0403714285714288e-05,-1.0403714285714284e-05,not recorded (no decision-time record exists),True
+2025-12-08,basket_members,,"XRP,SOL,TRX,DOGE,ADA,BCH,LINK,HYPE,XLM,XMR,LTC,SUI,AVAX,ZEC,HBAR,WLFI,TON,UNI,DOT,AAVE,TAO,CC,NEAR,M,ENA,ETC,ASTER,ICP,PUMP,ONDO","XRP,SOL,TRX,DOGE,ADA,BCH,LINK,HYPE,XLM,XMR,LTC,SUI,AVAX,ZEC,HBAR,WLFI,TON,UNI,DOT,AAVE,TAO,CC,NEAR,M,ENA,ETC,ASTER,ICP,PUMP,ONDO",not recorded (no decision-time record exists),False
+2025-12-08,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2025-12-08,Environment_APR,,3.399125594794616,3.399125594794616,not recorded (no decision-time record exists),False
+2025-12-15,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2025-12-15,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2025-12-15,funding_pct_rank,,0.4423076923076923,0.4423076923076923,not recorded (no decision-time record exists),False
+2025-12-15,F_tk,,6.8660476190476185e-06,6.86604761904762e-06,not recorded (no decision-time record exists),True
+2025-12-15,basket_members,,"XRP,SOL,TRX,DOGE,ADA,BCH,LINK,HYPE,XMR,XLM,ZEC,LTC,SUI,AVAX,HBAR,TON,WLFI,UNI,DOT,M,AAVE,TAO,CC,ASTER,NEAR,ETC,ENA,ICP,PUMP,ONDO","XRP,SOL,TRX,DOGE,ADA,BCH,LINK,HYPE,XMR,XLM,ZEC,LTC,SUI,AVAX,HBAR,TON,WLFI,UNI,DOT,M,AAVE,TAO,CC,ASTER,NEAR,ETC,ENA,ICP,PUMP,ONDO",not recorded (no decision-time record exists),False
+2025-12-15,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-12-15,Environment_APR,,3.333280735265987,3.333280735265987,not recorded (no decision-time record exists),False
+2025-12-22,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2025-12-22,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2025-12-22,funding_pct_rank,,0.1538461538461538,0.1538461538461538,not recorded (no decision-time record exists),False
+2025-12-22,F_tk,,-3.524095238095238e-05,-3.524095238095238e-05,not recorded (no decision-time record exists),False
+2025-12-22,basket_members,,"XRP,SOL,TRX,DOGE,ADA,BCH,LINK,XMR,ZEC,XLM,HYPE,LTC,SUI,AVAX,HBAR,UNI,WLFI,TON,CC,DOT,M,AAVE,TAO,NEAR,ETC,NIGHT,ASTER,ICP,ENA,SKY","XRP,SOL,TRX,DOGE,ADA,BCH,LINK,XMR,ZEC,XLM,HYPE,LTC,SUI,AVAX,HBAR,UNI,WLFI,TON,CC,DOT,M,AAVE,TAO,NEAR,ETC,NIGHT,ASTER,ICP,ENA,SKY",not recorded (no decision-time record exists),False
+2025-12-22,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-12-22,Environment_APR,,2.537622984071678,2.537622984071678,not recorded (no decision-time record exists),False
+2025-12-29,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2025-12-29,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2025-12-29,funding_pct_rank,,0.5,0.5,not recorded (no decision-time record exists),False
+2025-12-29,F_tk,,8.479476190476194e-06,8.479476190476192e-06,not recorded (no decision-time record exists),True
+2025-12-29,basket_members,,"XRP,SOL,TRX,DOGE,ADA,BCH,LINK,ZEC,XMR,XLM,HYPE,LTC,AVAX,SUI,CC,HBAR,TON,WLFI,UNI,DOT,M,AAVE,TAO,NEAR,ETC,ASTER,ICP,ENA,NIGHT,SKY","XRP,SOL,TRX,DOGE,ADA,BCH,LINK,ZEC,XMR,XLM,HYPE,LTC,AVAX,SUI,CC,HBAR,TON,WLFI,UNI,DOT,M,AAVE,TAO,NEAR,ETC,ASTER,ICP,ENA,NIGHT,SKY",not recorded (no decision-time record exists),False
+2025-12-29,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2025-12-29,Environment_APR,,3.909991114686708,3.909991114686708,not recorded (no decision-time record exists),False
+2026-01-05,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2026-01-05,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2026-01-05,funding_pct_rank,,0.2692307692307692,0.2692307692307692,not recorded (no decision-time record exists),False
+2026-01-05,F_tk,,-1.1708619047619047e-05,-1.1708619047619047e-05,not recorded (no decision-time record exists),False
+2026-01-05,basket_members,,"XRP,SOL,TRX,DOGE,ADA,BCH,LINK,ZEC,XMR,XLM,SUI,HYPE,LTC,AVAX,CC,HBAR,WLFI,TON,UNI,DOT,M,TAO,AAVE,NEAR,ETC,ENA,ASTER,ICP,WLD,NIGHT","XRP,SOL,TRX,DOGE,ADA,BCH,LINK,ZEC,XMR,XLM,SUI,HYPE,LTC,AVAX,CC,HBAR,WLFI,TON,UNI,DOT,M,TAO,AAVE,NEAR,ETC,ENA,ASTER,ICP,WLD,NIGHT",not recorded (no decision-time record exists),False
+2026-01-05,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2026-01-05,Environment_APR,,4.780300167332669,4.780300167332669,not recorded (no decision-time record exists),False
+2026-01-12,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2026-01-12,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-01-12,funding_pct_rank,,0.6730769230769231,0.6730769230769231,not recorded (no decision-time record exists),False
+2026-01-12,F_tk,,3.0713714285714285e-05,3.0713714285714285e-05,not recorded (no decision-time record exists),False
+2026-01-12,basket_members,,"XRP,SOL,TRX,DOGE,ADA,BCH,XMR,LINK,XLM,SUI,ZEC,AVAX,LTC,HYPE,CC,HBAR,WLFI,TON,UNI,DOT,M,TAO,AAVE,NEAR,ETC,ENA,ICP,ASTER,POL,WLD","XRP,SOL,TRX,DOGE,ADA,BCH,XMR,LINK,XLM,SUI,ZEC,AVAX,LTC,HYPE,CC,HBAR,WLFI,TON,UNI,DOT,M,TAO,AAVE,NEAR,ETC,ENA,ICP,ASTER,POL,WLD",not recorded (no decision-time record exists),False
+2026-01-12,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2026-01-12,Environment_APR,,4.867773274225776,4.867773274225776,not recorded (no decision-time record exists),False
+2026-01-19,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2026-01-19,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-01-19,funding_pct_rank,,0.5384615384615384,0.5384615384615384,not recorded (no decision-time record exists),False
+2026-01-19,F_tk,,9.722238095238098e-06,9.722238095238096e-06,not recorded (no decision-time record exists),True
+2026-01-19,basket_members,,"XRP,SOL,TRX,DOGE,ADA,BCH,XMR,LINK,XLM,ZEC,SUI,HYPE,AVAX,LTC,HBAR,WLFI,CC,TON,DOT,UNI,M,AAVE,TAO,ICP,NEAR,ETC,ONDO,PUMP,ENA,ASTER","XRP,SOL,TRX,DOGE,ADA,BCH,XMR,LINK,XLM,ZEC,SUI,HYPE,AVAX,LTC,HBAR,WLFI,CC,TON,DOT,UNI,M,AAVE,TAO,ICP,NEAR,ETC,ONDO,PUMP,ENA,ASTER",not recorded (no decision-time record exists),False
+2026-01-19,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-01-19,Environment_APR,,4.768842560601421,4.768842560601421,not recorded (no decision-time record exists),False
+2026-01-26,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2026-01-26,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2026-01-26,funding_pct_rank,,0.3653846153846153,0.3653846153846153,not recorded (no decision-time record exists),False
+2026-01-26,F_tk,,-4.41647619047619e-06,-4.416476190476189e-06,not recorded (no decision-time record exists),True
+2026-01-26,basket_members,,"XRP,SOL,TRX,DOGE,ADA,BCH,XMR,LINK,XLM,CC,SUI,ZEC,LTC,HYPE,AVAX,HBAR,WLFI,TON,DOT,UNI,M,AAVE,TAO,NEAR,ICP,ETC,ONDO,ASTER,SKY,PUMP","XRP,SOL,TRX,DOGE,ADA,BCH,XMR,LINK,XLM,CC,SUI,ZEC,LTC,HYPE,AVAX,HBAR,WLFI,TON,DOT,UNI,M,AAVE,TAO,NEAR,ICP,ETC,ONDO,ASTER,SKY,PUMP",not recorded (no decision-time record exists),False
+2026-01-26,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-01-26,Environment_APR,,3.599164877100253,3.599164877100253,not recorded (no decision-time record exists),False
+2026-02-02,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2026-02-02,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2026-02-02,funding_pct_rank,,0.2884615384615384,0.2884615384615384,not recorded (no decision-time record exists),False
+2026-02-02,F_tk,,-1.142747619047619e-05,-1.142747619047619e-05,not recorded (no decision-time record exists),False
+2026-02-02,basket_members,,"XRP,SOL,TRX,DOGE,ADA,BCH,HYPE,XMR,CC,LINK,XLM,ZEC,LTC,SUI,AVAX,HBAR,WLFI,TON,M,DOT,UNI,AAVE,TAO,NEAR,ETC,PUMP,ICP,SKY,ASTER,ONDO","XRP,SOL,TRX,DOGE,ADA,BCH,HYPE,XMR,CC,LINK,XLM,ZEC,LTC,SUI,AVAX,HBAR,WLFI,TON,M,DOT,UNI,AAVE,TAO,NEAR,ETC,PUMP,ICP,SKY,ASTER,ONDO",not recorded (no decision-time record exists),False
+2026-02-02,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-02-02,Environment_APR,,3.7770176298701306,3.7770176298701306,not recorded (no decision-time record exists),False
+2026-02-09,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2026-02-09,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-02-09,funding_pct_rank,,0.1153846153846153,0.1153846153846153,not recorded (no decision-time record exists),False
+2026-02-09,F_tk,,-4.288019047619048e-05,-4.288019047619048e-05,not recorded (no decision-time record exists),False
+2026-02-09,basket_members,,"XRP,SOL,TRX,DOGE,BCH,ADA,HYPE,CC,LINK,XMR,XLM,LTC,HBAR,ZEC,AVAX,SUI,TON,WLFI,M,UNI,DOT,AAVE,SKY,TAO,ASTER,ETC,NEAR,ICP,PUMP,ONDO","XRP,SOL,TRX,DOGE,BCH,ADA,HYPE,CC,LINK,XMR,XLM,LTC,HBAR,ZEC,AVAX,SUI,TON,WLFI,M,UNI,DOT,AAVE,SKY,TAO,ASTER,ETC,NEAR,ICP,PUMP,ONDO",not recorded (no decision-time record exists),False
+2026-02-09,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-02-09,Environment_APR,,3.642966001498503,3.642966001498503,not recorded (no decision-time record exists),False
+2026-02-16,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2026-02-16,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-02-16,funding_pct_rank,,0.2307692307692307,0.2307692307692307,not recorded (no decision-time record exists),False
+2026-02-16,F_tk,,-1.9679523809523804e-05,-1.9679523809523804e-05,not recorded (no decision-time record exists),False
+2026-02-16,basket_members,,"XRP,SOL,TRX,DOGE,BCH,ADA,HYPE,LINK,CC,XMR,XLM,ZEC,HBAR,LTC,AVAX,SUI,TON,WLFI,M,DOT,UNI,AAVE,TAO,ASTER,SKY,ETC,NEAR,ONDO,ICP,PUMP","XRP,SOL,TRX,DOGE,BCH,ADA,HYPE,LINK,CC,XMR,XLM,ZEC,HBAR,LTC,AVAX,SUI,TON,WLFI,M,DOT,UNI,AAVE,TAO,ASTER,SKY,ETC,NEAR,ONDO,ICP,PUMP",not recorded (no decision-time record exists),False
+2026-02-16,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-02-16,Environment_APR,,4.027862877122878,4.027862877122878,not recorded (no decision-time record exists),False
+2026-02-23,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2026-02-23,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-02-23,funding_pct_rank,,0.2307692307692307,0.2307692307692307,not recorded (no decision-time record exists),False
+2026-02-23,F_tk,,-2.6101761904761903e-05,-2.6101761904761903e-05,not recorded (no decision-time record exists),False
+2026-02-23,basket_members,,"XRP,SOL,TRX,DOGE,BCH,ADA,HYPE,CC,LINK,XMR,XLM,HBAR,ZEC,LTC,AVAX,SUI,TON,WLFI,M,UNI,DOT,AAVE,ASTER,TAO,SKY,ETC,NEAR,ONDO,PUMP,ICP","XRP,SOL,TRX,DOGE,BCH,ADA,HYPE,CC,LINK,XMR,XLM,HBAR,ZEC,LTC,AVAX,SUI,TON,WLFI,M,UNI,DOT,AAVE,ASTER,TAO,SKY,ETC,NEAR,ONDO,PUMP,ICP",not recorded (no decision-time record exists),False
+2026-02-23,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-02-23,Environment_APR,,3.0680013011988025,3.0680013011988025,not recorded (no decision-time record exists),False
+2026-03-02,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2026-03-02,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-03-02,funding_pct_rank,,0.25,0.25,not recorded (no decision-time record exists),False
+2026-03-02,F_tk,,-2.0692666666666662e-05,-2.0692666666666662e-05,not recorded (no decision-time record exists),False
+2026-03-02,basket_members,,"XRP,SOL,TRX,DOGE,ADA,BCH,HYPE,XMR,LINK,CC,XLM,HBAR,LTC,AVAX,SUI,ZEC,WLFI,TON,M,DOT,UNI,AAVE,TAO,NEAR,ASTER,SKY,ETC,ICP,ONDO,WLD","XRP,SOL,TRX,DOGE,ADA,BCH,HYPE,XMR,LINK,CC,XLM,HBAR,LTC,AVAX,SUI,ZEC,WLFI,TON,M,DOT,UNI,AAVE,TAO,NEAR,ASTER,SKY,ETC,ICP,ONDO,WLD",not recorded (no decision-time record exists),False
+2026-03-02,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-03-02,Environment_APR,,3.554359060939062,3.554359060939062,not recorded (no decision-time record exists),False
+2026-03-09,funding_regime,Q1: Negative/Low,Q1: Negative/Low,Q1: Negative/Low,20260316_080012@6277bd4,False
+2026-03-09,is_mrf_active,False,False,False,20260316_080012@6277bd4,False
+2026-03-09,funding_pct_rank,0.0384615384615384,0.0961538461538461,0.2115384615384615,20260316_080012@6277bd4,True
+2026-03-09,F_tk,-0.0051258714285714,-5.125871428571429e-05,-2.770209523809524e-05,20260316_080012@6277bd4,True
+2026-03-09,basket_members,"XRP,ADA,BCH,LINK,XMR,CC,XLM,LTC,HBAR,SUI,WLFI,M,DOT,UNI,TAO,SKY,ASTER,AAVE,NEAR,ICP,ETC,ONDO,WLD,MORPHO,POL,QNT,NIGHT,ATOM,ENA,KAS","XRP,ADA,BCH,LINK,XMR,CC,XLM,LTC,HBAR,SUI,WLFI,M,DOT,UNI,TAO,SKY,ASTER,AAVE,NEAR,ICP,ETC,ONDO,WLD,MORPHO,POL,QNT,NIGHT,ATOM,ENA,KAS","XRP,SOL,TRX,DOGE,ADA,BCH,HYPE,LINK,XMR,CC,XLM,LTC,HBAR,AVAX,SUI,TON,ZEC,WLFI,M,DOT,UNI,TAO,SKY,ASTER,AAVE,NEAR,ICP,ETC,ONDO,PUMP",20260316_080012@6277bd4,True
+2026-03-09,BTCDOM_Trend,Falling,Rising,Rising,20260316_080012@6277bd4,False
+2026-03-09,Environment_APR,,2.763777265234765,2.763777265234765,20260316_080012@6277bd4,False
+2026-03-16,funding_regime,Q1: Negative/Low,Q1: Negative/Low,Q1: Negative/Low,20260316_080012@6277bd4,False
+2026-03-16,is_mrf_active,False,False,False,20260316_080012@6277bd4,False
+2026-03-16,funding_pct_rank,0.1153846153846153,0.1923076923076923,0.2307692307692307,20260316_080012@6277bd4,True
+2026-03-16,F_tk,-0.0034328047619047,-3.4328047619047615e-05,-2.679533333333333e-05,20260316_080012@6277bd4,True
+2026-03-16,basket_members,"XRP,ADA,BCH,LINK,XMR,CC,XLM,LTC,HBAR,SUI,WLFI,TAO,DOT,M,UNI,NEAR,AAVE,ASTER,SKY,ICP,ETC,ONDO,WLD,MORPHO,POL,QNT,ENA,RENDER,ATOM,KAS","XRP,ADA,BCH,LINK,XMR,CC,XLM,LTC,HBAR,SUI,WLFI,TAO,DOT,M,UNI,NEAR,AAVE,ASTER,SKY,ICP,ETC,ONDO,WLD,MORPHO,POL,QNT,ENA,RENDER,ATOM,KAS","XRP,SOL,TRX,DOGE,ADA,BCH,HYPE,LINK,XMR,CC,XLM,LTC,AVAX,HBAR,SUI,ZEC,TON,WLFI,TAO,DOT,M,UNI,NEAR,AAVE,ASTER,SKY,ICP,ETC,ONDO,PUMP",20260316_080012@6277bd4,True
+2026-03-16,BTCDOM_Trend,Falling,Falling,Falling,20260316_080012@6277bd4,False
+2026-03-16,Environment_APR,,4.164428301698303,4.164428301698303,20260316_080012@6277bd4,False
+2026-03-23,funding_regime,Q1: Negative/Low,Q2: Weak,Q2: Weak,20260323_022829@6277bd4,False
+2026-03-23,is_mrf_active,False,True,True,20260323_022829@6277bd4,False
+2026-03-23,funding_pct_rank,0.173076923076923,0.2692307692307692,0.2884615384615384,20260323_022829@6277bd4,True
+2026-03-23,F_tk,-0.0004210952380952,-2.047490476190476e-05,-1.6183380952380953e-05,20260323_022829@6277bd4,True
+2026-03-23,basket_members,"XRP,ADA,BCH,LINK,XMR,CC,XLM,LTC,HBAR,SUI,WLFI,TAO,DOT,M,UNI,NEAR,AAVE,ASTER,SKY,ICP,ETC,ONDO,WLD,MORPHO,POL,QNT,ENA,RENDER,ATOM,KAS","XRP,BCH,ADA,XMR,LINK,CC,XLM,LTC,HBAR,SUI,M,WLFI,TAO,DOT,UNI,SIREN,NEAR,ASTER,AAVE,SKY,ICP,ETC,ONDO,QNT,KAS,POL,WLD,MORPHO,ATOM,RENDER","XRP,SOL,TRX,DOGE,BCH,ADA,HYPE,XMR,LINK,CC,XLM,LTC,AVAX,HBAR,ZEC,SUI,TON,M,WLFI,TAO,DOT,UNI,SIREN,NEAR,ASTER,AAVE,SKY,ICP,ETC,ONDO",20260323_022829@6277bd4,True
+2026-03-23,BTCDOM_Trend,Falling,Falling,Falling,20260323_022829@6277bd4,False
+2026-03-23,Environment_APR,,4.07793806943057,4.07793806943057,20260323_022829@6277bd4,False
+2026-03-30,funding_regime,Q2: Weak,Q1: Negative/Low,Q2: Weak,20260330_023757@599e5cb,True
+2026-03-30,is_mrf_active,False,False,True,20260330_023757@599e5cb,True
+2026-03-30,funding_pct_rank,0.2884615384615384,0.25,0.2884615384615384,20260330_023757@599e5cb,True
+2026-03-30,F_tk,-2.229385714285714e-05,-2.229385714285714e-05,-1.879342857142857e-05,20260330_023757@599e5cb,True
+2026-03-30,basket_members,"XRP,BCH,ADA,XMR,LINK,CC,XLM,LTC,M,HBAR,SUI,TAO,WLFI,UNI,DOT,SKY,ASTER,NEAR,AAVE,SIREN,ONDO,ETC,ICP,QNT,POL,KAS,RENDER,WLD,ATOM,MORPHO","XRP,BCH,ADA,XMR,LINK,CC,XLM,LTC,M,HBAR,SUI,TAO,WLFI,UNI,DOT,SKY,ASTER,NEAR,AAVE,SIREN,ONDO,ETC,ICP,QNT,POL,KAS,RENDER,WLD,ATOM,MORPHO","XRP,SOL,TRX,DOGE,BCH,HYPE,ADA,XMR,LINK,CC,XLM,LTC,M,HBAR,AVAX,ZEC,SUI,TAO,TON,WLFI,UNI,DOT,SKY,ASTER,NEAR,AAVE,SIREN,ONDO,ETC,ICP",20260330_023757@599e5cb,True
+2026-03-30,BTCDOM_Trend,Falling,Falling,Falling,20260330_023757@599e5cb,False
+2026-03-30,Environment_APR,0.0634955376510293,3.490315234765236,3.490315234765236,20260330_023757@599e5cb,False
+2026-04-06,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2026-04-06,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-04-06,funding_pct_rank,,0.5961538461538461,0.5961538461538461,not recorded (no decision-time record exists),False
+2026-04-06,F_tk,,9.824285714285716e-06,9.824285714285716e-06,not recorded (no decision-time record exists),False
+2026-04-06,basket_members,,"XRP,SOL,TRX,DOGE,ADA,HYPE,BCH,LINK,XMR,CC,XLM,M,LTC,ZEC,AVAX,HBAR,SUI,TON,WLFI,TAO,DOT,UNI,SKY,ASTER,NEAR,AAVE,ETC,ICP,ONDO,QNT","XRP,SOL,TRX,DOGE,ADA,HYPE,BCH,LINK,XMR,CC,XLM,M,LTC,ZEC,AVAX,HBAR,SUI,TON,WLFI,TAO,DOT,UNI,SKY,ASTER,NEAR,AAVE,ETC,ICP,ONDO,QNT",not recorded (no decision-time record exists),False
+2026-04-06,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-04-06,Environment_APR,,4.106908531468533,4.106908531468533,not recorded (no decision-time record exists),False
+2026-04-13,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2026-04-13,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2026-04-13,funding_pct_rank,,0.3846153846153846,0.3846153846153846,not recorded (no decision-time record exists),False
+2026-04-13,F_tk,,-6.747666666666664e-06,-6.747666666666671e-06,not recorded (no decision-time record exists),True
+2026-04-13,basket_members,,"XRP,SOL,TRX,DOGE,HYPE,ADA,BCH,LINK,XMR,ZEC,CC,XLM,M,LTC,AVAX,HBAR,SUI,TON,WLFI,TAO,RAVE,UNI,DOT,NEAR,SKY,ASTER,AAVE,ICP,ETC,ONDO","XRP,SOL,TRX,DOGE,HYPE,ADA,BCH,LINK,XMR,ZEC,CC,XLM,M,LTC,AVAX,HBAR,SUI,TON,WLFI,TAO,UNI,DOT,NEAR,SKY,ASTER,RAVE,AAVE,ICP,ETC,ONDO",not recorded (no decision-time record exists),True
+2026-04-13,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-04-13,Environment_APR,,4.202241353646356,4.202241353646356,not recorded (no decision-time record exists),False
+2026-04-20,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2026-04-20,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-04-20,funding_pct_rank,,0.6346153846153846,0.6346153846153846,not recorded (no decision-time record exists),False
+2026-04-20,F_tk,,1.915119047619048e-05,1.915119047619048e-05,not recorded (no decision-time record exists),False
+2026-04-20,basket_members,,"XRP,SOL,TRX,DOGE,HYPE,ADA,BCH,LINK,XMR,M,CC,XLM,ZEC,LTC,AVAX,HBAR,SUI,TON,WLFI,TAO,DOT,UNI,SKY,NEAR,ASTER,AAVE,ICP,ETC,ONDO,QNT","XRP,SOL,TRX,DOGE,HYPE,ADA,BCH,LINK,XMR,M,CC,XLM,ZEC,LTC,AVAX,HBAR,SUI,TON,WLFI,TAO,DOT,UNI,SKY,NEAR,ASTER,AAVE,ICP,ETC,ONDO,QNT",not recorded (no decision-time record exists),False
+2026-04-20,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-04-20,Environment_APR,,4.9402336138861145,4.9402336138861145,not recorded (no decision-time record exists),False
+2026-04-27,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2026-04-27,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-04-27,funding_pct_rank,,0.7115384615384616,0.7115384615384616,not recorded (no decision-time record exists),False
+2026-04-27,F_tk,,3.015161904761905e-05,3.0151619047619047e-05,not recorded (no decision-time record exists),True
+2026-04-27,basket_members,,"XRP,SOL,TRX,DOGE,HYPE,ADA,BCH,XMR,LINK,ZEC,CC,XLM,M,LTC,AVAX,HBAR,SUI,TON,TAO,WLFI,SKY,DOT,UNI,NEAR,ASTER,AAVE,ICP,ETC,ONDO,MORPHO","XRP,SOL,TRX,DOGE,HYPE,ADA,BCH,XMR,LINK,ZEC,CC,XLM,M,LTC,AVAX,HBAR,SUI,TON,TAO,WLFI,SKY,DOT,UNI,NEAR,ASTER,AAVE,ICP,ETC,ONDO,MORPHO",not recorded (no decision-time record exists),False
+2026-04-27,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-04-27,Environment_APR,,4.559418648851149,4.559418648851149,not recorded (no decision-time record exists),False
+2026-05-04,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2026-05-04,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-05-04,funding_pct_rank,,0.6730769230769231,0.6730769230769231,not recorded (no decision-time record exists),False
+2026-05-04,F_tk,,2.279419047619048e-05,2.279419047619048e-05,not recorded (no decision-time record exists),False
+2026-05-04,basket_members,,"XRP,SOL,TRX,DOGE,HYPE,ADA,BCH,XMR,ZEC,LINK,CC,XLM,LTC,AVAX,M,HBAR,SUI,TON,TAO,UNI,DOT,WLFI,SKY,ASTER,NEAR,AAVE,ONDO,ETC,ICP,MORPHO","XRP,SOL,TRX,DOGE,HYPE,ADA,BCH,XMR,ZEC,LINK,CC,XLM,LTC,AVAX,M,HBAR,SUI,TON,TAO,UNI,DOT,WLFI,SKY,ASTER,NEAR,AAVE,ONDO,ETC,ICP,MORPHO",not recorded (no decision-time record exists),False
+2026-05-04,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-05-04,Environment_APR,,4.356808643856145,4.356808643856145,not recorded (no decision-time record exists),False
+2026-05-11,funding_regime,,Q4: High,Q4: High,not recorded (no decision-time record exists),False
+2026-05-11,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-05-11,funding_pct_rank,,0.8461538461538461,0.8461538461538461,not recorded (no decision-time record exists),False
+2026-05-11,F_tk,,5.313566666666667e-05,5.3135666666666674e-05,not recorded (no decision-time record exists),True
+2026-05-11,basket_members,,"XRP,SOL,TRX,DOGE,ADA,HYPE,ZEC,BCH,LINK,XMR,TON,CC,XLM,SUI,LTC,AVAX,M,HBAR,TAO,UNI,DOT,WLFI,ONDO,NEAR,ICP,SKY,ASTER,ETC,AAVE,MORPHO","XRP,SOL,TRX,DOGE,ADA,HYPE,ZEC,BCH,LINK,XMR,TON,CC,XLM,SUI,LTC,AVAX,M,HBAR,TAO,UNI,DOT,WLFI,ONDO,NEAR,ICP,SKY,ASTER,ETC,AAVE,MORPHO",not recorded (no decision-time record exists),False
+2026-05-11,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-05-11,Environment_APR,,4.963913946053948,4.963913946053948,not recorded (no decision-time record exists),False
+2026-05-18,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2026-05-18,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-05-18,funding_pct_rank,,0.75,0.75,not recorded (no decision-time record exists),False
+2026-05-18,F_tk,,3.223561904761905e-05,3.223561904761905e-05,not recorded (no decision-time record exists),False
+2026-05-18,basket_members,,"XRP,SOL,TRX,DOGE,HYPE,ADA,ZEC,BCH,XMR,LINK,CC,TON,XLM,LTC,SUI,M,AVAX,HBAR,TAO,UNI,DOT,NEAR,WLFI,ASTER,ONDO,SKY,ICP,ETC,AAVE,MORPHO","XRP,SOL,TRX,DOGE,HYPE,ADA,ZEC,BCH,XMR,LINK,CC,TON,XLM,LTC,SUI,M,AVAX,HBAR,TAO,UNI,DOT,NEAR,WLFI,ASTER,ONDO,SKY,ICP,ETC,AAVE,MORPHO",not recorded (no decision-time record exists),False
+2026-05-18,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-05-18,Environment_APR,,4.606553421578424,4.606553421578424,not recorded (no decision-time record exists),False
+2026-05-25,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2026-05-25,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2026-05-25,funding_pct_rank,,0.5,0.5,not recorded (no decision-time record exists),False
+2026-05-25,F_tk,,5.971380952380956e-06,5.971380952380953e-06,not recorded (no decision-time record exists),True
+2026-05-25,basket_members,,"XRP,SOL,TRX,DOGE,HYPE,ZEC,ADA,XMR,BCH,LINK,CC,XLM,TON,SUI,LTC,AVAX,HBAR,M,NEAR,TAO,ONDO,UNI,DOT,WLFI,ASTER,SKY,MORPHO,ICP,ETC,AAVE","XRP,SOL,TRX,DOGE,HYPE,ZEC,ADA,XMR,BCH,LINK,CC,XLM,TON,SUI,LTC,AVAX,HBAR,M,NEAR,TAO,ONDO,UNI,DOT,WLFI,ASTER,SKY,MORPHO,ICP,ETC,AAVE",not recorded (no decision-time record exists),False
+2026-05-25,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-05-25,Environment_APR,,4.0290716433566445,4.0290716433566445,not recorded (no decision-time record exists),False
+2026-06-01,funding_regime,,Q2: Weak,Q2: Weak,not recorded (no decision-time record exists),False
+2026-06-01,is_mrf_active,,True,True,not recorded (no decision-time record exists),False
+2026-06-01,funding_pct_rank,,0.2884615384615384,0.2692307692307692,not recorded (no decision-time record exists),True
+2026-06-01,F_tk,,-2.0628952380952377e-05,-2.0628952380952377e-05,not recorded (no decision-time record exists),False
+2026-06-01,basket_members,,"XRP,SOL,TRX,HYPE,DOGE,ZEC,ADA,XLM,XMR,LINK,BCH,CC,TON,LAB,HBAR,LTC,M,AVAX,SUI,NEAR,TAO,DOT,UNI,ASTER,WLFI,ONDO,SKY,ICP,MORPHO,ETC","XRP,SOL,TRX,HYPE,DOGE,ZEC,ADA,XLM,XMR,LINK,BCH,CC,TON,HBAR,LTC,M,AVAX,LAB,SUI,NEAR,TAO,DOT,UNI,ASTER,WLFI,ONDO,SKY,ICP,MORPHO,ETC",not recorded (no decision-time record exists),True
+2026-06-01,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2026-06-01,Environment_APR,,4.328040554445556,4.328040554445556,not recorded (no decision-time record exists),False
+2026-06-08,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2026-06-08,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-06-08,funding_pct_rank,,0.0192307692307692,0.0192307692307692,not recorded (no decision-time record exists),False
+2026-06-08,F_tk,,-0.0001343105714285,-0.0001343105714285,not recorded (no decision-time record exists),False
+2026-06-08,basket_members,,"XRP,SOL,TRX,HYPE,DOGE,ZEC,XLM,CC,ADA,LINK,XMR,BCH,TON,M,LAB,HBAR,LTC,SUI,AVAX,NEAR,TAO,WLFI,ONDO,DOT,ASTER,WLD,UNI,SKY,ICP,H","XRP,SOL,TRX,HYPE,DOGE,ZEC,XLM,CC,ADA,LINK,XMR,BCH,TON,M,LAB,HBAR,LTC,SUI,AVAX,NEAR,TAO,WLFI,ONDO,DOT,ASTER,WLD,UNI,SKY,ICP,H",not recorded (no decision-time record exists),False
+2026-06-08,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-06-08,Environment_APR,,4.645172682317684,4.645172682317684,not recorded (no decision-time record exists),False
+2026-06-15,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2026-06-15,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-06-15,funding_pct_rank,,0.75,0.75,not recorded (no decision-time record exists),False
+2026-06-15,F_tk,,3.0633952380952384e-05,3.063395238095238e-05,not recorded (no decision-time record exists),True
+2026-06-15,basket_members,,"XRP,SOL,TRX,HYPE,DOGE,ZEC,ADA,CC,XLM,XMR,LINK,TON,BCH,M,HBAR,LTC,LAB,SUI,NEAR,AVAX,TAO,WLD,WLFI,ONDO,ASTER,DOT,UNI,ICP,BEAT,SKY","XRP,SOL,TRX,HYPE,DOGE,ZEC,ADA,CC,XLM,XMR,LINK,TON,BCH,M,HBAR,LTC,LAB,SUI,NEAR,AVAX,TAO,WLD,WLFI,ONDO,ASTER,DOT,UNI,BEAT,ICP,SKY",not recorded (no decision-time record exists),True
+2026-06-15,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2026-06-15,Environment_APR,,4.528804045954047,4.528804045954047,not recorded (no decision-time record exists),False
+2026-06-22,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2026-06-22,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-06-22,funding_pct_rank,,0.5192307692307693,0.5192307692307693,not recorded (no decision-time record exists),False
+2026-06-22,F_tk,,2.655523809523812e-06,2.655523809523812e-06,not recorded (no decision-time record exists),False
+2026-06-22,basket_members,,"XRP,SOL,TRX,HYPE,DOGE,ZEC,XLM,XMR,ADA,LINK,CC,LAB,TON,BCH,M,LTC,HBAR,SUI,NEAR,AVAX,TAO,WLD,WLFI,UNI,ASTER,ONDO,DOT,SKY,ICP,MORPHO","XRP,SOL,TRX,HYPE,DOGE,ZEC,XLM,XMR,ADA,LINK,CC,LAB,TON,BCH,M,LTC,HBAR,SUI,NEAR,AVAX,TAO,WLD,WLFI,UNI,ASTER,ONDO,DOT,SKY,ICP,MORPHO",not recorded (no decision-time record exists),False
+2026-06-22,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-06-22,Environment_APR,,4.759933276723278,4.759933276723278,not recorded (no decision-time record exists),False
+2026-06-29,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2026-06-29,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-06-29,funding_pct_rank,,0.0961538461538461,0.0961538461538461,not recorded (no decision-time record exists),False
+2026-06-29,F_tk,,-5.702995238095238e-05,-5.702995238095238e-05,not recorded (no decision-time record exists),False
+2026-06-29,basket_members,,"XRP,SOL,TRX,HYPE,DOGE,ZEC,XMR,XLM,CC,LINK,ADA,LAB,TON,BCH,LTC,HBAR,AVAX,SUI,NEAR,TAO,WLFI,UNI,ASTER,WLD,ONDO,AAVE,DOT,ICP,SKY,MORPHO","XRP,SOL,TRX,HYPE,DOGE,ZEC,XMR,XLM,CC,LINK,ADA,LAB,TON,BCH,LTC,HBAR,AVAX,SUI,NEAR,TAO,WLFI,UNI,ASTER,WLD,ONDO,AAVE,DOT,ICP,SKY,MORPHO",not recorded (no decision-time record exists),False
+2026-06-29,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-06-29,Environment_APR,,4.245220924075925,4.245220924075925,not recorded (no decision-time record exists),False
+2026-07-06,funding_regime,,Q1: Negative/Low,Q1: Negative/Low,not recorded (no decision-time record exists),False
+2026-07-06,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-07-06,funding_pct_rank,,0.0769230769230769,0.0769230769230769,not recorded (no decision-time record exists),False
+2026-07-06,F_tk,,-8.718285714285713e-05,-8.718285714285713e-05,not recorded (no decision-time record exists),False
+2026-07-06,basket_members,,"XRP,SOL,TRX,HYPE,DOGE,ZEC,ADA,XLM,XMR,LINK,CC,LAB,BCH,TON,LTC,HBAR,SUI,AVAX,NEAR,TAO,UNI,WLFI,M,ASTER,ONDO,DOT,WLD,AAVE,SKY,MORPHO","XRP,SOL,TRX,HYPE,DOGE,ZEC,ADA,XLM,XMR,LINK,CC,LAB,BCH,TON,LTC,HBAR,SUI,AVAX,NEAR,TAO,UNI,WLFI,M,ASTER,ONDO,DOT,WLD,AAVE,SKY,MORPHO",not recorded (no decision-time record exists),False
+2026-07-06,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2026-07-06,Environment_APR,,4.867520400870908,4.867520400870908,not recorded (no decision-time record exists),False
+2026-07-13,funding_regime,,Q4: High,Q4: High,not recorded (no decision-time record exists),False
+2026-07-13,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-07-13,funding_pct_rank,,0.8461538461538461,0.8461538461538461,not recorded (no decision-time record exists),False
+2026-07-13,F_tk,,5.0525333333333336e-05,5.052533333333333e-05,not recorded (no decision-time record exists),True
+2026-07-13,basket_members,,"XRP,SOL,TRX,HYPE,DOGE,ZEC,XLM,XMR,ADA,LINK,CC,BCH,TON,LTC,HBAR,SUI,AVAX,NEAR,DEXE,UNI,TAO,WLFI,ASTER,M,ONDO,WLD,AAVE,DOT,SKY,MORPHO","XRP,SOL,TRX,HYPE,DOGE,ZEC,XLM,XMR,ADA,LINK,CC,BCH,TON,LTC,HBAR,SUI,AVAX,NEAR,DEXE,UNI,TAO,WLFI,ASTER,M,ONDO,WLD,AAVE,DOT,SKY,MORPHO",not recorded (no decision-time record exists),False
+2026-07-13,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2026-07-13,Environment_APR,,4.878434298158289,4.878434298158289,not recorded (no decision-time record exists),False
+2026-07-20,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2026-07-20,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-07-20,funding_pct_rank,,0.6730769230769231,0.6730769230769231,not recorded (no decision-time record exists),False
+2026-07-20,F_tk,,1.4868809523809522e-05,1.4868809523809529e-05,not recorded (no decision-time record exists),True
+2026-07-20,basket_members,,"XRP,SOL,TRX,HYPE,DOGE,ZEC,XLM,XMR,LINK,ADA,CC,BCH,TON,LTC,SUI,HBAR,AVAX,NEAR,UNI,TAO,WLFI,ONDO,ASTER,M,DEXE,SKY,AAVE,DOT,MORPHO,WLD","XRP,SOL,TRX,HYPE,DOGE,ZEC,XLM,XMR,LINK,ADA,CC,BCH,TON,LTC,SUI,HBAR,AVAX,NEAR,UNI,TAO,WLFI,ONDO,ASTER,M,DEXE,SKY,AAVE,DOT,MORPHO,WLD",not recorded (no decision-time record exists),False
+2026-07-20,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2026-07-20,Environment_APR,,4.416331762070683,4.416331762070683,not recorded (no decision-time record exists),False
+2026-07-27,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2026-07-27,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-07-27,funding_pct_rank,,0.7307692307692307,0.7307692307692307,not recorded (no decision-time record exists),False
+2026-07-27,F_tk,,2.1789523809523813e-05,2.1789523809523813e-05,not recorded (no decision-time record exists),False
+2026-07-27,basket_members,,"XRP,SOL,TRX,HYPE,DOGE,ZEC,XMR,LINK,XLM,ADA,CC,BCH,TON,LTC,HBAR,SUI,AVAX,UNI,NEAR,ONDO,TAO,WLFI,ASTER,M,AAVE,DOT,SKY,WLD,MORPHO,ICP","XRP,SOL,TRX,HYPE,DOGE,ZEC,XMR,LINK,XLM,ADA,CC,BCH,TON,LTC,HBAR,SUI,AVAX,UNI,NEAR,ONDO,TAO,WLFI,ASTER,M,AAVE,DOT,SKY,WLD,MORPHO,ICP",not recorded (no decision-time record exists),False
+2026-07-27,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2026-07-27,Environment_APR,,4.320037167745148,4.320037167745148,not recorded (no decision-time record exists),False
+2026-08-03,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2026-08-03,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-08-03,funding_pct_rank,,0.6730769230769231,0.6730769230769231,not recorded (no decision-time record exists),False
+2026-08-03,F_tk,,1.277514285714286e-05,1.277514285714286e-05,not recorded (no decision-time record exists),False
+2026-08-03,basket_members,,"XRP,SOL,TRX,HYPE,DOGE,ZEC,ADA,XMR,LINK,XLM,CC,BCH,TON,LTC,HBAR,AVAX,SUI,UNI,NEAR,TAO,ONDO,WLFI,ASTER,M,AAVE,DOT,SKY,MORPHO,BEAT,ICP","XRP,SOL,TRX,HYPE,DOGE,ZEC,ADA,XMR,LINK,XLM,CC,BCH,TON,LTC,HBAR,AVAX,SUI,UNI,NEAR,TAO,ONDO,WLFI,ASTER,M,AAVE,DOT,SKY,MORPHO,BEAT,ICP",not recorded (no decision-time record exists),False
+2026-08-03,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2026-08-03,Environment_APR,,4.204042929318069,4.204042929318069,not recorded (no decision-time record exists),False
+2026-08-10,funding_regime,,Q4: High,Q4: High,not recorded (no decision-time record exists),False
+2026-08-10,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-08-10,funding_pct_rank,,0.8461538461538461,0.8653846153846154,not recorded (no decision-time record exists),True
+2026-08-10,F_tk,,3.4933857142857145e-05,3.7425809523809526e-05,not recorded (no decision-time record exists),True
+2026-08-10,basket_members,,"XRP,SOL,TRX,HYPE,DOGE,ZEC,XMR,ADA,LINK,XLM,BCH,CC,TON,LTC,HBAR,SUI,AVAX,UNI,NEAR,TAO,ONDO,WLFI,ASTER,M,AAVE,DOT,MORPHO,SKY,ICP,WLD","XRP,SOL,TRX,HYPE,DOGE,ZEC,XMR,ADA,LINK,XLM,BCH,CC,TON,LTC,HBAR,SUI,AVAX,UNI,NEAR,TAO,ONDO,WLFI,ASTER,M,AAVE,DOT,MORPHO,SKY,BEAT,ICP",not recorded (no decision-time record exists),True
+2026-08-10,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-08-10,Environment_APR,,4.382560087108014,4.382560087108014,not recorded (no decision-time record exists),False
+2026-08-17,funding_regime,,Q4: High,Q4: High,not recorded (no decision-time record exists),False
+2026-08-17,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-08-17,funding_pct_rank,,0.903846153846154,0.903846153846154,not recorded (no decision-time record exists),False
+2026-08-17,F_tk,,4.543795238095239e-05,4.543795238095239e-05,not recorded (no decision-time record exists),False
+2026-08-17,basket_members,,"XRP,SOL,TRX,HYPE,DOGE,ZEC,XMR,LINK,ADA,XLM,BCH,CC,TON,LTC,HBAR,SUI,AVAX,NEAR,UNI,WLFI,TAO,ONDO,ASTER,M,AAVE,MORPHO,WLD,DOT,ICP,SKY","XRP,SOL,TRX,HYPE,DOGE,ZEC,XMR,LINK,ADA,XLM,BCH,CC,TON,LTC,HBAR,SUI,AVAX,NEAR,UNI,WLFI,TAO,ONDO,ASTER,M,AAVE,MORPHO,WLD,DOT,ICP,SKY",not recorded (no decision-time record exists),False
+2026-08-17,BTCDOM_Trend,,Rising,Rising,not recorded (no decision-time record exists),False
+2026-08-17,Environment_APR,,4.630659616724739,4.630659616724739,not recorded (no decision-time record exists),False
+2026-08-24,funding_regime,,Q4: High,Q4: High,not recorded (no decision-time record exists),False
+2026-08-24,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-08-24,funding_pct_rank,,0.9423076923076924,0.9423076923076924,not recorded (no decision-time record exists),False
+2026-08-24,F_tk,,5.206842857142858e-05,5.206842857142858e-05,not recorded (no decision-time record exists),False
+2026-08-24,basket_members,,"XRP,SOL,TRX,HYPE,DOGE,ZEC,LINK,ADA,XMR,XLM,BCH,CC,TON,LTC,HBAR,SUI,AVAX,UNI,NEAR,M,TAO,AAVE,PUMP,ASTER,WLFI,ONDO,MORPHO,ENA,SKY,DOT","XRP,SOL,TRX,HYPE,DOGE,ZEC,LINK,ADA,XMR,XLM,BCH,CC,TON,LTC,HBAR,SUI,AVAX,UNI,NEAR,M,TAO,AAVE,PUMP,ASTER,WLFI,ONDO,MORPHO,ENA,SKY,DOT",not recorded (no decision-time record exists),False
+2026-08-24,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2026-08-24,Environment_APR,,5.0909013613738185,5.0909013613738185,not recorded (no decision-time record exists),False
+2026-08-31,funding_regime,,Q4: High,Q4: High,not recorded (no decision-time record exists),False
+2026-08-31,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-08-31,funding_pct_rank,,0.9807692307692308,0.9807692307692308,not recorded (no decision-time record exists),False
+2026-08-31,F_tk,,6.194509523809525e-05,6.194509523809525e-05,not recorded (no decision-time record exists),False
+2026-08-31,basket_members,,"XRP,SOL,TRX,HYPE,ZEC,DOGE,XMR,LINK,ADA,XLM,BCH,CC,LTC,TON,HBAR,UNI,AVAX,SUI,M,NEAR,TAO,AAVE,ASTER,WLFI,PUMP,ONDO,SKY,MORPHO,ENA,DOT","XRP,SOL,TRX,HYPE,ZEC,DOGE,XMR,LINK,ADA,XLM,BCH,CC,LTC,TON,HBAR,UNI,AVAX,SUI,M,NEAR,TAO,AAVE,ASTER,WLFI,PUMP,ONDO,SKY,MORPHO,ENA,DOT",not recorded (no decision-time record exists),False
+2026-08-31,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2026-08-31,Environment_APR,,5.467979790940768,5.467979790940768,not recorded (no decision-time record exists),False
+2026-09-07,funding_regime,,Q4: High,Q4: High,not recorded (no decision-time record exists),False
+2026-09-07,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-09-07,funding_pct_rank,,0.8846153846153846,0.8846153846153846,not recorded (no decision-time record exists),False
+2026-09-07,F_tk,,5.001085714285715e-05,5.001085714285715e-05,not recorded (no decision-time record exists),False
+2026-09-07,basket_members,,"XRP,SOL,TRX,ZEC,HYPE,DOGE,XMR,LINK,ADA,XLM,BCH,UNI,CC,LTC,TON,HBAR,AVAX,SUI,NEAR,M,TAO,ASTER,AAVE,ONDO,WLFI,ENA,MORPHO,DOT,SKY,PUMP","XRP,SOL,TRX,ZEC,HYPE,DOGE,XMR,LINK,ADA,XLM,BCH,UNI,CC,LTC,TON,HBAR,AVAX,SUI,NEAR,M,TAO,ASTER,AAVE,ONDO,WLFI,ENA,MORPHO,DOT,SKY,PUMP",not recorded (no decision-time record exists),False
+2026-09-07,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2026-09-07,Environment_APR,,5.377124223494277,5.377124223494277,not recorded (no decision-time record exists),False
+2026-09-14,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2026-09-14,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-09-14,funding_pct_rank,,0.7307692307692307,0.7307692307692307,not recorded (no decision-time record exists),False
+2026-09-14,F_tk,,2.967338095238096e-05,2.967338095238096e-05,not recorded (no decision-time record exists),False
+2026-09-14,basket_members,,"XRP,SOL,TRX,ZEC,HYPE,DOGE,XMR,LINK,ADA,XLM,BCH,LTC,UNI,CC,TON,HBAR,AVAX,NEAR,SUI,M,TAO,AAVE,ASTER,WLFI,DOT,ONDO,PUMP,ICP,MORPHO,SKY","XRP,SOL,TRX,ZEC,HYPE,DOGE,XMR,LINK,ADA,XLM,BCH,LTC,UNI,CC,TON,HBAR,AVAX,NEAR,SUI,M,TAO,AAVE,ASTER,WLFI,DOT,ONDO,PUMP,ICP,MORPHO,SKY",not recorded (no decision-time record exists),False
+2026-09-14,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2026-09-14,Environment_APR,,4.976970126928821,4.976970126928821,not recorded (no decision-time record exists),False
+2026-09-18,funding_regime,,Q3: Neutral,Q3: Neutral,not recorded (no decision-time record exists),False
+2026-09-18,is_mrf_active,,False,False,not recorded (no decision-time record exists),False
+2026-09-18,funding_pct_rank,,0.6730769230769231,0.6730769230769231,not recorded (no decision-time record exists),False
+2026-09-18,F_tk,,1.8813e-05,1.8813e-05,not recorded (no decision-time record exists),False
+2026-09-18,basket_members,,"XRP,SOL,TRX,ZEC,HYPE,DOGE,XMR,LINK,ADA,XLM,UNI,BCH,NEAR,CC,LTC,TON,AVAX,HBAR,SUI,M,TAO,AAVE,ASTER,PUMP,DOT,ONDO,WLFI,ENA,MORPHO,ICP","XRP,SOL,TRX,ZEC,HYPE,DOGE,XMR,LINK,ADA,XLM,UNI,BCH,NEAR,CC,LTC,TON,AVAX,HBAR,SUI,M,TAO,AAVE,ASTER,PUMP,DOT,ONDO,WLFI,ENA,MORPHO,ICP",not recorded (no decision-time record exists),False
+2026-09-18,BTCDOM_Trend,,Falling,Falling,not recorded (no decision-time record exists),False
+2026-09-18,Environment_APR,,4.480349201095073,4.480349201095073,not recorded (no decision-time record exists),False

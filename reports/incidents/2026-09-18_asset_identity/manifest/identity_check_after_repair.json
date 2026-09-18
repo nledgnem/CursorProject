@@ -1,0 +1,42 @@
+{
+ "mode": "asset_identity",
+ "run_utc": "2026-09-18T12:11:28+00:00",
+ "signals": [
+  {
+   "name": "A1",
+   "description": "dim_asset.coingecko_id = fetched id",
+   "status": "PASS",
+   "detail": "851 allowlisted assets, all ids match the allowlist"
+  },
+  {
+   "name": "A2",
+   "description": "no unacknowledged slug collisions",
+   "status": "PASS",
+   "detail": "11 acknowledged by policy: ['ALLO', 'BITCOIN', 'BLEND', 'DYDX', 'METAL', 'NAVI', 'NUSD', 'TENSOR', 'USA', 'WINK', 'ZETA']"
+  },
+  {
+   "name": "A3",
+   "description": "lake close = Binance perp close",
+   "status": "PASS",
+   "detail": "492 TRADING perps checked since 2024-05-10; wrong coin now: none; wrong-coin runs >=14d: 0 []; perps not bound to their ticker's asset: 1 (0 new: [])"
+  },
+  {
+   "name": "A4",
+   "description": "no mass re-binding dates",
+   "status": "PASS",
+   "detail": "no date since 2024-05-10 with >=20 assets jumping 3x overnight"
+  },
+  {
+   "name": "A5",
+   "description": "price+mcap = /coins/markets (by id)",
+   "status": "FAIL",
+   "detail": "fact_markets_snapshot stale: last date 2026-08-04 vs lake 2026-09-18 -- the independent market-cap reference is missing"
+  },
+  {
+   "name": "A6",
+   "description": "registry: one coin <-> one uid",
+   "status": "PASS",
+   "detail": "2846 uids, 2 declared aliases"
+  }
+ ]
+}

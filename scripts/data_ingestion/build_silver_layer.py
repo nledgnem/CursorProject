@@ -25,6 +25,7 @@ DATA_LAKE = data_lake_root()
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 from majors_alts_monitor.msm_funding_v0.macro_environment import build_daily_environment_table
+from src.data_lake.quarantine import flag_identity_quarantine, identity_quarantine_keys, with_quarantine_rows
 
 FFILL_LIMIT = 3
 
@@ -112,6 +113,10 @@ def build_silver_fact_price(data_lake_dir: Path) -> tuple[pd.DataFrame, dict]:
 
     # Normalize dates and ensure datetime index for calendar reindex
     df["date"] = pd.to_datetime(_normalize_date_series(df["date"]))
+    # Identity-quarantined dates (rows moved out as another coin's data) get a value-less row so the
+    # calendar spans them and they are flagged, never filled.
+    q_keys = identity_quarantine_keys(data_lake_dir, "fact_price")
+    df = with_quarantine_rows(df, q_keys, exclude_assets=blacklist_assets)
     df = df.sort_values(["asset_id", "date"]).reset_index(drop=True)
 
     # 2. The Calendar: reindex each asset to continuous daily frequency
@@ -127,6 +132,7 @@ def build_silver_fact_price(data_lake_dir: Path) -> tuple[pd.DataFrame, dict]:
     # 3. Initialize flags
     df["is_winsorized"] = False
     df["is_ffilled"] = False
+    df["is_identity_quarantined"] = flag_identity_quarantine(df, q_keys).values
 
     # 4. The Math: daily returns on calendar days
     # Use previous calendar day's close; if either side is NaN we get NaN returns.
@@ -345,6 +351,7 @@ def build_silver_fact_marketcap(
 
     # 1. The Bouncer: drop blacklisted assets
     blacklist_path = REPO_ROOT / "blacklist.csv"
+    blacklist_assets = set()
     if blacklist_path.exists():
         blacklist_df = pd.read_csv(blacklist_path)
         if "asset_id" not in blacklist_df.columns:
@@ -366,6 +373,8 @@ def build_silver_fact_marketcap(
 
     # 2. The Calendar: continuous daily frequency per asset_id
     df["date"] = pd.to_datetime(_normalize_date_series(df["date"]))
+    q_keys = identity_quarantine_keys(data_lake_dir, "fact_marketcap")
+    df = with_quarantine_rows(df, q_keys, exclude_assets=blacklist_assets)
     df = df.sort_values(["asset_id", "date"]).reset_index(drop=True)
 
     reindexed = []
@@ -379,6 +388,7 @@ def build_silver_fact_marketcap(
 
     # 3. Initialize flags
     df["is_winsorized"] = False
+    df["is_identity_quarantined"] = flag_identity_quarantine(df, q_keys).values
 
     # 4. The Integration: merge cleaned Silver price close
     price = silver_price.copy()

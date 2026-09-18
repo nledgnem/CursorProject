@@ -233,7 +233,12 @@ def main():
         default=None,
         help="Start date for incremental conversion (YYYY-MM-DD). If not provided, auto-detect from existing fact tables.",
     )
-    
+    parser.add_argument(
+        "--allow-rewind",
+        action="store_true",
+        help="Allow a full rebuild to replace fact tables that extend past the wide input (destructive).",
+    )
+
     args = parser.parse_args()
     
     repo_root = Path(__file__).parent.parent
@@ -242,7 +247,23 @@ def main():
     stablecoins_path = (repo_root / args.stablecoins).resolve()
     
     data_lake_dir.mkdir(parents=True, exist_ok=True)
-    
+
+    # Rewind guard. A full (non-incremental) run rebuilds the fact tables from the wide files; the
+    # repo's copies are frozen at 599e5cb (2026-03-30, writer-race era). Run against a live lake this
+    # silently truncates history and re-injects other coins' rows (local lake 2026-08-17; asset-
+    # identity incident 2026-09-18). Refuse when the lake already extends past the wide input.
+    wide_prices = curated_dir / "prices_daily.parquet"
+    if not args.incremental and not args.allow_rewind and wide_prices.exists():
+        wide_end = pd.to_datetime(pd.read_parquet(wide_prices).index).max()
+        for name in ("fact_price", "fact_marketcap", "fact_volume"):
+            fp = data_lake_dir / f"{name}.parquet"
+            if fp.exists():
+                lake_end = pd.to_datetime(pd.read_parquet(fp, columns=["date"])["date"]).max()
+                if lake_end > wide_end:
+                    raise SystemExit(
+                        f"[REFUSED] {fp} runs to {lake_end.date()} but {wide_prices} ends {wide_end.date()}: a full "
+                        f"rebuild would rewind the lake. Use --incremental, or --allow-rewind if that is intended.")
+
     print("=" * 70)
     print("CONVERTING TO FACT TABLES")
     print("=" * 70)

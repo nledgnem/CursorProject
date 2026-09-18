@@ -28,7 +28,7 @@ from src.providers.coingecko_analyst import (
     fetch_exchange_volume_chart_range,
     check_api_usage,
 )
-from src.data_lake.mapping import generate_asset_id
+from src.data_lake.asset_registry import coingecko_to_uid, load_registry, snapshot_asset_id
 
 DATA_LAKE_DIR = data_lake_root()
 
@@ -172,6 +172,52 @@ def fetch_and_save_categories():
     print()
 
 
+# Stored schema of fact_markets_snapshot.parquet. The day's frame is built against it explicitly:
+# letting polars infer types from the first 100 rows broke every write from 2026-08-05 to 2026-09-18,
+# when CoinGecko began returning fully_diluted_valuation ~1e24 for two small coins (linqai,
+# peipeicoin-vip) -- beyond Int64, so the frame build raised and the snapshot silently froze.
+SNAPSHOT_SCHEMA = {
+    "date": pl.Date, "asset_id": pl.Utf8, "coingecko_id": pl.Utf8, "symbol": pl.Utf8, "name": pl.Utf8,
+    "current_price_usd": pl.Float64, "market_cap_usd": pl.Int64, "market_cap_rank": pl.Int64,
+    "fully_diluted_valuation_usd": pl.Int64, "total_volume_usd": pl.Float64, "high_24h_usd": pl.Float64,
+    "low_24h_usd": pl.Float64, "price_change_24h": pl.Float64, "price_change_percentage_24h": pl.Float64,
+    "market_cap_change_24h": pl.Float64, "market_cap_change_percentage_24h": pl.Float64,
+    "circulating_supply": pl.Float64, "total_supply": pl.Float64, "max_supply": pl.Float64,
+    "ath_usd": pl.Float64, "ath_change_percentage": pl.Float64, "ath_date": pl.Date, "atl_usd": pl.Float64,
+    "atl_change_percentage": pl.Float64, "atl_date": pl.Date, "source": pl.Utf8,
+}
+_INT64_MAX = 2**63 - 1
+
+
+def _coerce_snapshot_record(rec: dict, bad: list) -> dict:
+    """Cast one record to SNAPSHOT_SCHEMA; values that cannot fit (e.g. FDV 6.9e24) become None."""
+    out = {}
+    for col, dtype in SNAPSHOT_SCHEMA.items():
+        v = rec.get(col)
+        if v is None or dtype in (pl.Utf8, pl.Date):
+            out[col] = v
+            continue
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            f = float("nan")
+        if f != f or f in (float("inf"), float("-inf")) or (dtype == pl.Int64 and abs(f) > _INT64_MAX):
+            bad.append((rec.get("coingecko_id"), col, v))
+            out[col] = None
+        else:
+            out[col] = int(round(f)) if dtype == pl.Int64 else f
+    return out
+
+
+def build_snapshot_frame(records: list) -> pl.DataFrame:
+    """The day's snapshot rows as a frame with the stored schema; logs every value set to null."""
+    bad: list = []
+    rows = [_coerce_snapshot_record(r, bad) for r in records]
+    for cg_id, col, v in bad:
+        print(f"[WARN] markets snapshot: {cg_id}.{col}={v!r} is not representable in the stored schema -> null")
+    return pl.DataFrame(rows, schema=SNAPSHOT_SCHEMA, orient="row")
+
+
 def fetch_and_save_markets_snapshot(max_pages: int = 10):
     """Fetch all markets snapshot and save to data lake."""
     print("=" * 80)
@@ -181,17 +227,11 @@ def fetch_and_save_markets_snapshot(max_pages: int = 10):
     today = date.today()
     all_records = []
     
-    # Load asset mapping for coingecko_id -> asset_id
-    dim_asset_path = DATA_LAKE_DIR / "dim_asset.parquet"
-    coingecko_to_asset_id = {}
-    
-    if dim_asset_path.exists():
-        dim_asset = pl.read_parquet(str(dim_asset_path))
-        for row in dim_asset.to_dicts():
-            cg_id = row.get("coingecko_id")
-            asset_id = row.get("asset_id")
-            if cg_id and asset_id:
-                coingecko_to_asset_id[cg_id.lower()] = asset_id
+    # asset_id comes from the asset registry by CoinGecko id (never from the ticker): the old
+    # mapping went through the placeholder dim_asset.coingecko_id (= lower-cased ticker), so real
+    # Bitcoin was stamped 'BITCOIN' (a memecoin's uid) and Toncoin became 'GRAM' when CoinGecko
+    # renamed its ticker. Coins not in the registry get the namespaced 'CG:<id>'.
+    cg_to_uid = coingecko_to_uid(load_registry())
     
     # Fetch markets (paginated, 250 per page)
     total_fetched = 0
@@ -213,10 +253,7 @@ def fetch_and_save_markets_snapshot(max_pages: int = 10):
             cg_id = market.get("id", "")
             symbol = market.get("symbol", "").upper()
             
-            # Get asset_id from mapping or generate
-            asset_id = coingecko_to_asset_id.get(cg_id.lower())
-            if not asset_id:
-                asset_id = generate_asset_id(symbol=symbol)
+            asset_id = snapshot_asset_id(cg_id, cg_to_uid)
             
             # Parse dates
             ath_date = None
@@ -268,17 +305,17 @@ def fetch_and_save_markets_snapshot(max_pages: int = 10):
             break
     
     if not all_records:
-        print("[ERROR] No market snapshot records created")
-        return
+        # Exit non-zero so Step 0 reports the failure (this used to return quietly with exit 0).
+        raise RuntimeError("No market snapshot records created (fetch_coins_markets returned nothing)")
     
     # Save to parquet
-    df = pl.DataFrame(all_records)
+    df = build_snapshot_frame(all_records)
     output_path = DATA_LAKE_DIR / "fact_markets_snapshot.parquet"
     
     # Merge with existing data (deduplicate by date, asset_id)
     if output_path.exists():
         existing = pl.read_parquet(str(output_path))
-        existing = existing.filter(pl.col("date") != today)
+        existing = existing.filter(pl.col("date") != today).select(list(SNAPSHOT_SCHEMA)).cast(SNAPSHOT_SCHEMA)
         df = pl.concat([existing, df])
     
     df.write_parquet(str(output_path))
