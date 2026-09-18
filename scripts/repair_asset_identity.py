@@ -266,7 +266,8 @@ def _refetch(cg_id: str, start: date, end: date, cache: Path) -> pd.DataFrame:
         return pd.read_parquet(f)
     from src.providers.coingecko import fetch_price_history
     p, m, v = fetch_price_history(cg_id, start, end)
-    df = pd.DataFrame({"close": pd.Series(p), "marketcap": pd.Series(m), "volume": pd.Series(v)})
+    df = pd.DataFrame({"close": pd.Series(p, dtype=float), "marketcap": pd.Series(m, dtype=float),
+                       "volume": pd.Series(v, dtype=float)})
     df.index = pd.to_datetime(df.index)
     df = df.rename_axis("date").reset_index()
     cache.mkdir(parents=True, exist_ok=True)
@@ -392,6 +393,7 @@ def cmd_dry_run(args) -> int:
         bser = _binance_series(reg_by[uid], cache_b)
         j = a[["close", "marketcap", "volume"]].join(r[["close", "marketcap", "volume"]], rsuffix="_ref")
         j["bin"] = bser.reindex(j.index) if bser is not None else np.nan
+        j = j.apply(pd.to_numeric, errors="coerce")        # CoinGecko sometimes returns null points
         has_b = (j["bin"] > 0).fillna(False)
         lake_bad = has_b & (np.log(j["close"] / j["bin"]).abs() > LOG_10PCT).fillna(False)
         ref_ok = has_b & (np.log(j["close_ref"] / j["bin"]).abs() <= LOG_10PCT).fillna(False)
@@ -503,9 +505,38 @@ def cmd_dry_run(args) -> int:
         summary["tables"][table] = {"rows_before": len(before), "rows_after": len(after), "rows_replaced": n_rep,
                                     "rows_quarantined": n_q, "sha256_before": _file_sha256(lake / f"{table}.parquet"),
                                     "sha256_after": _file_sha256(path)}
+    for table, (after, note) in _registry_dims(lake, ids).items():
+        path = cand / f"{table}.parquet"
+        _write_dim_like(after, lake / f"{table}.parquet", path)
+        summary["tables"][table] = {"rows": len(after), "note": note, "sha256_before": _file_sha256(lake / f"{table}.parquet"),
+                                    "sha256_after": _file_sha256(path)}
     (out / "summary.json").write_text(json.dumps(summary, indent=1, default=str))
     print(json.dumps(summary, indent=1, default=str))
     return 0
+
+
+def _registry_dims(lake: Path, ids: pd.Series) -> dict[str, tuple[pd.DataFrame, str]]:
+    """dim_asset / map_provider_asset re-keyed on the registry's real CoinGecko ids. The placeholder
+    lower(ticker) becomes the fetched id, or null where the registry has none (never a guess)."""
+    da = pd.read_parquet(lake / "dim_asset.parquet")
+    da["coingecko_id"] = da["asset_id"].map(ids)
+    da["metadata_json"] = [json.dumps({**json.loads(m), "coingecko_id": c if isinstance(c, str) else None})
+                           for m, c in zip(da["metadata_json"], da["coingecko_id"])]
+    mpa = pd.read_parquet(lake / "map_provider_asset.parquet")
+    cg = mpa["asset_id"].map(ids)
+    mpa["provider_asset_id"] = cg
+    mpa["mapping_method"] = np.where(cg.notna(), "asset_registry", "unresolved")
+    mpa["confidence"] = np.where(cg.notna(), 1.0, 0.0)
+    n = int(da["coingecko_id"].notna().sum())
+    return {"dim_asset": (da, f"{n}/{len(da)} rows carry a registry CoinGecko id; the rest null"),
+            "map_provider_asset": (mpa, f"{int(cg.notna().sum())}/{len(mpa)} mapped via asset_registry")}
+
+
+def _write_dim_like(df: pd.DataFrame, template: Path, path: Path) -> None:
+    schema = pq.read_schema(template).remove_metadata()
+    tmp = path.with_suffix(".parquet.tmp")
+    pq.write_table(pa.Table.from_pandas(df[schema.names], schema=schema, preserve_index=False), tmp)
+    tmp.replace(path)
 
 
 def _apply_to_frame(before: pd.DataFrame, table: str, col: str, repl: pd.DataFrame, quar: pd.DataFrame,
@@ -592,6 +623,11 @@ def cmd_apply(args) -> int:
             qdf = pd.concat([pd.read_parquet(qpath), qdf], ignore_index=True)
         qdf.assign(date=pd.to_datetime(qdf["date"]).dt.date).to_parquet(qpath, index=False)
         print(f"quarantine -> {qpath} ({len(qdf)} rows total)")
+    if args.include_dim:
+        for t in ("dim_asset", "map_provider_asset"):
+            shutil.copy2(lake / f"{t}.parquet", backup / f"{t}.parquet")
+            shutil.copy2(man / "candidate" / f"{t}.parquet", lake / f"{t}.parquet")
+            print(f"  {t}: replaced with the registry-keyed candidate")
     print("Next: python scripts/data_ingestion/build_silver_layer.py && "
           "python scripts/verify_ingestion_integrity.py --mode asset_identity")
     return 0
@@ -622,6 +658,8 @@ def main() -> int:
     a.add_argument("--classes", default=None, help="comma list of segment classes (default: apply_default)")
     a.add_argument("--skip-changed", action="store_true")
     a.add_argument("--yes", action="store_true")
+    a.add_argument("--include-dim", action="store_true",
+                   help="also install candidate dim_asset / map_provider_asset (registry CoinGecko ids)")
     args = p.parse_args()
     return {"registry": cmd_registry, "dry-run": cmd_dry_run, "apply": cmd_apply}[args.cmd](args)
 

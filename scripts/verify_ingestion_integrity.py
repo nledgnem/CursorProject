@@ -408,8 +408,12 @@ def _identity_inputs(lake: Path) -> dict:
     m = pd.read_parquet(lake / "fact_marketcap.parquet", columns=["asset_id", "date", "marketcap"])
     fact = p.merge(m, on=["asset_id", "date"], how="left")
     fact["date"] = pd.to_datetime(fact["date"])
+    reg_path = _REPO_ROOT / "data" / "asset_registry.csv"
+    conf_path = _REPO_ROOT / "data" / "asset_registry_conflicts.csv"
     return {
         "fact": fact,
+        "registry": pd.read_csv(reg_path) if reg_path.exists() else None,
+        "registry_conflicts": list(pd.read_csv(conf_path)["binance_symbol"]) if conf_path.exists() else [],
         "dim_asset": pd.read_parquet(lake / "dim_asset.parquet", columns=["asset_id", "coingecko_id"]),
         "dim_instrument": pd.read_parquet(lake / "dim_instrument.parquet",
                                           columns=["instrument_symbol", "venue", "instrument_type"]),
@@ -475,9 +479,17 @@ def _signal_a3_binance_prices(inp: dict, since: date, offline: bool) -> SignalRe
     fact = inp["fact"]
     fact = fact[fact["date"] >= pd.Timestamp(since)]
     closes = {a: g.set_index("date")["close"] for a, g in fact.groupby("asset_id")}
+    # Which lake asset a perp belongs to: the registry's effective-dated binding when it exists
+    # (Toncoin trades as GRAMUSDT; 1000000BOBUSDT is not the lake's BOB), else the ticker.
+    reg = inp.get("registry")
+    if reg is not None:
+        bound = reg.dropna(subset=["binance_symbol"])
+        pairs = {r.binance_symbol: (r.asset_uid, float(r.binance_multiplier)) for r in bound.itertuples()}
+    else:
+        pairs = {sym: binance_base_to_asset(base) for sym, base in trading.items()}
     wrong, spliced, checked = [], [], 0
-    for sym, base in sorted(trading.items()):
-        asset, mult = binance_base_to_asset(base)
+    for sym in sorted(set(trading) & set(pairs)):
+        asset, mult = pairs[sym]
         if asset not in closes:
             continue
         b = _binance_daily_closes(sym, since)
@@ -492,6 +504,13 @@ def _signal_a3_binance_prices(inp: dict, since: date, offline: bool) -> SignalRe
             spliced.append(f"{asset}:{r['bad_runs'][0][0]}..{r['bad_runs'][-1][1]}")
     detail = f"{checked} TRADING perps checked since {since}; wrong coin now: {wrong or 'none'}; " \
              f"wrong-coin runs >=14d: {len(spliced)} {spliced[:15]}"
+    if reg is not None:
+        # A TRADING perp whose ticker is a lake asset but which the registry does not bind to it is a
+        # different coin; known ones are listed in asset_registry_conflicts.csv, new ones fail.
+        unbound = sorted(s for s in trading if s not in pairs and binance_base_to_asset(trading[s])[0] in closes)
+        new = [u for u in unbound if u not in set(inp.get("registry_conflicts", []))]
+        detail += f"; perps not bound to their ticker's asset: {len(unbound)} ({len(new)} new: {new[:10]})"
+        wrong += new
     return SignalResult("A3", desc, "FAIL" if (wrong or spliced) else "PASS", detail)
 
 
