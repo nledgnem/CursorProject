@@ -2,7 +2,7 @@
 
 import polars as pl
 from typing import List, Set, Optional
-from datetime import date
+from datetime import date, timedelta
 import logging
 
 logger = logging.getLogger(__name__)
@@ -99,6 +99,7 @@ def select_top_n_alts(
     min_mcap_usd: float = 50_000_000,
     excluded_assets: Optional[Set[str]] = None,
     candidate_asset_ids: Optional[Set[str]] = None,
+    max_mcap_age_days: Optional[int] = None,
 ) -> pl.DataFrame:
     """
     Select top N eligible ALTs by market cap at a specific date.
@@ -111,7 +112,12 @@ def select_top_n_alts(
         excluded_assets: Set of asset_ids to exclude
         candidate_asset_ids: If set, only consider these asset_ids (e.g. assets with funding data).
             Ensures denominator alignment: basket is drawn from assets we can compute features for.
-    
+        max_mcap_age_days: If set, an asset's latest market cap must be at most this many days
+            before asof_date or the asset is ineligible. Without it the lookup reaches back
+            indefinitely, so a coin that stopped updating (cut from the allowlist) or whose rows
+            were quarantined as another coin's (asset-identity incident 2026-09-18) is ranked on a
+            stale cap -- a quarantine silently turned into a forward-fill.
+
     Returns:
         DataFrame with (asset_id, marketcap, rank) for selected assets
     """
@@ -122,6 +128,11 @@ def select_top_n_alts(
     mcap_at_date = marketcap.filter(
         pl.col("date") <= pl.date(asof_date.year, asof_date.month, asof_date.day)
     )
+    if max_mcap_age_days is not None:
+        oldest = asof_date - timedelta(days=max_mcap_age_days)
+        mcap_at_date = mcap_at_date.filter(pl.col("date") >= pl.date(oldest.year, oldest.month, oldest.day))
+    # NaN / null caps are missing data, never a value to rank on.
+    mcap_at_date = mcap_at_date.filter(pl.col("marketcap").is_not_null() & pl.col("marketcap").is_not_nan())
     if candidate_asset_ids is not None and len(candidate_asset_ids) > 0:
         mcap_at_date = mcap_at_date.filter(pl.col("asset_id").is_in(list(candidate_asset_ids)))
     

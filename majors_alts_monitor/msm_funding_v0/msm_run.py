@@ -289,6 +289,7 @@ def run_msm_v0(
             min_mcap_usd=config["universe"]["min_mcap_usd"],
             excluded_assets=excluded_assets,
             candidate_asset_ids=candidate_asset_ids,
+            max_mcap_age_days=config["universe"].get("max_mcap_age_days"),
         )
         
         if len(top_alts) == 0:

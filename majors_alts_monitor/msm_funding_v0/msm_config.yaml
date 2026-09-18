@@ -19,6 +19,10 @@ universe:
   majors_weights: [0.7, 0.3]  # BTC/ETH weights
   basket_size: 30  # Top N eligible ALTs
   min_mcap_usd: 50_000_000  # Minimum market cap for ALT inclusion
+  # A cap older than this (days before the decision date) makes the asset ineligible instead of
+  # being ranked on a stale value: coins that stopped updating, and rows quarantined as another
+  # coin's history (asset-identity incident 2026-09-18). Lake caps are daily.
+  max_mcap_age_days: 3
   
   # Exclusions (use dim_asset tags if available, else hardcode)
   exclude_categories:
