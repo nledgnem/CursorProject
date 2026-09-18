@@ -1,0 +1,56 @@
+{
+ "asof": "2026-09-18",
+ "window": [
+  "2024-09-23",
+  "2026-09-16"
+ ],
+ "coingecko_calls": 0,
+ "segments_by_class": {
+  "long_splice": 201,
+  "mass_window_2026_03": 138,
+  "pre_window_unrecoverable": 12,
+  "predates_coin": 110,
+  "predates_coin_tail": 58,
+  "short_splice": 220
+ },
+ "assets_affected": 379,
+ "coingecko_history_defect_assets": 331,
+ "tables": {
+  "fact_price": {
+   "rows_before": 1748828,
+   "rows_after": 1725042,
+   "rows_replaced": 8479,
+   "rows_quarantined": 23786,
+   "sha256_before": "72bd5c90c46233a9b4b1fcaada4f504c9672be2ae9a6b0f0e32ca9fe6ccc8f4a",
+   "sha256_after": "5207734f391f032a15b245c39b95889c79b9db7ebf35ba2a5e87de2bdad9c19c"
+  },
+  "fact_marketcap": {
+   "rows_before": 1739791,
+   "rows_after": 1716295,
+   "rows_replaced": 9204,
+   "rows_quarantined": 23496,
+   "sha256_before": "d015bdfae14877ca2d56553b1bbbc4263f1351a9d87dc8239e7a73a701e97ba7",
+   "sha256_after": "fcef293687ac1d4008dbeb204dff5a0e52a0088253092910f389e4b4ef60fea6"
+  },
+  "fact_volume": {
+   "rows_before": 1743456,
+   "rows_after": 1719625,
+   "rows_replaced": 9391,
+   "rows_quarantined": 23831,
+   "sha256_before": "37d661fa1f242e85cdcc1e7110f37aef30db874938e83ad688bb5a49adc303e8",
+   "sha256_after": "956069e661b2eaee0f06368761d0640ac3ebfefbd8aeab7eb6af6398991777e9"
+  },
+  "dim_asset": {
+   "rows": 2717,
+   "note": "2716/2717 rows carry a registry CoinGecko id; the rest null",
+   "sha256_before": "9360930dbe57c0930b81d31cf00bfbf3fe2a36fdb2b6abe6a6e21706ab789204",
+   "sha256_after": "d15b9afaa03ad9af9b23f5c13130a975cdc54f570ebc1e4de08d5b389c90e6a1"
+  },
+  "map_provider_asset": {
+   "rows": 2717,
+   "note": "2716/2717 mapped via asset_registry",
+   "sha256_before": "12b6cc20e2274b58c6cb73305ec4df8213d6ba72e071f2252af4040f62d501d5",
+   "sha256_after": "156719dfbc49aee9856877e7e180573af3d51d554d13a7af0684c53d4c64d539"
+  }
+ }
+}

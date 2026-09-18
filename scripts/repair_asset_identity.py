@@ -425,6 +425,23 @@ def cmd_dry_run(args) -> int:
             add_segment(uid, cg, "predates_coin", days, "all",
                         f"lake rows before CoinGecko history of {cg} starts ({first_ref.date()}); "
                         f"hand-over break {'>3x' if brk else '<=3x'}", brk, {}, None)
+            # The old coin often continues past first_ref until the allowlist switched. Those rows
+            # are identified by continuity with the quarantined old-coin series (not by disagreeing
+            # with CoinGecko, whose history can itself be >3x off): lake within 1.5x of the last
+            # pre-hand-over value and >3x from the new coin, contiguous from first_ref.
+            tail = []
+            for d in j.index[j.index >= first_ref]:
+                if has_b.get(d, False) or px_wrong.get(d, False):
+                    break
+                lc, rc = j.at[d, "close"], j.at[d, "close_ref"]
+                if not (_near(lc, last_lake, 1.5) and not _near(lc, rc, 3.0)):
+                    break
+                tail.append(d)
+                last_lake = lc
+            if tail:
+                add_segment(uid, cg, "predates_coin_tail", tail, "all",
+                            f"old coin continues past {first_ref.date()} (continuous with the quarantined "
+                            f"series, >3x from {cg})", brk, {}, None)
         mc_wrong = ~px_wrong & in_mw & sig_mc
         # the lake agrees with Binance but CoinGecko's current history does not: evidence that a
         # re-fetch is not a safe repair source by itself (reported, never applied)

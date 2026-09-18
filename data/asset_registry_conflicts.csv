@@ -1,0 +1,8 @@
+binance_symbol,ticker_asset_uid,uid_coingecko_id,why_not_bound,proposed_coingecko_id,resolution
+1000000BOBUSDT,BOB,bob-build-on-bitcoin,"ticker match: 303 overlapping days, median gap 47123176.1%",build-on-bnb,current price within 0.6% of Binance; 10 candidates
+ARXUSDT,ARX,arcs,"ticker match: 87 overlapping days, median gap 1425.1%",arcium,current price within 1.1% of Binance; 4 candidates
+CGPTUSDT,CGPT,chaingpt,no CoinGecko history cached for the uid's coin,chaingpt,current price within 0.8% of Binance; 1 candidates
+FRAXUSDT,FRAX,frax,"ticker match: 246 overlapping days, median gap 143.7%",frax-share,current price within 0.3% of Binance; 3 candidates
+PUMPBTCUSDT,PUMPBTC,pumpbtc,"ticker match: 285 overlapping days, median gap 294548491.1%",,0 of 1 candidates match the price
+TREEUSDT,TREE,tree-capital,"ticker match: 416 overlapping days, median gap 180.5%",treehouse,current price within 0.3% of Binance; 3 candidates
+哈基米USDT,哈基米,hakimi,"ticker match: 12 overlapping days, median gap 0.4%",hakimi,current price within 2.9% of Binance; 1 candidates

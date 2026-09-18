@@ -1,0 +1,380 @@
+{
+ "created_utc": "2026-09-18T09:38:17Z",
+ "source": "G:/My Drive/Render Exports (Drive Desktop mirror of Render nightly export)",
+ "files": [
+  {
+   "file": "apathy_alert_log.csv",
+   "bytes": 121258,
+   "sha256": "eab0be81437d5c4a2742110af76d915886bca454c0140e894116aab46e5a1ec8"
+  },
+  {
+   "file": "apathy_bleed_book.csv",
+   "bytes": 3540,
+   "sha256": "8cb884e199da679bbfd4934d5814d94dbc6fc652cc62c9c853ccc58500249fff"
+  },
+  {
+   "file": "apathy_bleed_book.PRE_RECON_2026-07-24.bak.csv",
+   "bytes": 2751,
+   "sha256": "bf2fbbb3a79c9013507e0299ffa34a108a55e91780d07ef2d23e072ae90645bc"
+  },
+  {
+   "file": "apathy_daily_bundle_state.json",
+   "bytes": 42,
+   "sha256": "fe9ef653a5604b1032e4b91b6ae56385d67ac5b98a20fa5f378ec57414fdea3c"
+  },
+  {
+   "file": "apathy_daily_snapshot_state.json",
+   "bytes": 109,
+   "sha256": "33d802083a5b92bb8db5f6cd37768a92921daffcd9eee33582d9cc92fc9d7333"
+  },
+  {
+   "file": "apathy_exit_reminder_state.json",
+   "bytes": 1683,
+   "sha256": "2e251408085864e0fb1852d7f42d20b1d09a74371ccbb1c483381b402b83dd1f"
+  },
+  {
+   "file": "apathy_scanner_reminder_state.json",
+   "bytes": 99,
+   "sha256": "a8fc97c9f76b46ab3e6c7a73d85e93624863e3ef00927ddff5575539976e39a0"
+  },
+  {
+   "file": "apathy_stop_proximity_state.json",
+   "bytes": 31,
+   "sha256": "4829173a55e1a278f8ccdb85c5fdd9745130302ca3d2aa5fa29e9ed61fdad15f"
+  },
+  {
+   "file": "BACKTEST.md",
+   "bytes": 31407,
+   "sha256": "a0f630630e4258b937866bd9792e122b2493b4f7c1cfb7392ce22f0027966a58"
+  },
+  {
+   "file": "binance_btcdom.csv",
+   "bytes": 51031,
+   "sha256": "27025f6c6910726187f272d3e916cd11abfffb6e6a005e893d9c7fa19dbcf9fe"
+  },
+  {
+   "file": "btcdom_binance_index.csv",
+   "bytes": 47650,
+   "sha256": "fd8d34b98d52bac5e5f8ae01da3cb57a944b4f442e8b8cc1fafaff4acc6a7cb0"
+  },
+  {
+   "file": "btcdom_reconstructed.csv",
+   "bytes": 58020,
+   "sha256": "b80e37856b391a5067d339e6b559536d339b6f0fc8eca60a861453b772405526"
+  },
+  {
+   "file": "danlongshort_bot_state.json",
+   "bytes": 77,
+   "sha256": "7e1f307339f76df072554387205da872767aaf8b7553457e820099eda7dd404e"
+  },
+  {
+   "file": "danlongshort_positions.csv",
+   "bytes": 48,
+   "sha256": "247ff9556140d823d8a2de0aaaac5202e1c45fd620433a654d6491d925d93f87"
+  },
+  {
+   "file": "danlongshort_snapshot_state.json",
+   "bytes": 56,
+   "sha256": "8f019e046283f5487b221aafa75ab90d2fd4f8ef5e8c77c0622fb2ae82918272"
+  },
+  {
+   "file": "data_dictionary.yaml",
+   "bytes": 87435,
+   "sha256": "37b8d04ade24b333d91ac8a703bfae5b6b78ab0950b11f8c85e9b8f7769e52ce"
+  },
+  {
+   "file": "DATA_LAKE_CONTEXT.md",
+   "bytes": 61984,
+   "sha256": "166daff80a737ae585b2ef33f6389ed511dcad46c4ebdd2798e6aa28f65cc922"
+  },
+  {
+   "file": "dim_asset.parquet",
+   "bytes": 105730,
+   "sha256": "9360930dbe57c0930b81d31cf00bfbf3fe2a36fdb2b6abe6a6e21706ab789204",
+   "rows": 2717
+  },
+  {
+   "file": "dim_categories.parquet",
+   "bytes": 12668,
+   "sha256": "0ebb377d60299955dca898e66dd1c78c6b585c5b73d79ff11a765b19a452ab5a",
+   "rows": 739
+  },
+  {
+   "file": "dim_derivative_exchanges.parquet",
+   "bytes": 3801,
+   "sha256": "4162b2c72e906b84c36a07a4a275e6e878cedf00a8336850301b417fb8221897",
+   "rows": 20
+  },
+  {
+   "file": "dim_exchanges.parquet",
+   "bytes": 35296,
+   "sha256": "556fc71179d871e4077d1563e14282caea598dd52a90b9d2b27f0019b5465615",
+   "rows": 100
+  },
+  {
+   "file": "dim_instrument.parquet",
+   "bytes": 27538,
+   "sha256": "b5275557b343774149e4c2124bfb64a3540642bbd7fa6b3fb9e7ee33b88e4884",
+   "rows": 605
+  },
+  {
+   "file": "dim_new_listings.parquet",
+   "bytes": 8302,
+   "sha256": "d92e1d0cbc983f5207172fd49cb2f8c843f950ab8755afa7bc1fe3e67b0d6023",
+   "rows": 200
+  },
+  {
+   "file": "fact_category_market.parquet",
+   "bytes": 1543229,
+   "sha256": "c2100b9c0a8a6ee9ad3169bec162c76bf1b9c21b0e4e73776b3d38e537ad0a3e",
+   "rows": 110963,
+   "date_min": "2026-01-28",
+   "date_max": "2026-09-18"
+  },
+  {
+   "file": "fact_derivative_exchange_details.parquet",
+   "bytes": 4352,
+   "sha256": "ccbdaca784911ccc07ff56c4aec6076ac35d58008004d5a9df35b0bdb5345f13",
+   "rows": 20,
+   "date_min": "2026-01-28",
+   "date_max": "2026-01-28"
+  },
+  {
+   "file": "fact_derivative_open_interest.parquet",
+   "bytes": 341281,
+   "sha256": "c4280af4324f7e13566478815406b829c57f467687621aaf54eaf9d5b3d18083",
+   "rows": 19209,
+   "date_min": "2026-01-28",
+   "date_max": "2026-01-28"
+  },
+  {
+   "file": "fact_derivative_volume.parquet",
+   "bytes": 349370,
+   "sha256": "a3a358ebda3bc5a80904f565c3913a72bf9b853dc91a4f4ca78d7c26cc5aadf3",
+   "rows": 19876,
+   "date_min": "2026-01-28",
+   "date_max": "2026-01-28"
+  },
+  {
+   "file": "fact_exchange_tickers.parquet",
+   "bytes": 21794,
+   "sha256": "ed3108e641e0254b409c6f81e8ed9338057dd017e188753db13d7d7988e35c51",
+   "rows": 800,
+   "date_min": "2026-01-28",
+   "date_max": "2026-01-28"
+  },
+  {
+   "file": "fact_exchange_volume.parquet",
+   "bytes": 8642,
+   "sha256": "e670a48239f117223b3f81a8090d8a43d15b900f925657ed0a54a1d3afebcd90",
+   "rows": 810,
+   "date_min": "2025-10-31",
+   "date_max": "2026-01-28"
+  },
+  {
+   "file": "fact_exchange_volume_history.parquet",
+   "bytes": 6513,
+   "sha256": "58772b5419f93ae1b94a9f86fad9dd2da83e0996b65153f102e5ae93a3c5ccf0",
+   "rows": 567,
+   "date_min": "2025-10-30",
+   "date_max": "2025-12-31"
+  },
+  {
+   "file": "fact_funding.parquet",
+   "bytes": 1690511,
+   "sha256": "28f6caa8a14f44437540343863e05e5b661a47c42420551c2bd410891d010e14",
+   "rows": 452511,
+   "date_min": "2023-04-19",
+   "date_max": "2026-09-18"
+  },
+  {
+   "file": "fact_global_market.parquet",
+   "bytes": 3362,
+   "sha256": "7e5198b0adbda24366e17a702a5420845b0a78e84bfe29bcb9ddc9b214a00fbe",
+   "rows": 1,
+   "date_min": "2026-01-28",
+   "date_max": "2026-01-28"
+  },
+  {
+   "file": "fact_global_market_history.parquet",
+   "bytes": 5597,
+   "sha256": "5ac41653e3b9f525a041460ccc10f030d26f61a3cfe7edf3f7e9c9b975047fc6",
+   "rows": 366,
+   "date_min": "2025-01-29",
+   "date_max": "2026-01-29"
+  },
+  {
+   "file": "fact_liquidations.parquet",
+   "bytes": 6522900,
+   "sha256": "535116d22714d7d780dd1023a85fa71158e31c91632852db5df4d0be159ecbd0",
+   "rows": 431898,
+   "date_min": "2024-01-01",
+   "date_max": "2026-09-18"
+  },
+  {
+   "file": "fact_market_breadth.parquet",
+   "bytes": 4782,
+   "sha256": "1e741c338fbe2f65f6c2f5421a6e27369d15de4778828b72dbae30e359abdba3",
+   "rows": 240,
+   "date_min": "2026-01-28",
+   "date_max": "2026-01-28"
+  },
+  {
+   "file": "fact_marketcap.parquet",
+   "bytes": 15017183,
+   "sha256": "d015bdfae14877ca2d56553b1bbbc4263f1351a9d87dc8239e7a73a701e97ba7",
+   "rows": 1739791,
+   "date_min": "2013-04-28",
+   "date_max": "2026-09-18"
+  },
+  {
+   "file": "fact_markets_snapshot.parquet",
+   "bytes": 23623526,
+   "sha256": "87dbf0714f9708e64b64ab258ee571663878d99ae1be2a1c94f8c4a57e7b9978",
+   "rows": 267500,
+   "date_min": "2026-01-28",
+   "date_max": "2026-08-04"
+  },
+  {
+   "file": "fact_ohlc.parquet",
+   "bytes": 357658,
+   "sha256": "1c3a5dc00b5bbad295c66190fd3a84c05dd30ae3d50ae3d399b63fb6f50f268a",
+   "rows": 19939,
+   "date_min": "2013-04-29",
+   "date_max": "2026-01-05"
+  },
+  {
+   "file": "fact_open_interest.parquet",
+   "bytes": 2065945,
+   "sha256": "8f57bf2d920363fe22aa6124db5d5f27e07bf8519382244e68b7944b5eaefb52",
+   "rows": 270577,
+   "date_min": "2025-02-14",
+   "date_max": "2026-09-18"
+  },
+  {
+   "file": "fact_price.parquet",
+   "bytes": 15960193,
+   "sha256": "72bd5c90c46233a9b4b1fcaada4f504c9672be2ae9a6b0f0e32ca9fe6ccc8f4a",
+   "rows": 1748828,
+   "date_min": "2013-04-28",
+   "date_max": "2026-09-18"
+  },
+  {
+   "file": "fact_trending_searches.parquet",
+   "bytes": 16666,
+   "sha256": "c56bded3794f72d086ef05a3a9175b18ed71b9dca9e32575d9dc216cc422a8a5",
+   "rows": 4034,
+   "date_min": "2026-01-28",
+   "date_max": "2026-09-18"
+  },
+  {
+   "file": "fact_volume.parquet",
+   "bytes": 15792674,
+   "sha256": "37d661fa1f242e85cdcc1e7110f37aef30db874938e83ad688bb5a49adc303e8",
+   "rows": 1743456,
+   "date_min": "2013-12-27",
+   "date_max": "2026-09-18"
+  },
+  {
+   "file": "map_category_asset.parquet",
+   "bytes": 19431,
+   "sha256": "58289110f73ec2034dd06bf3f1b2652ed77ee613509d91a148a9ecd0f3f56ccb",
+   "rows": 2711
+  },
+  {
+   "file": "map_provider_asset.parquet",
+   "bytes": 42842,
+   "sha256": "12b6cc20e2274b58c6cb73305ec4df8213d6ba72e071f2252af4040f62d501d5",
+   "rows": 2717
+  },
+  {
+   "file": "map_provider_instrument.parquet",
+   "bytes": 15182,
+   "sha256": "22f6e11038df9aff53b8eb7b31ae0e93b64485b056823328a071a5bd4d9ffcf3",
+   "rows": 605
+  },
+  {
+   "file": "msm_timeseries.csv",
+   "bytes": 77826,
+   "sha256": "64591086859b0fed3f1e62aa0118cf1d2901ac657654a7aa924a69113b562b5f"
+  },
+  {
+   "file": "perp_coverage_summary.csv",
+   "bytes": 12414311,
+   "sha256": "68b88ecb8681173850aa2162147f3da6bbe5fc99c9214da60f64aa77e2c55b8d"
+  },
+  {
+   "file": "perp_ticker_mapping.csv",
+   "bytes": 18589,
+   "sha256": "fbf2f9855d6dfecf7ec204de0f4f9060564fa58eaa0a8bfa6545edfbb546b700"
+  },
+  {
+   "file": "perps_hyperliquid.csv",
+   "bytes": 4211293,
+   "sha256": "2c5d2dfedda4a1af1901787dec095b8eb4a86058ca973040d2da6c8bd393c873"
+  },
+  {
+   "file": "perps_variational.csv",
+   "bytes": 51558555,
+   "sha256": "943a0df6107e352dc48a494a7875cefb4e5f4324863e240e9da59e5ffe9c2d48"
+  },
+  {
+   "file": "silver_fact_funding.parquet",
+   "bytes": 1618322,
+   "sha256": "632320989b15f36822c5ec6295926435d8eab80d94af7c5a4243d1d5a386015b",
+   "rows": 450214,
+   "date_min": "2023-04-19",
+   "date_max": "2026-09-18"
+  },
+  {
+   "file": "silver_fact_marketcap.parquet",
+   "bytes": 15317647,
+   "sha256": "e029ab12afa71338557b04144fbfa5caee180453719094a4ae80fc7109a17812",
+   "rows": 1815544,
+   "date_min": "2013-04-28",
+   "date_max": "2026-09-18"
+  },
+  {
+   "file": "silver_fact_price.parquet",
+   "bytes": 16469924,
+   "sha256": "590c803b9f2a06de7cd350b09f99a6f582a98a6785c5f21eaf79806314422874",
+   "rows": 1816622,
+   "date_min": "2013-04-28",
+   "date_max": "2026-09-18"
+  },
+  {
+   "file": "silver_funding_cross_sectional_daily.parquet",
+   "bytes": 55074,
+   "sha256": "674b172975958652368de2fe0cf2e0094104783af054a28cfa4b4b2fcd733f23",
+   "rows": 1249,
+   "date_min": "2023-04-19 00:00:00",
+   "date_max": "2026-09-18 00:00:00"
+  },
+  {
+   "file": "single_coin_panel.csv",
+   "bytes": 5923357,
+   "sha256": "5d7447bfcdbe08cc02171ba7c13717824326efc6b8907f87c09d2c50a13e3f40"
+  },
+  {
+   "file": "stablecoins.csv",
+   "bytes": 2163,
+   "sha256": "6e42406ba6cf7efa7feaee36c30e3d2ed294220952f3e5434c76df1366135762"
+  },
+  {
+   "file": "START_HERE.md",
+   "bytes": 6208,
+   "sha256": "74f22d7aa730541bab745906950231ae017749d5efc2ba86f9ae4998000a6d21"
+  },
+  {
+   "file": "STRATEGIES.md",
+   "bytes": 30292,
+   "sha256": "5ff349349e09b910a41264002f6fcb9b7a966b61364a33c61f317ee61e565346"
+  },
+  {
+   "file": "universe_eligibility.parquet",
+   "bytes": 1016444,
+   "sha256": "0df89e28c443d644c6c6dd25d1cea535928a8eaa52fb247bc05e29af75f578fc",
+   "rows": 62491
+  }
+ ]
+}
