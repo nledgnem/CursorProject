@@ -7,6 +7,7 @@ surface; do not fork this script.
 
 Usage:
     python scripts/verify_ingestion_integrity.py --mode writer_race
+    python scripts/verify_ingestion_integrity.py --mode asset_identity [--lake-dir DIR] [--since YYYY-MM-DD] [--offline]
     python scripts/verify_ingestion_integrity.py --mode <future-mode>
 
 Exit codes:
@@ -24,6 +25,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 
 # repo_paths sits at repo root; ensure it's importable when this script is run from anywhere.
@@ -339,16 +341,8 @@ def _signal_4_unaffected_unchanged(merge_date: date = date(2026, 5, 4)) -> Signa
     return SignalResult("4", "BTC/BNB/XRP regression check", "PASS", detail)
 
 
-def _run_writer_race_mode() -> int:
-    """Run all 4 signals for writer_race mode. Return exit code."""
-    signals = [
-        _signal_1_api_call_count(),
-        _signal_2_guard_silent(),
-        _signal_3_affected_correct(),
-        _signal_4_unaffected_unchanged(),
-    ]
-
-    # Markdown table to stdout
+def _print_signal_table(signals: list[SignalResult]) -> None:
+    """Markdown table to stdout, then full details for rows too long for the table."""
     print()
     print("| Signal | Description                          | Result        | Detail                                              |")
     print("|--------|--------------------------------------|---------------|-----------------------------------------------------|")
@@ -361,6 +355,17 @@ def _run_writer_race_mode() -> int:
     for s in signals:
         if len(s.detail) >= 120:
             print(f"### Signal {s.name} full detail:\n{s.detail}\n")
+
+
+def _run_writer_race_mode() -> int:
+    """Run all 4 signals for writer_race mode. Return exit code."""
+    signals = [
+        _signal_1_api_call_count(),
+        _signal_2_guard_silent(),
+        _signal_3_affected_correct(),
+        _signal_4_unaffected_unchanged(),
+    ]
+    _print_signal_table(signals)
 
     has_fail = any(s.status == "FAIL" for s in signals)
     has_indeterminate = any(s.status == "INDETERMINATE" for s in signals)
@@ -377,11 +382,177 @@ def _run_writer_race_mode() -> int:
 
 
 # ----------------------------------------------------------------------------------
+# Mode: asset_identity
+# ----------------------------------------------------------------------------------
+#
+# fact_price / fact_marketcap are keyed by ticker, and the coin behind a ticker is whatever
+# data/perp_allowlist.csv named at fetch time. The writer_race signals only look at a handful
+# of majors on the latest date, so they cannot see a ticker that holds another coin's history
+# (audit 2026-09-18: 2026-03-04..30 still carried the 599e5cb writer-race rows for 72 assets --
+# ETH/SOL/DOGE caps ~$2M -- and ~60 tickers were re-bound on 2026-01-28). Signals:
+#   A1  dim_asset.coingecko_id equals the id actually fetched (not the lower-cased ticker).
+#   A2  no ticker key spells another allowlisted coin's slug ('BITCOIN' vs real Bitcoin 'BTC').
+#   A3  each Binance USDT perp's lake close matches Binance (lake date d = Binance bar d-1):
+#       no currently-wrong coin, no wrong-coin run of >= 14 days since --since. Needs network.
+#   A4  no date since --since on which >= 20 assets jump 3x overnight in price or market cap.
+#   A5  on the latest fact_markets_snapshot date, lake price and market cap agree with
+#       /coins/markets for the *fetched coingecko_id*; snapshot must be <= 3 days old.
+
+_ASSET_IDENTITY_SINCE = date(2024, 5, 10)   # start of the window the writer-race refetch rewrote
+
+
+def _identity_inputs(lake: Path) -> dict:
+    p = pd.read_parquet(lake / "fact_price.parquet", columns=["asset_id", "date", "close"])
+    m = pd.read_parquet(lake / "fact_marketcap.parquet", columns=["asset_id", "date", "marketcap"])
+    fact = p.merge(m, on=["asset_id", "date"], how="left")
+    fact["date"] = pd.to_datetime(fact["date"])
+    return {
+        "fact": fact,
+        "dim_asset": pd.read_parquet(lake / "dim_asset.parquet", columns=["asset_id", "coingecko_id"]),
+        "dim_instrument": pd.read_parquet(lake / "dim_instrument.parquet",
+                                          columns=["instrument_symbol", "venue", "instrument_type"]),
+        "allowlist": pd.read_csv(_REPO_ROOT / "data" / "perp_allowlist.csv"),
+        "snapshot_path": lake / "fact_markets_snapshot.parquet",
+    }
+
+
+def _signal_a1_dim_asset_ids(inp: dict) -> SignalResult:
+    from src.data_lake.asset_identity import placeholder_coingecko_ids
+    bad = placeholder_coingecko_ids(inp["dim_asset"], inp["allowlist"])
+    n = int(inp["dim_asset"]["asset_id"].isin(inp["allowlist"]["symbol"].str.upper()).sum())
+    desc = "dim_asset.coingecko_id = fetched id"
+    if bad.empty:
+        return SignalResult("A1", desc, "PASS", f"{n} allowlisted assets, all ids match the allowlist")
+    eg = ", ".join(f"{r.asset_id}:{r.dim_coingecko_id}->{r.fetched_coingecko_id}" for r in bad.head(8).itertuples())
+    return SignalResult("A1", desc, "FAIL", f"{len(bad)}/{n} allowlisted assets carry a different id, e.g. {eg}")
+
+
+def _signal_a2_slug_collisions(inp: dict) -> SignalResult:
+    from src.data_lake.asset_identity import slug_ticker_collisions
+    hits = slug_ticker_collisions(inp["fact"]["asset_id"].unique(), inp["allowlist"])
+    desc = "no ticker spells another coin's slug"
+    if hits.empty:
+        return SignalResult("A2", desc, "PASS", "none")
+    eg = ", ".join(f"{r.asset_id} holds {r.holds_coingecko_id if isinstance(r.holds_coingecko_id, str) else '(not allowlisted)'}"
+                   f", spells {r.collides_with_coingecko_id} (ticker {r.collides_with_ticker})" for r in hits.itertuples())
+    return SignalResult("A2", desc, "FAIL", eg)
+
+
+def _binance_daily_closes(symbol: str, start: date) -> Optional[pd.Series]:
+    import requests
+    rows, st = [], int(pd.Timestamp(start, tz="UTC").timestamp() * 1000)
+    while True:
+        r = requests.get("https://fapi.binance.com/fapi/v1/klines",
+                         params={"symbol": symbol, "interval": "1d", "startTime": st, "limit": 1000}, timeout=30)
+        if r.status_code != 200:
+            return None
+        k = r.json()
+        rows += k
+        if len(k) < 1000:
+            break
+        st = k[-1][0] + 86_400_000
+    if not rows:
+        return None
+    s = pd.Series([float(x[4]) for x in rows], index=pd.to_datetime([x[0] for x in rows], unit="ms"))
+    return s
+
+
+def _signal_a3_binance_prices(inp: dict, since: date, offline: bool) -> SignalResult:
+    import time
+    from src.data_lake.asset_identity import binance_base_to_asset, price_identity
+    desc = "lake close = Binance perp close"
+    if offline:
+        return SignalResult("A3", desc, "INDETERMINATE", "--offline: Binance comparison skipped")
+    import requests
+    try:
+        info = requests.get("https://fapi.binance.com/fapi/v1/exchangeInfo", timeout=30).json()["symbols"]
+    except Exception as e:  # network unavailable -> never a FAIL on its own
+        return SignalResult("A3", desc, "INDETERMINATE", f"Binance unreachable: {e}")
+    trading = {s["symbol"]: s["baseAsset"] for s in info
+               if s["quoteAsset"] == "USDT" and s["contractType"] == "PERPETUAL" and s["status"] == "TRADING"}
+    fact = inp["fact"]
+    fact = fact[fact["date"] >= pd.Timestamp(since)]
+    closes = {a: g.set_index("date")["close"] for a, g in fact.groupby("asset_id")}
+    wrong, spliced, checked = [], [], 0
+    for sym, base in sorted(trading.items()):
+        asset, mult = binance_base_to_asset(base)
+        if asset not in closes:
+            continue
+        b = _binance_daily_closes(sym, since)
+        time.sleep(0.15)
+        if b is None:
+            continue
+        r = price_identity(closes[asset], b, multiplier=mult)
+        checked += 1
+        if r["status"] == "CURRENT_WRONG_COIN":
+            wrong.append(f"{asset}({sym})")
+        elif r["status"] == "SPLICED_HISTORY":
+            spliced.append(f"{asset}:{r['bad_runs'][0][0]}..{r['bad_runs'][-1][1]}")
+    detail = f"{checked} TRADING perps checked since {since}; wrong coin now: {wrong or 'none'}; " \
+             f"wrong-coin runs >=14d: {len(spliced)} {spliced[:15]}"
+    return SignalResult("A3", desc, "FAIL" if (wrong or spliced) else "PASS", detail)
+
+
+def _signal_a4_mass_splices(inp: dict, since: date) -> SignalResult:
+    from src.data_lake.asset_identity import market_wide_splice_dates
+    fact = inp["fact"][inp["fact"]["date"] >= pd.Timestamp(since)]
+    hits = {c: market_wide_splice_dates(fact, c) for c in ("close", "marketcap")}
+    desc = "no mass re-binding dates"
+    parts = [f"{c}: " + ", ".join(f"{d.date()}({n})" for d, n in h.items()) for c, h in hits.items() if len(h)]
+    if not parts:
+        return SignalResult("A4", desc, "PASS", f"no date since {since} with >=20 assets jumping 3x overnight")
+    return SignalResult("A4", desc, "FAIL", "dates with >=20 assets jumping 3x overnight -- " + "; ".join(parts))
+
+
+def _signal_a5_snapshot_crosscheck(inp: dict) -> SignalResult:
+    from src.data_lake.asset_identity import mcap_vs_snapshot
+    desc = "price+mcap = /coins/markets (by id)"
+    snap = pd.read_parquet(inp["snapshot_path"], columns=["date", "coingecko_id", "current_price_usd", "market_cap_usd"])
+    snap["date"] = pd.to_datetime(snap["date"])
+    last = snap["date"].max()
+    lake_last = inp["fact"]["date"].max()
+    if (lake_last - last).days > 3:
+        return SignalResult("A5", desc, "FAIL",
+                            f"fact_markets_snapshot stale: last date {last.date()} vs lake {lake_last.date()} "
+                            f"-- the independent market-cap reference is missing")
+    lake_day = inp["fact"][inp["fact"]["date"] == last]
+    bad = mcap_vs_snapshot(lake_day, snap[snap["date"] == last], inp["allowlist"])
+    if bad.empty:
+        return SignalResult("A5", desc, "PASS", f"{len(lake_day)} assets on {last.date()} agree within 5%/10%")
+    eg = ", ".join(f"{r.asset_id}(px {np.exp(r.price_log_diff):.3g}x, mcap {np.exp(r.mcap_log_diff):.3g}x)"
+                   for r in bad.head(10).itertuples())
+    return SignalResult("A5", desc, "FAIL", f"{len(bad)} assets disagree on {last.date()}: {eg}")
+
+
+def _run_asset_identity_mode(args: argparse.Namespace) -> int:
+    lake = Path(args.lake_dir) if args.lake_dir else data_lake_root()
+    since = date.fromisoformat(args.since) if args.since else _ASSET_IDENTITY_SINCE
+    print(f"Lake: {lake}  since: {since}")
+    inp = _identity_inputs(lake)
+    signals = [
+        _signal_a1_dim_asset_ids(inp),
+        _signal_a2_slug_collisions(inp),
+        _signal_a3_binance_prices(inp, since, args.offline),
+        _signal_a4_mass_splices(inp, since),
+        _signal_a5_snapshot_crosscheck(inp),
+    ]
+    _print_signal_table(signals)
+    n_fail = sum(s.status == "FAIL" for s in signals)
+    if n_fail:
+        print(f"OVERALL: FAIL --{n_fail}/{len(signals)} signals failed. Do not trust ticker-keyed history "
+              f"(fact_price/fact_marketcap, silver copies) until repaired.")
+        return 1
+    print("OVERALL: PASS" + (" (with INDETERMINATEs)" if any(s.status == "INDETERMINATE" for s in signals) else ""))
+    return 0
+
+
+# ----------------------------------------------------------------------------------
 # Mode dispatch
 # ----------------------------------------------------------------------------------
 
 _MODES = {
-    "writer_race": _run_writer_race_mode,
+    "writer_race": lambda args: _run_writer_race_mode(),
+    "asset_identity": _run_asset_identity_mode,
 }
 
 
@@ -389,8 +560,14 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--mode", required=True, choices=sorted(_MODES.keys()),
                    help="Verification mode. Add new modes as new incident classes surface.")
+    p.add_argument("--lake-dir", default=None,
+                   help="asset_identity: lake directory to check (default data_lake_root(); "
+                        "e.g. the Drive Desktop mirror 'G:/My Drive/Render Exports').")
+    p.add_argument("--since", default=None,
+                   help=f"asset_identity: first date checked by A3/A4 (default {_ASSET_IDENTITY_SINCE}).")
+    p.add_argument("--offline", action="store_true", help="asset_identity: skip the Binance comparison (A3).")
     args = p.parse_args()
-    return _MODES[args.mode]()
+    return _MODES[args.mode](args)
 
 
 if __name__ == "__main__":
