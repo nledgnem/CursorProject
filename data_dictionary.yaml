@@ -95,10 +95,17 @@ data_sources:
       2,717 rows have coingecko_id == lowercase(symbol). Zero rows carry real
       CoinGecko slugs. Daily ingestion does NOT use this column, so dormant;
       any analysis joining via dim_asset.coingecko_id is silently wrong.
-      The fact_price.asset_id column definition below ("Canonical CoinGecko
-      slug ... Matches dim_asset.coingecko_id") is documentation drift -- still
-      OPEN as of 2026-05-05 (not bundled into writer-race remediation).
-      See DATA_LAKE_CONTEXT.md section 13.
+      The fact_price.asset_id column definition drift was corrected 2026-09-18.
+      Still a placeholder in the live lake as of 2026-09-18 (only 137 of 851
+      allowlisted assets carry the id actually fetched; 69 carry a real id of a
+      DIFFERENT coin, e.g. 'bitcoin' on the BITCOIN memecoin row). Replacement:
+      data/asset_registry.csv. See DATA_LAKE_CONTEXT.md section 13.
+
+      [2026-09-18] Asset-identity incident: ticker-keyed fact tables hold other
+      coins' rows in dated windows (2026-03-04..30 re-injected from the stale
+      git wide files for 72 assets; ~60 tickers re-bound 2026-01-28; older
+      splices). Full list, root causes and repair:
+      reports/incidents/2026-09-18_asset_identity/README.md.
 
     ingestion_universe:
       type: sticky_allowlist_csv
@@ -237,7 +244,7 @@ fact_price:
   columns:
     - name: asset_id
       type: string
-      definition: "Canonical CoinGecko slug (e.g. 'bitcoin', 'ethereum', 'aria-ai'). Matches dim_asset.coingecko_id."
+      definition: "Asset key: an UPPER-CASE ticker string (e.g. 'BTC', 'ETH', 'ARIA'), NOT a CoinGecko slug. Treat as the immutable internal asset_uid; its CoinGecko id and Binance symbol are effective-dated attributes in data/asset_registry.csv. Traps: 'BITCOIN' is a memecoin (real Bitcoin is 'BTC'); dim_asset.coingecko_id is a placeholder (lower-cased ticker) -- never join on it. Wrong-coin history windows are listed in reports/incidents/2026-09-18_asset_identity/README.md."
     - name: date
       type: date
       unit: UTC_calendar_day
@@ -266,7 +273,7 @@ fact_marketcap:
   columns:
     - name: asset_id
       type: string
-      definition: "Canonical CoinGecko slug."
+      definition: "Same key as fact_price.asset_id (upper-case ticker / asset_uid, not a CoinGecko slug)."
     - name: date
       type: date
       unit: UTC_calendar_day
@@ -298,7 +305,7 @@ fact_volume:
   columns:
     - name: asset_id
       type: string
-      definition: "Canonical CoinGecko slug."
+      definition: "Same key as fact_price.asset_id (upper-case ticker / asset_uid, not a CoinGecko slug)."
     - name: date
       type: date
       unit: UTC_calendar_day
@@ -1042,7 +1049,7 @@ silver_fact_price:
   columns:
     - name: asset_id
       type: string
-      definition: "Canonical CoinGecko slug (matches dim_asset.coingecko_id)."
+      definition: "Same key as fact_price.asset_id (upper-case ticker / asset_uid, not a CoinGecko slug)."
     - name: date
       type: date
       unit: UTC_calendar_day

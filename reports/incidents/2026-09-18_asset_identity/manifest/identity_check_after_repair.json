@@ -1,0 +1,36 @@
+{
+ "mode": "asset_identity",
+ "run_utc": "2026-09-18T10:44:49+00:00",
+ "signals": [
+  {
+   "name": "A1",
+   "description": "dim_asset.coingecko_id = fetched id",
+   "status": "PASS",
+   "detail": "851 allowlisted assets, all ids match the allowlist"
+  },
+  {
+   "name": "A2",
+   "description": "no ticker spells another coin's slug",
+   "status": "FAIL",
+   "detail": "BITCOIN holds harrypotterobamasonic10in, spells bitcoin (ticker BTC), METAL holds metal-blockchain, spells metal (ticker MTL), NUSD holds nusd-2, spells nusd (ticker SUSD), USA holds (not allowlisted), spells usa (ticker USAT), WINK holds (not allowlisted), spells wink (ticker WIN)"
+  },
+  {
+   "name": "A3",
+   "description": "lake close = Binance perp close",
+   "status": "PASS",
+   "detail": "490 TRADING perps checked since 2024-05-10; wrong coin now: none; wrong-coin runs >=14d: 0 []; perps not bound to their ticker's asset: 7 (0 new: [])"
+  },
+  {
+   "name": "A4",
+   "description": "no mass re-binding dates",
+   "status": "FAIL",
+   "detail": "dates with >=20 assets jumping 3x overnight -- marketcap: 2026-01-28(20)"
+  },
+  {
+   "name": "A5",
+   "description": "price+mcap = /coins/markets (by id)",
+   "status": "FAIL",
+   "detail": "fact_markets_snapshot stale: last date 2026-08-04 vs lake 2026-09-18 -- the independent market-cap reference is missing"
+  }
+ ]
+}

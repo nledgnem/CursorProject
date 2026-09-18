@@ -11,34 +11,35 @@
   "pre_window_unrecoverable": 12,
   "predates_coin": 110,
   "predates_coin_tail": 58,
+  "rebinding_2026_01_28": 22,
   "short_splice": 220
  },
- "assets_affected": 379,
+ "assets_affected": 390,
  "coingecko_history_defect_assets": 331,
  "tables": {
   "fact_price": {
    "rows_before": 1748828,
-   "rows_after": 1725042,
+   "rows_after": 1722096,
    "rows_replaced": 8479,
-   "rows_quarantined": 23786,
+   "rows_quarantined": 26732,
    "sha256_before": "72bd5c90c46233a9b4b1fcaada4f504c9672be2ae9a6b0f0e32ca9fe6ccc8f4a",
-   "sha256_after": "5207734f391f032a15b245c39b95889c79b9db7ebf35ba2a5e87de2bdad9c19c"
+   "sha256_after": "7b2f24025f0c74112fc11adfb1050529b08da8431e63fc35b47a030b3914aa90"
   },
   "fact_marketcap": {
    "rows_before": 1739791,
-   "rows_after": 1716295,
+   "rows_after": 1713349,
    "rows_replaced": 9204,
-   "rows_quarantined": 23496,
+   "rows_quarantined": 26442,
    "sha256_before": "d015bdfae14877ca2d56553b1bbbc4263f1351a9d87dc8239e7a73a701e97ba7",
-   "sha256_after": "fcef293687ac1d4008dbeb204dff5a0e52a0088253092910f389e4b4ef60fea6"
+   "sha256_after": "1836e1bb3aff24226db5a3fd939272e6eed04c4ca6049729f27d91587bdd7d5c"
   },
   "fact_volume": {
    "rows_before": 1743456,
-   "rows_after": 1719625,
+   "rows_after": 1716679,
    "rows_replaced": 9391,
-   "rows_quarantined": 23831,
+   "rows_quarantined": 26777,
    "sha256_before": "37d661fa1f242e85cdcc1e7110f37aef30db874938e83ad688bb5a49adc303e8",
-   "sha256_after": "956069e661b2eaee0f06368761d0640ac3ebfefbd8aeab7eb6af6398991777e9"
+   "sha256_after": "6e3f23662fe36b21c51183dccf22ace33d21030e3f0d700a334ee21648733f18"
   },
   "dim_asset": {
    "rows": 2717,

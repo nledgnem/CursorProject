@@ -57,7 +57,8 @@ def _manifest(tmp_path, lake):
 
 def _args(lake, man, **kw):
     return argparse.Namespace(lake_dir=str(lake), manifest_dir=str(man), classes=None,
-                              skip_changed=kw.get("skip_changed", False), yes=kw.get("yes", True))
+                              skip_changed=kw.get("skip_changed", False), yes=kw.get("yes", True),
+                              include_dim=kw.get("include_dim", False))
 
 
 def test_mass_window_signature():
@@ -103,3 +104,19 @@ def test_apply_without_yes_writes_nothing(tmp_path):
     before = (lake / "fact_price.parquet").read_bytes()
     assert rep.cmd_apply(_args(lake, man, yes=False)) == 0
     assert (lake / "fact_price.parquet").read_bytes() == before
+
+
+def test_include_dim_installs_registry_keyed_dims_with_backup(tmp_path):
+    lake = _lake(tmp_path)
+    man = _manifest(tmp_path, lake)
+    placeholder = pd.DataFrame({"asset_id": ["ETH"], "coingecko_id": ["eth"]})
+    placeholder.to_parquet(lake / "dim_asset.parquet", index=False)
+    placeholder.rename(columns={"coingecko_id": "provider_asset_id"}).to_parquet(lake / "map_provider_asset.parquet", index=False)
+    (man / "candidate").mkdir()
+    pd.DataFrame({"asset_id": ["ETH"], "coingecko_id": ["ethereum"]}).to_parquet(man / "candidate" / "dim_asset.parquet", index=False)
+    pd.DataFrame({"asset_id": ["ETH"], "provider_asset_id": ["ethereum"]}).to_parquet(
+        man / "candidate" / "map_provider_asset.parquet", index=False)
+    assert rep.cmd_apply(_args(lake, man, include_dim=True)) == 0
+    assert pd.read_parquet(lake / "dim_asset.parquet")["coingecko_id"].tolist() == ["ethereum"]
+    backup = next(lake.glob("_backup_asset_identity_*"))
+    assert pd.read_parquet(backup / "dim_asset.parquet")["coingecko_id"].tolist() == ["eth"]

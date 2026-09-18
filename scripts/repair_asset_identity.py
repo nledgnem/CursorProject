@@ -55,6 +55,8 @@ PRE_CUT_ALLOWLIST_PATH = REPO_ROOT / "data" / "perp_allowlist.2716_pre_universe_
 RECOVERABLE_DAYS = 725          # CoinGecko Basic depth is 730d; fetch_price_history pads the start by 2 days
 MASS_WINDOW = (pd.Timestamp("2026-03-04"), pd.Timestamp("2026-03-30"))
 SHORT_SEGMENT_DAYS = 7
+REBIND_DATE = pd.Timestamp("2026-01-28")   # allowlist re-binding of ~60 tickers (A4 mass-switch date)
+REBIND_MIN_GAP = 25.0                      # > largest CoinGecko-vs-Binance history error measured (24x)
 
 
 # --------------------------------------------------------------------------------- helpers
@@ -473,6 +475,48 @@ def cmd_dry_run(args) -> int:
             add_segment(uid, cg, "mass_window_2026_03", seg, "mcap_volume",
                         "re-injection signature (market cap), price right", True, accept, r)
 
+    # 2026-01-28 mass re-binding, coins without a perp: a >3x overnight jump that day, the lake after
+    # it matching the uid's CoinGecko coin (<=1.5x), and before it off by >25x -- beyond the largest
+    # CoinGecko history error measured against Binance (24x over 14,438 bad days), so it cannot be
+    # CoinGecko noise. The old-coin run back to the previous >3x jump (or series start) is quarantined;
+    # CoinGecko values for it cannot be validated without a perp. Smaller gaps are reported only.
+    rebind_review = []
+    covered_days = {}
+    for sg in segs:
+        covered_days.setdefault(sg["asset_uid"], set()).update(
+            pd.date_range(sg["start"], sg["end"], freq="D"))
+    for uid in todo:
+        if reg_by[uid]["binance_symbol"].notna().any():
+            continue
+        g = lk_by[uid]
+        l = g["close"][g["close"] > 0]
+        if REBIND_DATE not in l.index or (REBIND_DATE - pd.Timedelta(days=1)) not in l.index:
+            continue
+        step = np.log(l).diff()
+        if abs(step.get(REBIND_DATE, 0)) <= np.log(3):
+            continue
+        f = out / "cg_cache" / f"{ids[uid]}.parquet"
+        ref = pd.read_parquet(f).set_index("date")["close"] if f.exists() else pd.Series(dtype=float)
+        ref = ref[ref > 0]
+        prior_jumps = step[(step.index < REBIND_DATE) & (step.abs() > np.log(3))
+                           & (l.index.to_series().diff().dt.days == 1).reindex(step.index, fill_value=False)]
+        start = prior_jumps.index.max() if len(prior_jumps) else l.index.min()
+        pre = l.loc[start:REBIND_DATE - pd.Timedelta(days=1)]
+        pre = pre[~pre.index.isin(list(covered_days.get(uid, ())))]   # rows another segment already handles
+        if pre.empty:
+            continue
+        post = l.loc[REBIND_DATE:REBIND_DATE + pd.Timedelta(days=13)]
+        gap_pre = np.exp(np.log(pre / ref.reindex(pre.index)).abs().median())
+        gap_post = np.exp(np.log(post / ref.reindex(post.index)).abs().median())
+        row = {"asset_uid": uid, "coingecko_id": ids[uid], "old_coin_from": start.date(), "n_days": len(pre),
+               "pre_gap_vs_coingecko": gap_pre, "post_gap_vs_coingecko": gap_post}
+        if pd.notna(gap_pre) and gap_pre > REBIND_MIN_GAP and pd.notna(gap_post) and gap_post <= 1.5:
+            add_segment(uid, ids[uid], "rebinding_2026_01_28", list(pre.index), "all",
+                        f"ticker re-bound {REBIND_DATE.date()}: before it {gap_pre:,.0f}x off {ids[uid]}, after it "
+                        f"{gap_post:.2f}x; old coin quarantined", True, {}, None)
+        else:
+            rebind_review.append(row)
+
     # Pre-window history: Binance-evidenced wrong-coin runs cannot be re-fetched -> quarantine.
     for uid, rows in reg_by.items():
         bser = _binance_series(rows, cache_b)
@@ -505,6 +549,7 @@ def cmd_dry_run(args) -> int:
     quar_df.to_parquet(out / "quarantine_keys.parquet", index=False)
     pd.DataFrame(cg_defects).to_csv(out / "coingecko_history_defects.csv", index=False)
     pd.DataFrame(noise).to_csv(out / "timing_noise_not_applied.csv", index=False)
+    pd.DataFrame(rebind_review).to_csv(out / "rebinding_2026_01_28_review.csv", index=False)
 
     cand = out / "candidate"
     cand.mkdir(exist_ok=True)
