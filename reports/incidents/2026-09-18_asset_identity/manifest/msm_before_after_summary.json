@@ -1,0 +1,23 @@
+{
+ "code_only (live file vs branch code, unrepaired lake)": {
+  "weeks": 105,
+  "changed_weeks": 1,
+  "basket_changes": 0,
+  "regime_changes": 0,
+  "mrf_changes": 0
+ },
+ "repair_only (branch code: unrepaired vs repaired lake)": {
+  "weeks": 105,
+  "changed_weeks": 10,
+  "basket_changes": 10,
+  "regime_changes": 1,
+  "mrf_changes": 1
+ },
+ "total (live file vs branch code on repaired lake)": {
+  "weeks": 105,
+  "changed_weeks": 11,
+  "basket_changes": 10,
+  "regime_changes": 1,
+  "mrf_changes": 1
+ }
+}

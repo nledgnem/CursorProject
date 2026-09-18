@@ -12,34 +12,35 @@
   "predates_coin": 110,
   "predates_coin_tail": 58,
   "rebinding_2026_01_28": 22,
+  "rebinding_2026_01_28_ambiguous": 21,
   "short_splice": 220
  },
- "assets_affected": 390,
+ "assets_affected": 400,
  "coingecko_history_defect_assets": 331,
  "tables": {
   "fact_price": {
    "rows_before": 1748828,
-   "rows_after": 1722096,
+   "rows_after": 1713275,
    "rows_replaced": 8479,
-   "rows_quarantined": 26732,
+   "rows_quarantined": 35553,
    "sha256_before": "72bd5c90c46233a9b4b1fcaada4f504c9672be2ae9a6b0f0e32ca9fe6ccc8f4a",
-   "sha256_after": "7b2f24025f0c74112fc11adfb1050529b08da8431e63fc35b47a030b3914aa90"
+   "sha256_after": "636b5d1c74b73f36a7389ac05696545eded46f65246ba3abeb2c3abd7b215bd4"
   },
   "fact_marketcap": {
    "rows_before": 1739791,
-   "rows_after": 1713349,
+   "rows_after": 1704528,
    "rows_replaced": 9204,
-   "rows_quarantined": 26442,
+   "rows_quarantined": 35263,
    "sha256_before": "d015bdfae14877ca2d56553b1bbbc4263f1351a9d87dc8239e7a73a701e97ba7",
-   "sha256_after": "1836e1bb3aff24226db5a3fd939272e6eed04c4ca6049729f27d91587bdd7d5c"
+   "sha256_after": "22295afd274f16409acb0aeecb5adeb86fcb6e1789717fe006c37627aa3e60e7"
   },
   "fact_volume": {
    "rows_before": 1743456,
-   "rows_after": 1716679,
+   "rows_after": 1707858,
    "rows_replaced": 9391,
-   "rows_quarantined": 26777,
+   "rows_quarantined": 35598,
    "sha256_before": "37d661fa1f242e85cdcc1e7110f37aef30db874938e83ad688bb5a49adc303e8",
-   "sha256_after": "6e3f23662fe36b21c51183dccf22ace33d21030e3f0d700a334ee21648733f18"
+   "sha256_after": "d13dc2ec482733438ed24bd6e3aa0eb7ee434e4a8150e531e2ec0af830b6b861"
   },
   "dim_asset": {
    "rows": 2717,
@@ -52,6 +53,21 @@
    "note": "2716/2717 mapped via asset_registry",
    "sha256_before": "12b6cc20e2274b58c6cb73305ec4df8213d6ba72e071f2252af4040f62d501d5",
    "sha256_after": "156719dfbc49aee9856877e7e180573af3d51d554d13a7af0684c53d4c64d539"
+  },
+  "fact_markets_snapshot": {
+   "rekey": {
+    "rows": 267500,
+    "rows_rekeyed": 56092,
+    "coins_rekeyed": 1380,
+    "examples": {
+     "bitcoin": "BITCOIN->BTC",
+     "tokamak-network": "TON->CG:tokamak-network",
+     "the-open-network": "GRAM->TON",
+     "gram-2": "GRM->GRAM"
+    },
+    "uids_holding_two_coins_on_one_date_after": 0
+   },
+   "sha256_before": "87dbf0714f9708e64b64ab258ee571663878d99ae1be2a1c94f8c4a57e7b9978"
   }
  }
 }
