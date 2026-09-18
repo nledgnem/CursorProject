@@ -1,0 +1,60 @@
+# Asset-identity policy — decision 2026-09-18 (reports/incidents/2026-09-18_asset_identity/README.md)
+#
+# Invariant: one asset_uid = one economic asset, for all time.
+#   - An asset_uid is never re-pointed to a different asset, and never reinterpreted retrospectively.
+#   - Misleading or colliding uids keep their historical meaning; they are acknowledged here.
+#   - When one asset holds two uids (a ticker rename left history under both), the old uid is a
+#     retired alias of the canonical one. Aliases are not merged or re-pointed; readers resolve them.
+#   - Tickers, CoinGecko ids and Binance symbols are effective-dated ATTRIBUTES of a uid
+#     (data/asset_registry.csv), e.g. Toncoin = uid TON: TONUSDT until 2026-06-22, GRAMUSDT from 2026-07-02.
+#
+# Check A2 (verify_ingestion_integrity.py --mode asset_identity) fails on any collision NOT listed
+# here; A6 fails on any coin held by two uids that is not a declared alias.
+
+acknowledged_slug_collisions:
+  # uid: the uid spells another coin's CoinGecko slug but holds a different coin (verified single,
+  # continuous series 2024-01..2026-09 on the 2026-09-18 lake).
+  BITCOIN:
+    holds: harrypotterobamasonic10in
+    note: "HarryPotterObamaSonic10Inu memecoin. Real Bitcoin is uid BTC (coingecko 'bitcoin')."
+  METAL:
+    holds: metal-blockchain
+    note: "Metal Blockchain. Metal DAO (coingecko 'metal') is uid MTL."
+  NUSD:
+    holds: nusd-2
+    note: "nUSD (nusd-2). Synthetix sUSD (coingecko 'nusd') is uid SUSD."
+  USA:
+    holds: american-coin
+    note: "American Coin (inactive since 2026-05-05). USAT (coingecko 'usa') is uid USAT."
+  WINK:
+    holds: wink-2
+    note: "wink-2 (inactive since 2026-03). WINkLink (coingecko 'wink') is uid WIN."
+  ALLO:
+    holds: allora
+    note: "Allora. Allo (coingecko 'allo') is uid RWA. Pre-2026-01-28 rows of another coin are quarantined by the repair."
+  BLEND:
+    holds: fluent-network
+    note: "Fluent Network. Blend (coingecko 'blend') is uid BLND."
+  DYDX:
+    holds: dydx-chain
+    note: "dYdX chain token. Legacy ethDYDX (coingecko 'dydx') is uid ETHDYDX."
+  NAVI:
+    holds: atlas-navi
+    note: "Atlas Navi (inactive since 2026-05-05). NAVI Protocol (coingecko 'navi') is uid NAVX."
+  TENSOR:
+    holds: wrapped-hypertensor
+    note: "Wrapped HyperTensor (inactive since 2026-05-05). Tensor (coingecko 'tensor') is uid TNSR. Pre-2026-01-28 rows of another coin are quarantined by the repair."
+  ZETA:
+    holds: zetachain
+    note: "ZetaChain. Zeta Markets (coingecko 'zeta') is uid ZEX."
+
+aliases:
+  # retired uid -> canonical uid for the same economic asset (CoinGecko renamed the ticker).
+  QAI:
+    alias_of: QFI
+    coingecko_id: quantixai
+    note: "QuantixAI ticker QAI -> QFI (CoinGecko ~2026-04-16)."
+  AITECH:
+    alias_of: ACN
+    coingecko_id: solidus-aitech
+    note: "Solidus AI Tech ticker AITECH -> ACN (CoinGecko ~2026-05-02)."

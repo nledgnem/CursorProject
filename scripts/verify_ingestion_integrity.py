@@ -399,6 +399,8 @@ def _run_writer_race_mode() -> int:
 #   A4  no date since --since on which >= 20 assets jump 3x overnight in price or market cap.
 #   A5  on the latest fact_markets_snapshot date, lake price and market cap agree with
 #       /coins/markets for the *fetched coingecko_id*; snapshot must be <= 3 days old.
+#   A6  registry invariant: one coin <-> one uid (declared aliases aside); one uid per Binance symbol.
+#   A2 accepts collisions acknowledged in configs/asset_identity_policy.yaml (ids are never re-pointed).
 
 _ASSET_IDENTITY_SINCE = date(2024, 5, 10)   # start of the window the writer-race refetch rewrote
 
@@ -433,15 +435,56 @@ def _signal_a1_dim_asset_ids(inp: dict) -> SignalResult:
     return SignalResult("A1", desc, "FAIL", f"{len(bad)}/{n} allowlisted assets carry a different id, e.g. {eg}")
 
 
+def _identity_frame(inp: dict) -> pd.DataFrame:
+    """uid -> coingecko_id: the registry (active + retired tickers) when present, else the allowlist."""
+    if inp.get("registry") is not None:
+        return inp["registry"].drop_duplicates("asset_uid").rename(columns={"asset_uid": "symbol"})[
+            ["symbol", "coingecko_id"]].dropna()
+    return inp["allowlist"]
+
+
 def _signal_a2_slug_collisions(inp: dict) -> SignalResult:
+    """Collisions are allowed only when acknowledged in configs/asset_identity_policy.yaml (the uid
+    keeps its historical meaning -- ids are never re-pointed); any new one fails."""
     from src.data_lake.asset_identity import slug_ticker_collisions
-    hits = slug_ticker_collisions(inp["fact"]["asset_id"].unique(), inp["allowlist"])
-    desc = "no ticker spells another coin's slug"
-    if hits.empty:
-        return SignalResult("A2", desc, "PASS", "none")
-    eg = ", ".join(f"{r.asset_id} holds {r.holds_coingecko_id if isinstance(r.holds_coingecko_id, str) else '(not allowlisted)'}"
-                   f", spells {r.collides_with_coingecko_id} (ticker {r.collides_with_ticker})" for r in hits.itertuples())
-    return SignalResult("A2", desc, "FAIL", eg)
+    from src.data_lake.asset_registry import load_policy
+    hits = slug_ticker_collisions(inp["fact"]["asset_id"].unique(), _identity_frame(inp))
+    ack = load_policy()["acknowledged_slug_collisions"]
+    desc = "no unacknowledged slug collisions"
+    ok = hits.apply(lambda r: r.asset_id in ack and ack[r.asset_id].get("holds") == r.holds_coingecko_id, axis=1)         if len(hits) else pd.Series(dtype=bool)
+    new = hits[~ok] if len(hits) else hits
+    acked = sorted(hits.loc[ok, "asset_id"]) if len(hits) else []
+    if new.empty:
+        return SignalResult("A2", desc, "PASS", f"{len(acked)} acknowledged by policy: {acked}")
+    eg = ", ".join(f"{r.asset_id} holds {r.holds_coingecko_id}, spells {r.collides_with_coingecko_id} "
+                   f"(uid {r.collides_with_ticker})" for r in new.itertuples())
+    return SignalResult("A2", desc, "FAIL", f"not in configs/asset_identity_policy.yaml: {eg}")
+
+
+def _signal_a6_registry_invariant(inp: dict) -> SignalResult:
+    """One asset_uid = one economic asset: no coin held by two uids unless declared an alias, no
+    Binance symbol bound to two uids, aliases point at registry uids."""
+    from src.data_lake.asset_registry import coingecko_to_uid, load_policy
+    desc = "registry: one coin <-> one uid"
+    reg = inp.get("registry")
+    if reg is None:
+        return SignalResult("A6", desc, "INDETERMINATE", "data/asset_registry.csv not found")
+    problems = []
+    try:
+        coingecko_to_uid(reg)
+    except ValueError as e:
+        problems.append(str(e))
+    b = reg.dropna(subset=["binance_symbol"]).groupby("binance_symbol")["asset_uid"].nunique()
+    if (b > 1).any():
+        problems.append(f"Binance symbols bound to several uids: {list(b[b > 1].index)}")
+    uids = set(reg["asset_uid"])
+    bad_alias = [a for a, v in load_policy()["aliases"].items() if a not in uids or v.get("alias_of") not in uids]
+    if bad_alias:
+        problems.append(f"aliases not in the registry: {bad_alias}")
+    if problems:
+        return SignalResult("A6", desc, "FAIL", "; ".join(problems))
+    return SignalResult("A6", desc, "PASS", f"{reg['asset_uid'].nunique()} uids, "
+                                            f"{len(load_policy()['aliases'])} declared aliases")
 
 
 def _binance_daily_closes(symbol: str, start: date) -> Optional[pd.Series]:
@@ -556,6 +599,7 @@ def _run_asset_identity_mode(args: argparse.Namespace) -> list[SignalResult]:
         _signal_a3_binance_prices(inp, since, args.offline),
         _signal_a4_mass_splices(inp, since),
         _signal_a5_snapshot_crosscheck(inp),
+        _signal_a6_registry_invariant(inp),
     ]
 
 

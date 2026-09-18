@@ -28,11 +28,11 @@ Changes vs the previous (stale-lake) build:
   as a FALLBACK for assets where Binance funding is missing.
   Hyperliquid does not surface funding rates in its perp snapshot JSON, so
   no HL-funding fallback is possible from the current lake.
-- Top-20-by-mc canonical override: where fact_markets_snapshot's asset_id
-  differs from the silver tables' asset_id (only known case: canonical
-  Bitcoin is "BITCOIN" in snapshot, "BTC" in silver), the snap mc is
-  preferred for the silver asset_id row. New mismatches will surface as
-  warnings in the run log.
+- Top-20-by-mc canonical override: snapshot rows are matched to silver
+  asset_ids by CoinGecko id (the snapshot's own asset_id stamped real Bitcoin
+  "BITCOIN", a memecoin's silver id, until the 2026-09-18 identity repair),
+  and the snap mc is preferred for that silver asset_id row. New mismatches
+  will surface as warnings in the run log.
 """
 from __future__ import annotations
 import io
@@ -61,9 +61,12 @@ FILE_IDS: dict[str, str] = {
     "fact_markets_snapshot.parquet":  "181h32ykjUUnwAXcmtZ13dpxe8JQzpis5",
 }
 
-# Known asset_id mismatch: fact_markets_snapshot uses "BITCOIN" for canonical
-# Bitcoin, silver tables use "BTC". Map: snap asset_id -> silver asset_id.
-SNAP_TO_SILVER_ASSET_ID: dict[str, str] = {"BITCOIN": "BTC"}
+# Snapshot rows are matched to silver asset_ids by CoinGecko id, never by the snapshot's own
+# asset_id. Until the 2026-09-18 identity repair the snapshot stamped real Bitcoin "BITCOIN" -- which
+# in the silver tables is a memecoin -- and Toncoin "GRAM" (another coin in silver) after CoinGecko
+# renamed its ticker. After the re-key the snapshot asset_id is the registry uid and these entries
+# are no-ops; keyed on coingecko_id they are right in both states. Map: coingecko_id -> silver asset_id.
+SNAP_COINGECKO_TO_SILVER_ASSET_ID: dict[str, str] = {"bitcoin": "BTC", "the-open-network": "TON"}
 
 # Hard-coded stitch for Variational tickers that don't equal lake asset_id.
 # Almost all match by identity; only special cases listed here.
@@ -355,9 +358,15 @@ def build(paths: dict[str, Path]) -> tuple[pd.DataFrame, dict]:
     # BTC-ticker memecoin both landing on silver "BTC"), keep the one with
     # the best market_cap_rank — that's the canonical row.
     fms = _normalise_dates(fms)
+    # A stale snapshot must not override fresher silver caps (it froze 2026-08-04..09-18 unnoticed).
+    snap_lag_days = (pd.to_datetime(mcap["date"]).max() - pd.to_datetime(fms["date"]).max()).days
+    if snap_lag_days > 2:
+        print(f"[WARN] fact_markets_snapshot is {snap_lag_days} days behind silver_fact_marketcap; "
+              f"snapshot market-cap override disabled for this run.")
+        fms = fms.iloc[0:0]
     fms_latest = fms[fms["date"] == fms["date"].max()].copy()
     fms_latest["silver_asset_id"] = (
-        fms_latest["asset_id"].map(SNAP_TO_SILVER_ASSET_ID).fillna(fms_latest["asset_id"])
+        fms_latest["coingecko_id"].map(SNAP_COINGECKO_TO_SILVER_ASSET_ID).fillna(fms_latest["asset_id"])
     )
     fms_canonical = (
         fms_latest.sort_values("market_cap_rank")
@@ -575,9 +584,9 @@ def write_summary(out: pd.DataFrame, diag: dict, csv_path: Path) -> None:
         "`funding_rate_latest` is therefore not strictly cross-venue "
         "comparable when sourced from Variational. The `funding_source_counts` "
         "diagnostic shows how many rows landed on each.",
-        "- **Assumptions.** The asset_id mismatch between snap (`BITCOIN`) "
-        "and silver (`BTC`) is handled by a one-entry override "
-        "`SNAP_TO_SILVER_ASSET_ID`. New mismatches will surface as warning "
+        "- **Assumptions.** Snapshot rows map to silver asset_ids by CoinGecko id "
+        "(`SNAP_COINGECKO_TO_SILVER_ASSET_ID`: bitcoin -> BTC, the-open-network -> TON), "
+        "never by the snapshot's asset_id. New mismatches will surface as warning "
         "rows in the run log. FIGR_HELOC (rank 9 by mc) exists in snap but "
         "not in silver_fact_price; it is silently excluded. Variational "
         "ticker → asset_id is mostly identity; one explicit override "

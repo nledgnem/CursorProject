@@ -28,7 +28,7 @@ from src.providers.coingecko_analyst import (
     fetch_exchange_volume_chart_range,
     check_api_usage,
 )
-from src.data_lake.mapping import generate_asset_id
+from src.data_lake.asset_registry import coingecko_to_uid, load_registry, snapshot_asset_id
 
 DATA_LAKE_DIR = data_lake_root()
 
@@ -227,17 +227,11 @@ def fetch_and_save_markets_snapshot(max_pages: int = 10):
     today = date.today()
     all_records = []
     
-    # Load asset mapping for coingecko_id -> asset_id
-    dim_asset_path = DATA_LAKE_DIR / "dim_asset.parquet"
-    coingecko_to_asset_id = {}
-    
-    if dim_asset_path.exists():
-        dim_asset = pl.read_parquet(str(dim_asset_path))
-        for row in dim_asset.to_dicts():
-            cg_id = row.get("coingecko_id")
-            asset_id = row.get("asset_id")
-            if cg_id and asset_id:
-                coingecko_to_asset_id[cg_id.lower()] = asset_id
+    # asset_id comes from the asset registry by CoinGecko id (never from the ticker): the old
+    # mapping went through the placeholder dim_asset.coingecko_id (= lower-cased ticker), so real
+    # Bitcoin was stamped 'BITCOIN' (a memecoin's uid) and Toncoin became 'GRAM' when CoinGecko
+    # renamed its ticker. Coins not in the registry get the namespaced 'CG:<id>'.
+    cg_to_uid = coingecko_to_uid(load_registry())
     
     # Fetch markets (paginated, 250 per page)
     total_fetched = 0
@@ -259,10 +253,7 @@ def fetch_and_save_markets_snapshot(max_pages: int = 10):
             cg_id = market.get("id", "")
             symbol = market.get("symbol", "").upper()
             
-            # Get asset_id from mapping or generate
-            asset_id = coingecko_to_asset_id.get(cg_id.lower())
-            if not asset_id:
-                asset_id = generate_asset_id(symbol=symbol)
+            asset_id = snapshot_asset_id(cg_id, cg_to_uid)
             
             # Parse dates
             ath_date = None
